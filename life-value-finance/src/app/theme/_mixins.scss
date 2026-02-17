@@ -1,0 +1,112 @@
+// SCSS Mixins (build-time helpers)
+
+@mixin flex-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@mixin respond-to($breakpoint) {
+    @if $breakpoint =='sm' {
+        @media (min-width: 640px) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint =='md' {
+        @media (min-width: 768px) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint =='lg' {
+        @media (min-width: 1024px) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint =='xl' {
+        @media (min-width: 1280px) {
+            @content;
+        }
+    }
+}
+
+@mixin card-style {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-lg);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+@mixin input-style {
+    background-color: var(--bg-input);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    padding: 0.25rem 0.5rem;
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    font-family: var(--font-family-body);
+
+    &:hover {
+        background-color: #eef2ff; // Slight purple tint on hover
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        background-color: var(--bg-surface);
+        box-shadow: var(--shadow-focus);
+    }
+
+    &::placeholder {
+        color: #9aa0ac;
+    }
+}
+
+@mixin btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-md);
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &:hover {
+        filter: brightness(110%);
+        box-shadow: var(--shadow-md);
+    }
+
+    &:active {
+        transform: translateY(1px);
+    }
+
+    &:disabled {
+        filter: grayscale(1);
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}

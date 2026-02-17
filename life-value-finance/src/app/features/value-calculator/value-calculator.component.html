@@ -1,0 +1,50 @@
+<div class="calculator-container">
+  <h2><span class="emoji">🛍️</span> Value Calculator</h2>
+  
+  <p class="intro-text">
+      Understand the <strong>real cost</strong> of your purchases in terms of your life energy.
+  </p>
+
+  <div class="card input-card">
+    <div class="input-group">
+      <label>Product Price ($)</label>
+      <input 
+        appNumericInput
+        class="price-input"
+        type="text" 
+        [value]="productPrice()"
+        (input)="onPriceChange($event)"
+        placeholder="0.00"
+      >
+    </div>
+  </div>
+
+  <div class="results-card" [ngClass]="painClass">
+    <div class="result-header">
+      <div class="impact-badge">{{ painEmoji() }} {{ analysis().impactLevel }}</div>
+    </div>
+
+    <div class="result-grid">
+        <div class="result-item time-cost">
+        <span class="label">Life Energy Cost</span>
+        <span class="value highlight">{{ analysis().timeCostFormatted }}</span>
+        <span class="sub-text">of work required</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="result-item financial-impact">
+        <span class="label">Budget Impact</span>
+        <span class="value">{{ analysis().financialImpactPercent }}%</span>
+        <span class="sub-text">of free money</span>
+        </div>
+    </div>
+
+    <div class="progress-bar-container" title="Impact on remaining budget">
+      <div 
+        class="progress-bar" 
+        [style.width.%]="analysis().financialImpactPercent > 100 ? 100 : analysis().financialImpactPercent"
+      ></div>
+    </div>
+  </div>
+</div>

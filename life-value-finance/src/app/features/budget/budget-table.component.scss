@@ -1,0 +1,169 @@
+@use '../../theme/variables' as v;
+@use '../../theme/mixins' as m;
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-lg;
+}
+
+// Grid Card (Main Table)
+.grid-card {
+  @include m.card-style;
+  padding: 0; // Remove padding for full-width grid
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 600px; 
+
+  // Header inside the card
+  .card-header {
+    padding: v.$spacing-md v.$spacing-lg;
+    border-bottom: 1px solid v.$border-color;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .header-content {
+      display: flex;
+      gap: v.$spacing-sm;
+      align-items: center;
+    }
+
+    button.btn-archive {
+      background: transparent;
+      border: 1px solid v.$border-color;
+      border-radius: v.$radius-sm;
+      padding: 6px 12px;
+      margin-left: auto;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: v.$text-secondary;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: v.$bg-input;
+        color: v.$primary-color;
+        border-color: v.$primary-color;
+      }
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: v.$text-primary;
+    }
+
+    .row-count {
+      background: v.$bg-color;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: v.$text-secondary;
+      font-weight: 600;
+      border: 1px solid v.$border-color;
+    }
+  }
+
+  // The Grid Component Container
+  .grid-container {
+    flex: 1;
+    width: 100%;
+    
+    ag-grid-angular {
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+// AG Grid Theme Overrides (Quarts)
+::ng-deep .ag-theme-quartz {
+  // Colors
+  --ag-header-background-color: #fafafa;
+  --ag-header-foreground-color: #{v.$text-secondary};
+  --ag-background-color: #{v.$surface-color};
+  --ag-odd-row-background-color: #fcfcfc;
+  --ag-border-color: #{v.$border-color};
+  --ag-row-hover-color: color-mix(in srgb, var(--primary-color), transparent 97%);
+  --ag-selected-row-background-color: color-mix(in srgb, var(--primary-color), transparent 92%);
+  
+  // Font
+  --ag-font-family: 'Inter', sans-serif;
+  --ag-font-size: 14px;
+  
+  // Spacing
+  --ag-row-height: 48px;
+  --ag-header-height: 48px;
+  --ag-cell-horizontal-padding: 16px;
+
+  // Header Styling
+  .ag-header-cell-text {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+  }
+  
+  // Cell Styling
+  .ag-cell {
+    display: flex;
+    align-items: center;
+  }
+
+  // Column Specifics
+  .expense-name {
+    font-weight: 500;
+    color: v.$text-primary;
+  }
+
+  // Tags/Badges
+  .type-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    
+    &.fixed {
+      background: color-mix(in srgb, var(--danger-color) 10%, transparent);
+      color: v.$error-color;
+    }
+    
+    &.variable {
+      background: color-mix(in srgb, var(--success-color) 10%, transparent);
+      color: v.$success-color;
+    }
+  }
+
+  // Actions
+  .action-cell {
+    justify-content: center;
+    
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      opacity: 0.6;
+      font-size: 1.1rem;
+
+      &:hover {
+        opacity: 1;
+        background: color-mix(in srgb, var(--danger-color) 10%, transparent);
+        transform: scale(1.1);
+      }
+    }
+  }
+}
+

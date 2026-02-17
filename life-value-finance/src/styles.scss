@@ -1,0 +1,69 @@
+/* You can add global styles to this file, and also import other style files */
+@use 'app/theme/variables' as v;
+@use 'app/theme/mixins' as m;
+// @use 'app/theme/theme'; // removed missing file
+
+// Reset & Base
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-family-body, 'Inter', sans-serif);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+// Typography Hierarchy
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 var(--spacing-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--font-size-xl, 2rem); }
+h2 { font-size: var(--font-size-lg, 1.5rem); }
+h3 { font-size: var(--font-size-md, 1.2rem); font-weight: var(--font-weight-medium); }
+
+// Buttons
+button, .btn-primary {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: inherit;
+  font-weight: var(--font-weight-medium);
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+
+  &:hover:not(:disabled) {
+    background-color: hsl(var(--color-primary-hue), var(--color-primary-sat), 45%); 
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  }
+}
+
+// Inputs
+input, select {
+  font-family: inherit;
+  font-size: var(--font-size-md, 1rem);
+  box-sizing: border-box;
+}
+
+// Global Cards
+.card-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}

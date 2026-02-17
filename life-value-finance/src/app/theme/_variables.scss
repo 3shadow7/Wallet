@@ -1,0 +1,110 @@
+// Light and Dark Color Tokens (CSS Variables)
+
+:root {
+  /* -- Purple & White Modern Tech Theme -- */
+  --color-primary-hue: 260; // Deep Purple
+  --color-primary-sat: 70%;
+  --color-primary-lig: 55%;
+
+  /* Base Text */
+  --text-primary: #1a1b25;
+  --text-secondary: #5e6472;
+  --text-inverse: #ffffff;
+  
+  /* Backgrounds */
+  --bg-app: #f4f6fa;       // Light gray-blue app background
+  --bg-surface: #ffffff;   // White cards
+  --bg-surface-hover: #fcfcfd; 
+  --bg-input: #f2f3f7;
+
+  /* Borders */
+  --border-color: #e2e8f0;
+  --border-focus: #8b5cf6; // Purple-500
+
+  /* Brand Colors generated from hue */
+  --primary-color: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lig));
+  --primary-color-hover: hsl(var(--color-primary-hue), var(--color-primary-sat), 45%);
+  --primary-color-light: hsl(var(--color-primary-hue), var(--color-primary-sat), 90%);
+  --primary-gradient: linear-gradient(135deg, hsl(260, 70%, 55%) 0%, hsl(280, 70%, 50%) 100%);
+
+  /* Functional Colors */
+  --danger-color: #ef4444;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+
+  /* -- Spacing System (8pt grid) -- */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 64px;
+
+  /* -- Radii -- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-full: 999px;
+
+  /* -- Typography -- */
+  --font-family-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.8rem;
+  --font-size-xxl: 2.5rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+
+  /* -- Shadows -- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-focus: 0 0 0 3px rgba(139, 92, 246, 0.3); // Focus ring
+}
+
+/* Dark Theme Support (Optional Framework) */
+@media (prefers-color-scheme: dark) {
+  :root {
+      /* Re-map for dark mode if requested, keeping simple for now */
+  }
+}
+
+// SCSS Variables Mapping (for use in @use)
+$primary-color: var(--primary-color);
+$accent-color: var(--border-focus); // Using border focus as accent/purple
+$text-primary: var(--text-primary);
+$text-secondary: var(--text-secondary);
+$bg-color: var(--bg-app);
+$bg-input: var(--bg-input);
+$surface-color: var(--bg-surface);
+$border-color: var(--border-color);
+$error-color: var(--danger-color);
+$success-color: var(--success-color);
+
+$spacing-xs: var(--spacing-xs);
+$spacing-sm: var(--spacing-sm);
+$spacing-md: var(--spacing-md);
+$spacing-lg: var(--spacing-lg);
+$spacing-xl: var(--spacing-xl);
+
+$radius-sm: var(--radius-sm);
+$radius-md: var(--radius-md);
+$radius-lg: var(--radius-lg);
+$radius-full: var(--radius-full);
+
+$shadow-sm: var(--shadow-sm);
+$shadow-md: var(--shadow-md);
+$shadow-lg: var(--shadow-lg);
+
+// NOTE: Direct use of rgba($primary-color) will fail in SCSS. 
+// Use these predefined translucent variants or calc() manually in CSS.
+// Defining hex values here just for SCSS manipulation if absolutely needed, 
+// but preferred to use CSS vars.

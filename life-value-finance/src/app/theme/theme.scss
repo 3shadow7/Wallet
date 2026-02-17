@@ -1,0 +1,42 @@
+// Theme Entry Point
+@use 'variables';
+@use 'mixins';
+@use 'ag-grid-overrides';
+
+// Reset & Global styles
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: var(--font-family-body);
+  background-color: var(--bg-secondary); // App background
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Utility classes based on tokens */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}

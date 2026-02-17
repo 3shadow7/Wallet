@@ -1,0 +1,158 @@
+@use '../../theme/variables' as v;
+@use '../../theme/mixins' as m;
+
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: v.$spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-xl;
+  min-height: 100vh;
+  background-color: v.$bg-color;
+}
+
+// ----------------------------------------------------
+// TOP ROW: Income Input & Summary Stats
+// ----------------------------------------------------
+
+.income-widget {
+    display: flex;
+    height: 100%;
+    flex: 1 1 auto;
+}
+
+.top-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$spacing-lg;
+
+  @media (min-width: 1024px) {
+    // 3 Equal columns on large screens
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// Summary Cards Styling (Expenses & Remaining)
+.summary-card {
+  @include m.card-style;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: v.$spacing-lg;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  justify-content: flex-start;
+  padding: v.$spacing-xl;
+    flex: 1 0 auto;
+
+  .icon-container {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      flex-shrink: 0;
+  }
+
+  // Expenses Specifics
+  &.expenses {
+      border-left: 4px solid v.$error-color;
+      
+      .icon-container {
+          background: color-mix(in srgb, var(--danger-color), transparent 90%);
+          color: v.$error-color;
+      }
+      .details .value { color: v.$error-color; }
+  }
+
+  // Remaining Specifics
+  &.remaining {
+      border-left: 4px solid v.$success-color;
+
+      .icon-container {
+          background: color-mix(in srgb, var(--success-color), transparent 90%);
+          color: v.$success-color;
+      }
+      .details .value { color: v.$success-color; }
+  }
+  
+  // Text Details
+  .details {
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+
+      .label {
+          font-size: 0.85rem;
+          color: v.$text-secondary;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: v.$spacing-xs;
+          font-weight: 600;
+      }
+
+      .value {
+          font-size: 2rem;
+          font-weight: 800;
+          line-height: 1.1;
+      }
+  }
+
+  // Decorative Background Circle
+  &::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      bottom: -20px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.03;
+      pointer-events: none;
+  }
+}
+
+// ----------------------------------------------------
+// MAIN GRID: Budget Table (Left) & Tools (Right)
+// ----------------------------------------------------
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: v.$spacing-lg;
+
+  // Wide layout: Table takes 2.5x space, Calculator takes 1x
+  @media (min-width: 1024px) {
+    grid-template-columns: 2.5fr 1fr; 
+    align-items: start; // Keep calculator at top even if table is long
+  }
+}
+
+// Section Containers
+.budget-section {
+  width: 100%;
+}
+
+.tools-section {
+  position: sticky;
+  top: v.$spacing-lg;
+  
+  // On mobile, just stack it normally
+  @media (max-width: 1024px) {
+    position: static;
+  }.amount {
+      margin-top: var(--spacing-sm);
+      color: var(--text-secondary);
+    }
+  }
+
+  .empty-state {
+    @include m.flex-centered;
+    height: 100%;
+    color: var(--text-secondary);
+  }
+

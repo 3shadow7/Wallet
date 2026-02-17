@@ -1,0 +1,31 @@
+<div class="table-container">
+  
+
+  <!-- Grid Card -->
+  <div class="grid-card">
+    <div class="card-header">
+      <div class="header-content">
+          <h3>Budget Breakdown</h3>
+          <span class="row-count">{{ expenses().length }} Items</span>
+      </div>
+      <button class="btn-archive" (click)="startNewMonth()" title="Archive current month and start new">
+        📅 Start New Month
+      </button>
+    </div>
+    
+    <div class="grid-container">
+      @if (isBrowser) {
+      <ag-grid-angular
+        class="ag-theme-quartz expense-grid"
+        [rowData]="expenses()"
+        [columnDefs]="colDefs"
+        [defaultColDef]="defaultColDef"
+        [gridOptions]="gridOptions"
+        (cellValueChanged)="onCellValueChanged($event)"
+        (cellClicked)="onCellClicked($event)" 
+      >
+      </ag-grid-angular>
+      }
+    </div>
+  </div>
+</div>

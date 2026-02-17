@@ -1,0 +1,31 @@
+// AG Grid Customization (CSS Variable based)
+// We override CSS variables provided by AG Grid or target classes directly
+
+/* AG Grid Quartz Theme override via CSS vars */
+.ag-theme-quartz {
+  --ag-foreground-color: var(--text-primary);
+  --ag-background-color: var(--bg-primary);
+  --ag-header-foreground-color: var(--text-secondary);
+  --ag-header-background-color: var(--bg-secondary);
+  --ag-odd-row-background-color: var(--bg-secondary);
+  --ag-border-color: var(--border-color);
+  --ag-row-border-color: var(--border-color);
+  --ag-row-hover-color: var(--primary-color-light); // light tint on hover
+  --ag-selected-row-background-color: var(--primary-color-light);
+
+  --ag-font-family: var(--font-family-body);
+  --ag-font-size: var(--font-size-sm);
+
+  /* Specific overrides */
+  .ag-root-wrapper {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Dark mode specific for AG Grid if needed */
+  &.ag-theme-quartz-dark {
+     // Usually handled by AG Grid's own dark implementation,
+     // but we can enforce our variables:
+     --ag-background-color: var(--bg-primary);
+  }
+}
