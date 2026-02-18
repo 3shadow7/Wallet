@@ -89,6 +89,7 @@ import { UserIncomeConfig } from '@core/domain/models';
     .income-card {
       @include m.card-style;
       border-top: 4px solid var(--primary-color);
+      margin-bottom: 0 ;
       height: auto;
       display: flex;
       flex: 1;

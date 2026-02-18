@@ -1,60 +1,61 @@
 import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem } from '@core/domain/models';
 
 @Component({
   selector: 'app-add-expense',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SingleSelectComponent],
   template: `
     <div class="add-expense-card">
       <h3>Add New Expense</h3>
-      <form [formGroup]="expenseForm" (ngSubmit)="submitExpense()" class="add-form">
+      <div [formGroup]="expenseForm" class="add-form">
         <div class="form-row">
           
           <!-- Name Input -->
           <div class="input-group name-input">
             <label>Expense Name</label>
-            <input type="text" formControlName="name" placeholder="e.g. Monthly Rent" autofocus>
+            <input type="text" [formControlName]="'name'" placeholder="e.g. Monthly Rent" autofocus>
           </div>
           
           <!-- Priority Select -->
           <div class="input-group prio-input">
             <label>Importance</label>
-            <select formControlName="priority">
-              <option [ngValue]="null" disabled selected>Select...</option>
-              <option value="High">High (Must Have)</option>
-              <option value="Medium">Medium (Need)</option>
-              <option value="Low">Low (Want)</option>
-              <option value="Emergency">Emergency</option>
-              <option value="Gift">Gift</option>
-            </select>
+            <app-single-select
+              [options]="priorityOptions"
+              [value]="expenseForm.get('priority')?.value"
+              (valueChange)="expenseForm.patchValue({priority: $event})"
+              placeholder="Select Priority">
+            </app-single-select>
           </div>
           
           <!-- Type Select -->
           <div class="input-group type-input">
             <label>Type</label>
-            <select formControlName="type">
-              <option [ngValue]="null" disabled selected>Select...</option>
-              <option value="Variable">Variable</option>
-              <option value="Fixed">Fixed</option>
-            </select>
+            <app-single-select
+              [options]="typeOptions"
+              [value]="expenseForm.get('type')?.value"
+              [variant]="'badge'"
+              (valueChange)="expenseForm.patchValue({type: $event})"
+              placeholder="Select Type">
+            </app-single-select>
           </div>
 
           <!-- Amount Input -->
           <div class="input-group amt-input">
             <label>Cost ($)</label>
-            <input type="number" formControlName="amount" placeholder="0.00" step="0.01">
+            <input type="number" [formControlName]="'amount'" placeholder="0.00" step="0.01">
           </div>
 
           <!-- Add Button -->
-          <button type="submit" [disabled]="expenseForm.invalid">
+          <button type="submit" [disabled]="expenseForm.invalid" (click)="submitExpense()">
             Add Expense
           </button>
         </div>
-      </form>
+      </div>
     </div>
   `,
   styles: [`
@@ -64,11 +65,21 @@ import { ExpenseItem } from '@core/domain/models';
     :host {
       display: block;
       width: 100%;
+      position: relative; /* Ensure z-index works */
+      z-index: 50; /* Higher than content below it */
+    }
+    
+    // Ensure app-single-select behaves like a block input
+    app-single-select {
+        display: block;
+        width: 100%;
     }
 
     .add-expense-card {
       @include m.card-style;
       
+      z-index: 2;
+
       h3 {
         margin: 0 0 v.$spacing-md;
         color: v.$text-primary;
@@ -117,29 +128,12 @@ import { ExpenseItem } from '@core/domain/models';
           }
         }
 
-        input,
-        select {
+        input {
           @include m.input-style;
-          width: 100%;
-          height: 42px; // Consistent height
         }
 
         select {
-          appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-          background-repeat: no-repeat;
-          background-position: right 1rem center;
-          background-size: 1em;
-          padding-right: 2.5rem;
-          cursor: pointer;
-          
-          &:invalid {
-            color: v.$text-secondary;
-          }
-
-          option {
-            color: v.$text-primary;
-          }
+          @include m.select-style;
         }
 
         button {
@@ -161,8 +155,12 @@ import { ExpenseItem } from '@core/domain/models';
   encapsulation: ViewEncapsulation.None
 })
 export class AddExpenseComponent {
+
   private fb = inject(FormBuilder);
   private budgetState = inject(BudgetStateService);
+
+  priorityOptions = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
+  typeOptions = ['Variable','Fixed',  'Savings'];
 
   expenseForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -174,11 +172,22 @@ export class AddExpenseComponent {
   submitExpense() {
     if (this.expenseForm.valid) {
       const val = this.expenseForm.value;
+      const amount = Number(val.amount);
+      
+      // Validation: Cannot add Savings if it exceeds remaining free money
+      if (val.type === 'Savings') {
+          const currentFreeMoney = this.budgetState.remainingIncome();
+          if (amount > currentFreeMoney) {
+              alert(`Cannot add savings of $${amount} because you only have $${currentFreeMoney.toFixed(2)} free money remaining.`);
+              return;
+          }
+      }
+
       const newExpense: ExpenseItem = {
         id: crypto.randomUUID(),
         name: val.name,
         // category is optional now
-        amount: Number(val.amount),
+        amount: amount,
         type: val.type,
         priority: val.priority
       };

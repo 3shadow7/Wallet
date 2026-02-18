@@ -19,7 +19,7 @@ export class PersistenceService {
   private platformId = inject(PLATFORM_ID);
 
   saveState(state: Partial<AppStateData>): void {
-    if (!isPlatformBrowser(this.platformId)) return;
+    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
 
     try {
       const dataToSave = {

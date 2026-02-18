@@ -1,16 +1,18 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [],
+  imports: [RouterLink, RouterLinkActive],
   template: `
     <header class="app-header">
       <div class="logo">
         <h1>Life Value Finance</h1>
       </div>
       <nav>
-        <!-- Single View App -->
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/history" routerLinkActive="active">History & Savings</a>
       </nav>
     </header>
   `,

@@ -1,0 +1,186 @@
+@use 'sass:color';
+@use '../../theme/variables' as v;
+@use '../../theme/mixins' as m;
+
+.history-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: v.$spacing-lg;
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-xl;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    color: v.$text-primary;
+    margin-bottom: v.$spacing-md;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: v.$spacing-lg;
+
+    .stat-card {
+        @include m.card-style;
+        display: flex;
+        flex-direction: column;
+        gap: v.$spacing-xs;
+        
+        h3 {
+            font-size: 0.9rem;
+            color: v.$text-secondary;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: v.$primary-color;
+        }
+        
+        .mini-detail {
+            display: flex;
+            flex-direction: column;
+            
+            .sub {
+                font-size: 0.8rem;
+                color: v.$text-secondary;
+            }
+        }
+    }
+}
+
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: v.$spacing-lg;
+
+    @media (min-width: 1024px) {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .chart-card {
+        @include m.card-style;
+        min-height: 400px;
+        
+        h3 { margin-bottom: v.$spacing-lg; }
+
+        &.full-width {
+            grid-column: 1 / -1;
+            
+            .chart-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: v.$spacing-md;
+
+                .toggle-group {
+                    display: flex;
+                    gap: v.$spacing-sm;
+                    
+                    button {
+                        padding: v.$spacing-xs v.$spacing-md;
+                        border: 1px solid v.$border-color;
+                        border-radius: 4px;
+                        background: transparent;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        font-size: 0.9rem;
+                        
+                        &.active {
+                            background: v.$primary-color;
+                            color: white;
+                            border-color: v.$primary-color;
+                        }
+                    }
+                }
+
+                // Styles for the Treemap Header
+                &.treemap-header {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: v.$spacing-md;
+                    
+                    // New Filter Control Row
+                    .filter-controls {
+                        display: flex;
+                        gap: v.$spacing-lg;
+                        align-items: center;
+                        flex-wrap: wrap;
+                        margin-bottom: v.$spacing-sm;
+                        width: 100%;
+                        padding-bottom: v.$spacing-sm;
+                        border-bottom: 1px solid v.$border-color;
+                        
+                        .control-group {
+                            display: flex;
+                            align-items: center;
+                            gap: v.$spacing-xs;
+                            
+                            label {
+                                font-size: 0.8rem;
+                                color: v.$text-secondary;
+                                font-weight: 600;
+                            }
+
+                            .styled-select {
+                                padding: 6px 12px;
+                                border-radius: 6px;
+                                border: 1px solid v.$border-color;
+                                background: v.$surface-color;
+                                color: v.$text-primary;
+                                font-size: 0.9rem;
+                                cursor: pointer;
+                                min-width: 120px;
+                                
+                                &:focus {
+                                    outline: none;
+                                    border-color: v.$primary-color;
+                                    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+                                }
+                            }
+                        }
+                    }
+
+                    .month-selector {
+                        display: flex;
+                        align-items: center;
+                        gap: v.$spacing-md;
+                        width: 100%;
+                        background: v.$bg-input;
+                        padding: v.$spacing-md;
+                        border-radius: 8px;
+                        
+                        .label { 
+                            font-size: 0.8rem; 
+                            color: v.$text-secondary; 
+                            font-weight: 600;
+                            min-width: 60px;
+                        }
+                        
+                        .slider-wrapper {
+                            flex: 1;
+                            height: 80px; // Ensure space for slider and labels
+                            display: flex;
+                            align-items: center;
+                        }
+                    }
+                } 
+            }
+        }
+    }
+}
+
+.table-card {
+    @include m.card-style;
+    h3 { margin-bottom: v.$spacing-md; }
+    
+    .history-grid {
+        width: 100%;
+        height: 500px;
+    }
+}

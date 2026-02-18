@@ -28,7 +28,7 @@ h2 {
 
 .card {
   @include m.card-style;
-  margin-bottom: var(--spacing-md);
+//   margin-bottom: var(--spacing-md);
 }
 
 .input-group {
@@ -71,6 +71,7 @@ h2 {
   border: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
+  height: 100%;
   
   // Dynamic border color based on impact
   &.low { border-top: 4px solid var(--success-color); }

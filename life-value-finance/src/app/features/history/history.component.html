@@ -1,0 +1,111 @@
+<div class="history-container">
+    <header>
+      <h1>📊 Monthly History & Savings Analysis</h1>
+    </header>
+    
+    <!-- Stats Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+          <h3>Total Savings</h3>
+          <span class="value">{{ totalSavings() | currency }}</span>
+      </div>
+      <div class="stat-card">
+          <h3>Avg Savings Rate</h3>
+          <span class="value">{{ avgSavingsRate() | number:'1.1-1' }}%</span>
+      </div>
+      <div class="stat-card">
+          <h3>Best Month</h3>
+          <div class="mini-detail">
+              <span class="value">{{ bestMonth()?.month || '--' }}</span>
+              <span class="sub" *ngIf="bestMonth()">{{ bestMonth()?.transferredToSavings | currency }} saved</span>
+          </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-row">
+      <div class="chart-card">
+          <h3>Savings Growth</h3>
+          <div #savingsChart></div>
+      </div>
+      <div class="chart-card">
+          <h3>Monthly Cash Flow Breakdown</h3>
+          <div #expensesChart></div>
+      </div>
+      <div class="chart-card full-width">
+          <div class="chart-header">
+              <h3>Expense Composition Analysis</h3>
+              <div class="toggle-group">
+                  <button [class.active]="breakdownMode === 'type'" (click)="setBreakdownMode('type')">By Type</button>
+                  <button [class.active]="breakdownMode === 'priority'" (click)="setBreakdownMode('priority')">By Priority</button>
+              </div>
+          </div>
+          <div #breakdownChart></div>
+      </div>
+
+      <!-- New Section: Item Drilldown -->
+      <div class="chart-card full-width">
+          <div class="chart-header treemap-header">
+              <h3>Detailed Item Composition (Treemap)</h3>
+              
+              <!-- Filters Row: Year | Type | Priority -->
+              <div class="filter-controls">
+                  <div class="control-group">
+                      <label>Year:</label>
+                      <app-single-select
+                          [options]="availableYears()"
+                          [value]="selectedYear()"
+                          (valueChange)="selectedYear.set($event)"
+                          placeholder="Select Year">
+                      </app-single-select>
+                  </div>
+
+                  <div class="control-group">
+                      <label>Type:</label>
+                      <app-multi-select 
+                          [options]="availableTypes" 
+                          [selected]="filterType()"
+                          (selectionChange)="filterType.set($event)"
+                          placeholder="Select Types">
+                      </app-multi-select>
+                  </div>
+
+                  <div class="control-group">
+                      <label>Priority:</label>
+                      <app-multi-select 
+                          [options]="availablePriorities" 
+                          [selected]="filterPriority()"
+                          (selectionChange)="filterPriority.set($event)"
+                          placeholder="Select Priority">
+                      </app-multi-select>
+                  </div>
+              </div>
+
+              <!-- Month Selection Slider -->
+              <div class="month-selector">
+                      <span class="label">Timeline:</span>
+                      <div class="slider-wrapper">
+                          <app-month-slider (rangeChange)="onTimeRangeChange($event)"></app-month-slider>
+                      </div>
+              </div>
+          </div>
+          <div #itemChart></div>
+      </div>
+    </div>
+
+    <!-- Detailed History Table -->
+    <div class="table-card">
+      <h3>Detailed Monthly Log</h3>
+      @if (isBrowser) {
+      <ag-grid-angular
+        class="ag-theme-quartz history-grid"
+        [rowData]="history()"
+        [columnDefs]="colDefs"
+        [defaultColDef]="defaultColDef"
+        domLayout="autoHeight"
+        [theme]="'legacy'"
+      >
+      </ag-grid-angular>
+      }
+    </div>
+  </div>

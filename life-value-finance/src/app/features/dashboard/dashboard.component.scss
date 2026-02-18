@@ -19,19 +19,31 @@
 .income-widget {
     display: flex;
     height: 100%;
-    flex: 1 1 auto;
+    width: 40%;
+    flex: 0.3 0 20rem;
+    margin: 0 auto;
 }
 
 .top-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: v.$spacing-lg;
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: var(--spacing-lg);
 
   @media (min-width: 1024px) {
     // 3 Equal columns on large screens
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+.card-summary-container{
+    display: flex;
+    flex: 1 1 25%;
+    gap: var(--spacing-lg);
+    height: 100%;
+    flex-wrap: wrap;
+}
+
 
 // Summary Cards Styling (Expenses & Remaining)
 .summary-card {
@@ -78,6 +90,101 @@
           color: v.$success-color;
       }
       .details .value { color: v.$success-color; }
+  }
+
+  // Savings Specifics (Blue/Primary)
+  &.savings {
+      border-left: 4px solid v.$primary-color;
+      background: linear-gradient(135deg, v.$surface-color 0%, color-mix(in srgb, v.$primary-color, transparent 96%) 100%);
+
+      .icon-container {
+          background: color-mix(in srgb, var(--primary-color), transparent 90%);
+          color: v.$primary-color;
+      }
+
+      .details {
+          .value { color: v.$primary-color; }
+          .label { color: v.$primary-color; }
+      }
+
+      .extra-info {
+           font-size: 0.75rem;
+           background: v.$surface-color;
+           margin-top: v.$spacing-sm;
+           padding: 2px 8px;
+           border-radius: v.$radius-full;
+           border: 1px solid color-mix(in srgb, var(--primary-color), transparent 80%);
+           color: v.$primary-color;
+           
+           &.deficit {
+              border-color: color-mix(in srgb, var(--danger-color), transparent 50%);
+              color: v.$error-color;
+              background: color-mix(in srgb, var(--danger-color), transparent 95%);
+           }
+      }
+
+      .manual-add {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-left: auto; 
+          z-index: 2;
+          
+          // Use mixin or custom style that matches card
+          input {
+              width: 125px;
+              padding: 6px 10px;
+              border: 1px solid color-mix(in srgb, var(--primary-color), transparent 85%);
+              background: rgba(255, 255, 255, 0.8);
+              border-radius: v.$radius-sm;
+              font-size: 0.85rem;
+              outline: none;
+              color: v.$text-primary;
+              transition: all 0.2s;
+              
+              &::placeholder {
+                 color: rgba(0,0,0,0.3);
+                 font-size: 0.8rem;
+              }
+
+              &:focus {
+                 border-color: v.$primary-color;
+                 background: white;
+                 box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color), transparent 85%);
+              }
+          }
+
+          button {
+              width: 35px;
+              height: 35px;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border: none;
+              background-color: v.$primary-color; 
+              color: white; 
+              border-radius: v.$radius-sm;
+              cursor: pointer;
+              font-weight: bold;
+              font-size: 1.1rem;
+              line-height: inherit;
+              transition: all 0.2s;
+              
+              &:hover {
+                  background-color: color-mix(in srgb, var(--primary-color), black 10%);
+                  transform: scale(1.05);
+              }
+              
+              &:active {
+                 transform: scale(0.95);
+              }
+          }
+      }
+  }
+
+  .savings-input-container{
+    margin-left: auto;
   }
   
   // Text Details
@@ -138,6 +245,7 @@
 }
 
 .tools-section {
+    height: 100%;
   position: sticky;
   top: v.$spacing-lg;
   

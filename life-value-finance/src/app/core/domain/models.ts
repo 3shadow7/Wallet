@@ -20,14 +20,14 @@ export interface UserIncomeConfig {
   };
 }
 
-export type PriorityLevel = 'High' | 'Medium' | 'Low' | 'Emergency' | 'Gift';
+export type PriorityLevel = 'Must Have' | 'Need' | 'Want' | 'Emergency' | 'Gift';
 
 export interface ExpenseItem {
   id: string;
   category?: string;
   name: string;
   amount: number;
-  type: 'Fixed' | 'Variable'; // Updated per requirements
+  type: 'Fixed' | 'Variable' | 'Savings'; // Updated per requirements
   priority: PriorityLevel;
 }
 

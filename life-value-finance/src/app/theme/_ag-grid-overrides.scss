@@ -1,20 +1,28 @@
-// AG Grid Customization (CSS Variable based)
-// We override CSS variables provided by AG Grid or target classes directly
+@use 'variables' as v;
+@import 'ag-grid-community/styles/ag-grid.css';
+@import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-/* AG Grid Quartz Theme override via CSS vars */
-.ag-theme-quartz {
-  --ag-foreground-color: var(--text-primary);
-  --ag-background-color: var(--bg-primary);
+// Standard AG Grid Quartz Overrides
+// Use this class on all AG Grid instances for consistent app-wide style
+
+::ng-deep .ag-theme-quartz {
+  // Colors & Theme Vars
+  --ag-header-background-color: #fafafa;
   --ag-header-foreground-color: var(--text-secondary);
-  --ag-header-background-color: var(--bg-secondary);
-  --ag-odd-row-background-color: var(--bg-secondary);
+  --ag-background-color: var(--bg-surface);
+  --ag-odd-row-background-color: #fcfcfc;
   --ag-border-color: var(--border-color);
-  --ag-row-border-color: var(--border-color);
-  --ag-row-hover-color: var(--primary-color-light); // light tint on hover
-  --ag-selected-row-background-color: var(--primary-color-light);
-
+  --ag-row-hover-color: color-mix(in srgb, var(--primary-color), transparent 97%);
+  --ag-selected-row-background-color: color-mix(in srgb, var(--primary-color), transparent 92%);
+  
+  // Font
   --ag-font-family: var(--font-family-body);
-  --ag-font-size: var(--font-size-sm);
+  --ag-font-size: 14px;
+  
+  // Spacing
+  --ag-row-height: 48px;
+  --ag-header-height: 48px;
+  --ag-cell-horizontal-padding: 16px;
 
   /* Specific overrides */
   .ag-root-wrapper {
@@ -22,10 +30,71 @@
     border: 1px solid var(--border-color);
   }
 
-  /* Dark mode specific for AG Grid if needed */
-  &.ag-theme-quartz-dark {
-     // Usually handled by AG Grid's own dark implementation,
-     // but we can enforce our variables:
-     --ag-background-color: var(--bg-primary);
+  // Header Styling
+  .ag-header-cell-text {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+  }
+  
+  // Cell Styling
+  .ag-cell {
+    display: flex;
+    align-items: center;
+    color: var(--text-primary);
+  }
+
+  // Column Specifics
+  .expense-name {
+    font-weight: 500;
+  }
+
+  // Tags/Badges
+  .type-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    
+    &.fixed {
+      background: color-mix(in srgb, var(--danger-color) 10%, transparent);
+      color: var(--danger-color);
+    }
+    
+    &.variable {
+      background: color-mix(in srgb, var(--success-color) 10%, transparent);
+      color: var(--success-color);
+    }
+
+    &.savings {
+      background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+      color: var(--primary-color);
+    }
+  }
+
+  // Actions
+  .action-cell {
+    justify-content: center;
+    
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      opacity: 0.6;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+
+      &:hover {
+        opacity: 1;
+        background: color-mix(in srgb, var(--danger-color) 10%, transparent);
+        transform: scale(1.1);
+        color: var(--danger-color);
+      }
+    }
   }
 }

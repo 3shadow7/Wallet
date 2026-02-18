@@ -1,0 +1,16 @@
+<div class="multi-select-container" [class.open]="showDropdown()">
+  <div class="select-trigger" (click)="toggleDropdown($event)">
+    <span class="value-text">{{ getDisplayText() }}</span>
+    <span class="icon">▼</span>
+  </div>
+
+  <div class="options-list" *ngIf="showDropdown()">
+    <label *ngFor="let option of options" class="option-item">
+      <input type="checkbox" 
+             [checked]="isSelected(option)" 
+             (change)="onCheckboxChange(option, $event)">
+      <span class="check-box"></span>
+      <span class="label-text">{{ option }}</span>
+    </label>
+  </div>
+</div>

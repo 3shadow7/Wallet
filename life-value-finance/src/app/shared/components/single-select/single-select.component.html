@@ -1,0 +1,49 @@
+<div class="custom-select-container" [class.open]="showDropdown()">
+    <div class="select-trigger" (click)="toggleDropdown($event)">
+      <div class="trigger-content">
+          <!-- Dot Variant -->
+          <ng-container *ngIf="variant === 'dot'">
+              <span class="color-dot" *ngIf="value" [style.background-color]="getColor(value)"></span>
+              <span class="value-text" [class.placeholder]="!value">{{ value || placeholder }}</span>
+          </ng-container>
+
+          <!-- Badge Variant -->
+          <ng-container *ngIf="variant === 'badge'">
+              <span class="badge-pill" *ngIf="value" 
+                    [style.background-color]="getBadgeBg(value)"
+                    [style.color]="getBadgeColor(value)"
+                    [style.border-color]="getBadgeColor(value)">
+                  {{ value }}
+              </span>
+              <span class="value-text placeholder" *ngIf="!value">{{ placeholder }}</span>
+          </ng-container>
+      </div>
+      <span class="icon">▼</span>
+    </div>
+  
+    <div class="options-list" *ngIf="showDropdown()">
+      <div *ngFor="let option of options" 
+           class="option-item" 
+           [class.selected]="option === value"
+           (click)="selectOption(option, $event)">
+        
+        <!-- Dot Variant Option -->
+        <div class="option-content" *ngIf="variant === 'dot'">
+            <span class="color-dot" [style.background-color]="getColor(option)"></span>
+            <span class="label-text">{{ option }}</span>
+        </div>
+
+        <!-- Badge Variant Option -->
+        <div class="option-content" *ngIf="variant === 'badge'">
+             <span class="badge-pill" 
+                    [style.background-color]="getBadgeBg(option)"
+                    [style.color]="getBadgeColor(option)"
+                    [style.border-color]="getBadgeColor(option)">
+                  {{ option }}
+              </span>
+        </div>
+
+        <span class="check-icon" *ngIf="option === value">✓</span>
+      </div>
+    </div>
+  </div>

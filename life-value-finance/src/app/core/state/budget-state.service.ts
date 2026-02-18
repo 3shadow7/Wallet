@@ -1,7 +1,9 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { Injectable, signal, computed, effect, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ExpenseItem, BudgetSummary, UserIncomeConfig, BudgetHistory } from '@core/domain/models';
 import { FinancialCalculatorService } from '@core/domain/financial-calculator.service';
 import { PersistenceService, AppStateData } from '@core/services/persistence.service';
+import { SavingsService } from '@core/services/savings.service';
 
 /**
  * State Interface
@@ -29,13 +31,16 @@ const INITIAL_STATE: BudgetState = {
   providedIn: 'root'
 })
 export class BudgetStateService {
+  private platformId = inject(PLATFORM_ID);
   private persistenceService = inject(PersistenceService);
+  private savingsService = inject(SavingsService);
 
   // --- Core State ---
   // Using a single configuration object for income as per new requirements
   private incomeConfig = signal<UserIncomeConfig>(INITIAL_STATE.incomeConfig);
   private expenses = signal<ExpenseItem[]>(INITIAL_STATE.expenses);
   private history = signal<BudgetHistory[]>(INITIAL_STATE.history);
+  private manualSavingsLog = signal<number>(0); // Track manual additions
 
   // --- Derived State (Readonly) ---
   readonly incomeConfigSignal = this.incomeConfig.asReadonly();
@@ -70,10 +75,21 @@ export class BudgetStateService {
       };
       
       this.persistenceService.saveState(currentState);
+      if (isPlatformBrowser(this.platformId) && typeof localStorage !== 'undefined') {
+        localStorage.setItem('manualSavingsLog', this.manualSavingsLog().toString());
+      }
     });
   }
 
   private async loadInitialState() {
+    // Load Manual Savings Log
+    if (isPlatformBrowser(this.platformId) && typeof localStorage !== 'undefined') {
+      const savedLog = localStorage.getItem('manualSavingsLog');
+      if (savedLog) {
+         this.manualSavingsLog.set(Number(savedLog));
+      }
+    }
+
     try {
       const savedState = await this.persistenceService.loadState();
       if (savedState) {
@@ -110,22 +126,69 @@ export class BudgetStateService {
     this.expenses.update(current => current.filter(item => item.id !== id));
   }
 
+  // Manual Savings Actions
+  trackManualSavings(amount: number) {
+      this.savingsService.addToSavings(amount); // Update real balance
+      this.manualSavingsLog.update(v => v + amount); // Log for history
+  }
+
   // History & Rollover
   archiveAndResetMonth(): void {
+    const expenses = this.expenses();
+    const incomeConfig = this.incomeConfig();
+    const summary = this.budgetSummary();
+
     const currentState: BudgetHistory = {
         month: new Date().toISOString().slice(0, 7), // YYYY-MM
         date: new Date().toISOString(),
-        incomeConfig: this.incomeConfig(),
-        expenses: this.expenses(),
-        summary: this.budgetSummary()
+        incomeConfig: incomeConfig,
+        expenses: expenses,
+        summary: summary
     };
     
+    // 0. Update Savings Module with this month's snapshot
+    // Logic: 
+    // - Savings Items are treated as allocated funds, so they are added back to "transferred" calculation.
+    // - If Remaining Income is negative (overspending), we must DEDUCT that deficit from savings storage.
+    const savingsExpensesTotal = expenses
+        .filter(item => item.type === 'Savings') // Ensure strict match with ExpenseItem type
+        .reduce((sum, item) => sum + item.amount, 0);
+
+    // Calculate true net result: Income - (Real Expenses + Savings Contribution)
+    // Note: summary.remainingIncome is clamped to 0 in FinancialCalculator, so we recalculate raw
+    const rawRemaining = summary.totalIncome - summary.totalExpenses;
+    
+    // Transferred Amount Logic:
+    // This value represents the net change to your Total Savings Storage.
+    // If positive: Your savings grow.
+    // If negative: Your savings shrink (you dipped into storage).
+    
+    const transferredAmount = rawRemaining + savingsExpensesTotal;
+
+    // Free Money Logic:
+    // Defined as unallocated surplus. This is what's left after ALL obligations (including planned savings).
+    // If you have $500 planned savings and $200 surplus, Free Money is $200.
+    // Transferred to Savings is $700.
+    // If you have NO planned savings, then Free Money = Transferred = $200. This is correct but visually redundant.
+    
+    this.savingsService.addMonthlySnapshot({
+        month: currentState.month,
+        income: summary.totalIncome,
+        expenses: summary.totalExpenses,
+        freeMoney: rawRemaining, // Record actual processed result (can be negative)
+        transferredToSavings: transferredAmount,
+        manualAdded: this.manualSavingsLog()
+    });
+
+    // Reset Manual Log for next month
+    this.manualSavingsLog.set(0);
+
     // 1. Archive current state
     this.history.update(current => [...current, currentState]);
     
-    // 2. Clear Variable Expenses, Keep Fixed
+    // 2. Clear Variable Expenses, Keep Fixed AND Savings
     this.expenses.update(current => 
-        current.filter(item => item.type === 'Fixed')
+        current.filter(item => item.type === 'Fixed' || item.type === 'Savings')
     );
   }
 }

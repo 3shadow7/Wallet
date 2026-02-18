@@ -5,6 +5,8 @@
     <!-- Income Config & Display -->
     <app-income-input class="income-widget"></app-income-input>
 
+    <div class="card-summary-container">
+        
     <!-- Expenses Summary -->
     <div class="card summary-card expenses">
       <div class="icon-container">💸</div>
@@ -22,11 +24,33 @@
         <span class="value">{{ remainingIncome() | currency }}</span>
       </div>
     </div>
+    
+    <!-- Savings Summary (New) -->
+    <div class="card summary-card savings">
+      <div class="icon-container">🏦</div>
+      <div class="details">
+        <span class="label">Total Savings</span>
+        <span class="value">{{ totalSavings() | currency }}</span>
+      </div>
+      <div class="savings-input-container">
+      <div class="manual-add">
+        <input #savingsInput type="number" placeholder="Add Amount..." (keyup.enter)="addSavings(savingsInput.value, savingsInput)">
+        <button (click)="addSavings(savingsInput.value, savingsInput)">+</button>
+      </div>
+      <div class="extra-info" *ngIf="lastSavingsTransfer() !== 0"  [class.deficit]="lastSavingsTransfer() < 0">
+         <span *ngIf="lastSavingsTransfer() > 0">+{{ lastSavingsTransfer() | currency }} last month</span>
+         <span *ngIf="lastSavingsTransfer() < 0">{{ lastSavingsTransfer() | currency }} (Dipped into Storage)</span>
+      </div>
+      </div>
+      
+    </div>
+    
+    </div>
   </div>
 
   <!-- Add Expense Component -->
   <app-add-expense></app-add-expense>
-  
+
   <!-- 2. Main Workspace -->
   <div class="main-grid">
     

@@ -44,28 +44,35 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     padding: var(--spacing-lg);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    /* Ensure positioned context for children, but avoid aggressive stacking */
+    position: relative;
+    z-index: 1; 
 
     &:hover {
-        transform: translateY(-2px);
+        /* transform: translateY(-2px); REMOVED to prevent stacking context issues with dropdowns */
         box-shadow: var(--shadow-md);
+        z-index: 10; /* Raise card on hover so dropdowns might show above others */
     }
 }
 
 @mixin input-style {
     background-color: var(--bg-input);
-    border: 1px solid transparent;
+    border: 1px solid var(--border-color); // Added border for better visibility
+    // ... rest
     border-radius: var(--radius-md);
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem; // Increased padding slightly
     font-size: var(--font-size-md);
     color: var(--text-primary);
     width: 100%;
     box-sizing: border-box;
     transition: all 0.2s ease;
     font-family: var(--font-family-body);
+    height: 42px; // Consistent height
 
     &:hover {
-        background-color: #eef2ff; // Slight purple tint on hover
+        background-color: var(--bg-surface-hover); // Use defined hover
+        border-color: var(--border-focus); // Subtle hint on hover
     }
 
     &:focus {
@@ -76,7 +83,29 @@
     }
 
     &::placeholder {
-        color: #9aa0ac;
+        color: var(--text-secondary);
+        opacity: 0.6;
+    }
+}
+
+@mixin select-style {
+    @include input-style;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    
+    &:invalid {
+        color: var(--text-secondary);
+    }
+
+    option {
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        padding: 8px;
     }
 }
 

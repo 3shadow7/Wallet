@@ -1,7 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @use 'app/theme/variables' as v;
 @use 'app/theme/mixins' as m;
-// @use 'app/theme/theme'; // removed missing file
+@use 'app/theme/ag-grid-overrides';
 
 // Reset & Base
 html, body {
