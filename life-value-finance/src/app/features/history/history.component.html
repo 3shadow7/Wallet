@@ -98,7 +98,7 @@
       <h3>Detailed Monthly Log</h3>
       @if (isBrowser) {
       <ag-grid-angular
-        class="ag-theme-quartz history-grid"
+        [class]="themeService.isDark() ? 'ag-theme-quartz-dark history-grid' : 'ag-theme-quartz history-grid'"
         [rowData]="history()"
         [columnDefs]="colDefs"
         [defaultColDef]="defaultColDef"

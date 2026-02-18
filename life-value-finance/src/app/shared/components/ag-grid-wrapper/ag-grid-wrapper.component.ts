@@ -7,26 +7,8 @@ import { ColDef, GridOptions } from 'ag-grid-community';
   selector: 'app-ag-grid-wrapper',
   standalone: true,
   imports: [CommonModule, AgGridAngular],
-  template: `
-    <div style="height: 100%; width: 100%;">
-      @if (isBrowser) {
-        <ag-grid-angular
-            style="width: 100%; height: 100%;"
-            [class]="class"
-            [rowData]="rowData"
-            [columnDefs]="columnDefs"
-            [defaultColDef]="defaultColDef"
-            [gridOptions]="gridOptions"
-            [theme]="theme"
-            [domLayout]="domLayout"
-            (gridReady)="onGridReady($event)"
-            (cellValueChanged)="onCellValueChanged($event)"
-            (cellClicked)="onCellClicked($event)"
-        >
-        </ag-grid-angular>
-      }
-    </div>
-  `,
+  templateUrl: './ag-grid-wrapper.component.html',
+  styleUrl: './ag-grid-wrapper.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None
 })

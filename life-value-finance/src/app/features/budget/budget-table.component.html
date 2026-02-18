@@ -16,7 +16,7 @@
     <div class="grid-container">
       @if (isBrowser) {
       <ag-grid-angular
-        class="ag-theme-quartz expense-grid"
+        [class]="themeService.isDark() ? 'ag-theme-quartz-dark expense-grid' : 'ag-theme-quartz expense-grid'"
         [rowData]="expenses()"
         [columnDefs]="colDefs"
         [defaultColDef]="defaultColDef"

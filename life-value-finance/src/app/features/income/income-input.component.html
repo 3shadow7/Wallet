@@ -1,0 +1,70 @@
+<div class="card income-card gradient-border-card">
+  <div class="card-header">
+    <h3>💰 Income Setup</h3>
+    <button class="icon-btn edit-btn" (click)="toggleEdit()" *ngIf="!isEditing()" title="Edit Income">
+        <span class="icon">✏️</span> Edit
+    </button>
+  </div>
+
+  <div *ngIf="!isEditing()" class="summary-view">
+    <div class="summary-item main-stat">
+      <span class="label">Monthly Income</span>
+      <span class="value income-value">{{ incomeConfig().monthlyIncome | currency }}</span>
+    </div>
+    
+    <div class="divider"></div>
+
+    <div class="secondary-stats">
+        <div class="summary-item">
+        <span class="label">Work Schedule</span>
+        <span class="value">{{ incomeConfig().workHoursPerMonth | number:'1.0-0' }}h / mo</span>
+        </div>
+        <div class="summary-item">
+        <span class="label">Real Hourly Rate</span>
+        <span class="value">{{ hourlyRate() | currency }}/hr</span>
+        </div>
+    </div>
+  </div>
+
+  <form [formGroup]="form" *ngIf="isEditing()" (ngSubmit)="save()" class="edit-form">
+    <div class="form-group">
+      <label>Monthly Net Income</label>
+      <input type="number" formControlName="monthlyIncome" placeholder="e.g. 5000">
+    </div>
+    
+    <div class="toggle-group">
+        <label>Calculation Method:</label>
+        <div class="toggles">
+            <button type="button" [class.active]="calcMethod() === 'weekly'" (click)="setCalcMethod('weekly')">Weekly Schedule</button>
+            <button type="button" [class.active]="calcMethod() === 'manual'" (click)="setCalcMethod('manual')">Manual Hours</button>
+        </div>
+    </div>
+
+    @if (calcMethod() === 'weekly') {
+        <div class="form-row">
+            <div class="form-group">
+                <label>Hours/Day</label>
+                <input type="number" formControlName="hoursPerDay" placeholder="8">
+            </div>
+            <div class="form-group">
+                <label>Days/Week</label>
+                <input type="number" formControlName="daysPerWeek" placeholder="5">
+            </div>
+        </div>
+        <div class="calc-preview">
+            ≈ {{ calculateMonthlyHours() | number:'1.0-0' }} hours / month
+        </div>
+    } @else {
+        <div class="form-group">
+            <label>Work Hours / Month</label>
+            <input type="number" formControlName="workHoursPerMonth" placeholder="e.g. 160">
+            <small>Standard: 160h</small>
+        </div>
+    }
+
+    <div class="actions">
+      <button type="button" class="btn-cancel" (click)="cancel()">Cancel</button>
+      <button type="submit" class="btn-save" [disabled]="form.invalid">Save Changes</button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,215 @@
+@use '../../theme/variables' as v;
+@use '../../theme/mixins' as m;
+
+:host { display: block; }
+
+.income-card {
+  @include m.card-style;
+  border-top: 4px solid var(--primary-color);
+  margin-bottom: 0;
+  height: auto;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+
+  h3 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+.edit-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+
+    &:hover {
+        background: var(--bg-input);
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+}
+
+.summary-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  flex: 1;
+  justify-content: center;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &.main-stat {
+     flex-direction: column;
+     align-items: flex-start;
+     
+     .value {
+         font-size: 2rem;
+         font-weight: 800;
+         background: var(--primary-gradient);
+         -webkit-background-clip: text;
+         -webkit-text-fill-color: transparent;
+     }
+  }
+
+  .label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  
+  .value {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: var(--spacing-xs) 0;
+}
+
+.secondary-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    
+    .summary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        
+        .value { font-size: 1.1rem; }
+    }
+}
+
+/* Form Styling */
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-row {
+    display: flex;
+    gap: var(--spacing-md);
+    
+    .form-group { flex: 1; min-width: 0; }
+}
+
+.toggle-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .toggles {
+        display: flex;
+        background: v.$bg-input;
+        padding: 4px;
+        border-radius: var(--radius-sm);
+        gap: 4px;
+
+        button {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 6px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            
+            &.active {
+               background: var(--bg-surface); 
+               opacity: 1;
+               font-weight: 600;
+               color: var(--primary-color);
+               box-shadow: var(--shadow-sm);
+            }
+        }
+    }
+}
+
+.calc-preview {
+    font-size: 0.8rem;
+    // Approximation of primary color tint if rgba fails
+    background: #f3f0ff; 
+    color: var(--primary-color);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    text-align: center;
+    font-weight: 600;
+}
+
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  input {
+    @include m.input-style;
+  }
+  
+  small {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+
+  button {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-save {
+    @include m.btn-primary;
+  }
+
+  .btn-cancel {
+    background: transparent;
+    border: 1px solid v.$border-color;
+    color: v.$text-secondary;
+    
+    &:hover {
+      background: v.$bg-input;
+      color: v.$text-primary;
+    }
+  }
+}

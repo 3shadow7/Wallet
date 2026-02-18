@@ -1,0 +1,47 @@
+<div class="add-expense-card">
+    <h3>Add New Expense</h3>
+    <div [formGroup]="expenseForm" class="add-form">
+      <div class="form-row">
+        
+        <!-- Name Input -->
+        <div class="input-group name-input">
+          <label>Expense Name</label>
+          <input type="text" [formControlName]="'name'" placeholder="e.g. Monthly Rent" autofocus>
+        </div>
+        
+        <!-- Priority Select -->
+        <div class="input-group prio-input">
+          <label>Importance</label>
+          <app-single-select
+            [options]="priorityOptions"
+            [value]="expenseForm.get('priority')?.value"
+            (valueChange)="expenseForm.patchValue({priority: $event})"
+            placeholder="Select Priority">
+          </app-single-select>
+        </div>
+        
+        <!-- Type Select -->
+        <div class="input-group type-input">
+          <label>Type</label>
+          <app-single-select
+            [options]="typeOptions"
+            [value]="expenseForm.get('type')?.value"
+            [variant]="'badge'"
+            (valueChange)="expenseForm.patchValue({type: $event})"
+            placeholder="Select Type">
+          </app-single-select>
+        </div>
+
+        <!-- Amount Input -->
+        <div class="input-group amt-input">
+          <label>Cost ($)</label>
+          <input type="number" [formControlName]="'amount'" placeholder="0.00" step="0.01">
+        </div>
+
+        <!-- Add Button -->
+        <button type="submit" [disabled]="expenseForm.invalid" (click)="submitExpense()">
+          Add Expense
+        </button>
+      </div>
+    </div>
+  </div>

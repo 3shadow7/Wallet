@@ -8,6 +8,7 @@ import { SingleSelectComponent } from '@shared/components/single-select/single-s
 import { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { SavingsService, MonthlyRecord } from '@core/services/savings.service';
 import ApexCharts from 'apexcharts';
+import { ThemeService } from '@core/services/theme.service';
 
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem } from '@core/domain/models';
@@ -24,6 +25,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private savingsService = inject(SavingsService);
   private budgetState = inject(BudgetStateService);
   private platformId = inject(PLATFORM_ID);
+  public themeService = inject(ThemeService); // Made public for template if needed
   
   isBrowser = isPlatformBrowser(this.platformId);
   breakdownMode: 'type' | 'priority' = 'type';
@@ -163,6 +165,14 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           }
       }, { allowSignalWrites: true });
 
+      // Theme Change Effect
+      effect(() => {
+          if (!this.isBrowser) return;
+          const isDark = this.themeService.isDark();
+          
+          this.updateChartTheme(isDark);
+      });
+
       // Update Item Treemap when ANY selection changes
       effect(() => {
         if (!this.isBrowser) return;
@@ -183,6 +193,70 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   // State to track if user has manually filtered
   private userHasInteractedWithSlider = false;
+
+  private updateChartTheme(isDark: boolean) {
+      const themeMode = isDark ? 'dark' : 'light';
+      const textColor = isDark ? '#e2e8f0' : '#1e293b'; 
+      const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+      const commonOptions = {
+          chart: {
+              foreColor: textColor
+          },
+          grid: {
+              borderColor: gridColor
+          },
+          tooltip: {
+              theme: themeMode,
+              style: {
+                fontSize: '12px',
+                fontFamily: undefined
+              },
+          },
+          xaxis: {
+             labels: { style: { colors: textColor } }
+          },
+          yaxis: {
+             labels: { style: { colors: textColor } }
+          },
+          title: {
+             style: { color: textColor }
+          },
+          // Ensure data labels contrast correctly
+          dataLabels: {
+              style: { colors: [isDark ? '#e2e8f0' : '#1e293b'] }
+          }
+      };
+
+      if (this.sChart) this.sChart.updateOptions(commonOptions);
+      if (this.eChart) this.eChart.updateOptions(commonOptions);
+      
+      if (this.bChart) {
+          this.bChart.updateOptions({
+            ...commonOptions,
+            plotOptions: {
+              bar: {
+                dataLabels: {
+                  total: {
+                    style: { color: textColor }
+                  }
+                }
+              }
+            }
+          });
+      }
+      
+      if (this.iChart) {
+          // Treemap title needs specific update
+          this.iChart.updateOptions({
+              ...commonOptions,
+              title: {
+                 style: { color: textColor }
+              }
+              // Treemap dataLabels are usually white on colored blocks, so we don't override them with text color
+          });
+      }
+  }
 
   ngAfterViewInit() {
       if (!this.isBrowser) return;
@@ -247,10 +321,14 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private initCharts() {
       const data = this.history();
-      
+      const isDark = this.themeService.isDark();
+      const textColor = isDark ? '#e2e8f0' : '#1e293b'; 
+      const gridColor = isDark ? '#334155' : '#e2e8f0';
+      const themeMode = isDark ? 'dark' : 'light';
+
       // Common Styling
       const commonGrid = {
-          borderColor: '#f1f5f9',
+          borderColor: gridColor,
           strokeDashArray: 4,
       };
       
@@ -265,7 +343,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               height: 350,
               fontFamily: 'Inter, sans-serif',
               toolbar: { show: false },
-              zoom: { enabled: false }
+              zoom: { enabled: false },
+              foreColor: textColor
           },
           dataLabels: { enabled: false },
           stroke: { curve: 'smooth', width: 3 },
@@ -286,7 +365,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               }
           },
           tooltip: {
-              theme: 'light',
+              theme: themeMode,
               y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
           markers: { size: 4, colors: ['#fff'], strokeColors: '#8b5cf6', strokeWidth: 2, hover: { size: 6 } }
@@ -316,7 +395,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               type: 'bar',
               height: 350,
               fontFamily: 'Inter, sans-serif',
-              toolbar: { show: false }
+              toolbar: { show: false },
+              foreColor: textColor
           },
           plotOptions: {
               bar: {
@@ -344,7 +424,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           ],
           fill: { opacity: 1 },
           tooltip: {
-              theme: 'light',
+              theme: themeMode,
               y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
           legend: { position: 'top', horizontalAlign: 'right' }
@@ -382,11 +462,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private initBreakdownChart() {
+      const isDark = this.themeService.isDark();
+      const textColor = isDark ? '#e2e8f0' : '#1e293b';
+      const themeMode = isDark ? 'dark' : 'light';
+
       const options = {
           series: [],
           title: { 
             text: 'Monthly Spending Breakdown',
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600 } 
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor } 
           },
           chart: {
               type: 'bar',
@@ -394,7 +478,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               stacked: true,
               toolbar: { show: false },
               fontFamily: 'Inter, sans-serif',
-              animations: { enabled: true }
+              animations: { enabled: true },
+              foreColor: textColor
           },
           plotOptions: {
             bar: {
@@ -406,7 +491,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                   formatter: function (val: number) {
                     return '$' + val.toLocaleString();
                   },
-                  style: { fontWeight: 700 }
+                  style: { fontWeight: 700, color: textColor }
                 }
               }
             },
@@ -424,14 +509,14 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisTicks: { show: false }
           },
           grid: {
-            borderColor: '#f1f5f9',
+            borderColor: isDark ? '#334155' : '#f1f5f9',
             xaxis: { lines: { show: true } },
             yaxis: { lines: { show: false } }
           },
           fill: { opacity: 1 },
           legend: { position: 'top', horizontalAlign: 'right' },
           tooltip: {
-            theme: 'light',
+            theme: themeMode,
             y: { formatter: (val: number) => '$' + val.toLocaleString() }
           }
       };
@@ -439,7 +524,6 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       if (this.breakdownChartEl) {
         this.bChart = new ApexCharts(this.breakdownChartEl.nativeElement, options);
         this.bChart.render();
-        this.updateBreakdownChart();
       }
   }
 
@@ -496,18 +580,23 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private initItemChart() {
+      const isDark = this.themeService.isDark();
+      const textColor = isDark ? '#e2e8f0' : '#1e293b';
+      const themeMode = isDark ? 'dark' : 'light';
+
       const options = {
           series: [],
           title: { 
             text: 'Item Level Breakdown (Treemap)',
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600 } 
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor } 
           },
           chart: {
               type: 'treemap',
               height: 400,
               fontFamily: 'Inter, sans-serif',
               toolbar: { show: false },
-              animations: { enabled: true }
+              animations: { enabled: true },
+              foreColor: textColor
           },
           // Extended palette for distributed colors
           colors: [
@@ -536,7 +625,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               offsetY: -4
           },
           tooltip: {
-            theme: 'light',
+            theme: themeMode,
             y: { formatter: (val: number) => '$' + val.toLocaleString() }
           }
       };
@@ -553,6 +642,16 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private updateItemChart() {
     if (!this.iChart) return;
+
+    const isDark = this.themeService.isDark();
+    const textColor = isDark ? '#e2e8f0' : '#1e293b';
+    const themeMode = isDark ? 'dark' : 'light';
+
+    // Update title color dynamically on data change (hack since chart.updateOptions might reset)
+    this.iChart.updateOptions({
+        chart: { foreColor: textColor },
+        tooltip: { theme: themeMode }
+    });
 
     const data = this.detailedHistory();
     const selected = this.selectedMonths();

@@ -10,6 +10,37 @@
   gap: v.$spacing-xl;
   min-height: 100vh;
   background-color: v.$bg-color;
+  position: relative;
+  overflow: hidden; // Keep blobs contained to the dashboard area
+
+  // --- Background Ambient Blobs ---
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 800px; /* Big Huge Circle */
+    height: 800px;
+    border-radius: 50%;
+    filter: blur(80px); /* Blur effect */
+    z-index: 0; 
+    opacity: 0.15; /* Barely seeing */
+    pointer-events: none;
+    transition: background 1s ease;
+  }
+
+//   &::before {
+//     // Top Right Blob
+//     background: var(--primary-color);
+//     top: -300px;
+//     right: -300px;
+//   }
+
+  &::after {
+    // Bottom Left Blob
+    background: var(--border-focus); // Secondary purple/accent
+    bottom: -300px;
+    left: -300px;
+  }
 }
 
 // ----------------------------------------------------
@@ -29,6 +60,8 @@
     flex-wrap: wrap;
     width: 100%;
     gap: var(--spacing-lg);
+    position: relative;
+    z-index: 1; // Sit above background blobs
 
   @media (min-width: 1024px) {
     // 3 Equal columns on large screens
@@ -115,6 +148,7 @@
            border-radius: v.$radius-full;
            border: 1px solid color-mix(in srgb, var(--primary-color), transparent 80%);
            color: v.$primary-color;
+            width: fit-content;
            
            &.deficit {
               border-color: color-mix(in srgb, var(--danger-color), transparent 50%);
@@ -132,26 +166,18 @@
           
           // Use mixin or custom style that matches card
           input {
+            @include m.input-style;
               width: 125px;
               padding: 6px 10px;
               border: 1px solid color-mix(in srgb, var(--primary-color), transparent 85%);
-              background: rgba(255, 255, 255, 0.8);
               border-radius: v.$radius-sm;
               font-size: 0.85rem;
               outline: none;
-              color: v.$text-primary;
-              transition: all 0.2s;
               
               &::placeholder {
-                 color: rgba(0,0,0,0.3);
                  font-size: 0.8rem;
               }
 
-              &:focus {
-                 border-color: v.$primary-color;
-                 background: white;
-                 box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color), transparent 85%);
-              }
           }
 
           button {
@@ -230,6 +256,8 @@
 .main-grid {
   display: grid;
   grid-template-columns: 1fr;
+  position: relative;
+  z-index: 1;
   gap: v.$spacing-lg;
 
   // Wide layout: Table takes 2.5x space, Calculator takes 1x

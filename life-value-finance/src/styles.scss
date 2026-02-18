@@ -12,6 +12,24 @@ html, body {
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+
+  // Staggered Transitions
+  transition: 
+    background-color 1.5s ease-in-out,
+    color 0.3s ease-in-out,
+    border-color 0.3s ease-in-out;
+}
+
+// Global Transition Rule
+// Apply to common container elements to propagate the effect
+*, *::before, *::after {
+  transition: 
+    background-color 1s ease-in-out,
+    color 0.3s ease-in-out,
+    border-color 0.3s ease-in-out,
+    box-shadow 2s ease-in-out,
+    stroke 0.3s ease-in-out,
+    fill 0.3s ease-in-out;
 }
 
 // Typography Hierarchy
@@ -66,4 +84,49 @@ input, select {
     max-width: 1200px;
     margin: 0 auto;
     padding: var(--spacing-lg);
+}
+
+/* --- Glassmorphism Effect --- */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03); /* Extremely subtle fill */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode Specific Glass override if needed */
+[data-theme="dark"] .glass-panel {
+  background: rgba(0, 0, 0, 0.2); 
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Lighter border for visibility */
+}
+
+
+/* --- Gradient Border Effect --- */
+.gradient-border-card {
+  position: relative;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  /* The trick: use a pseudo-element behind the card */
+  z-index: 1; 
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -2px; /* Border thickness */
+    border-radius: calc(var(--radius-lg) + 2px); 
+    background: linear-gradient(
+      135deg, 
+      rgba(255, 255, 255, 0.1),
+      var(--primary-color), 
+      rgba(255, 255, 255, 0.1)
+    );
+    z-index: -1;
+    opacity: 0.1; /* Adjust visibility */
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover::before {
+    opacity: 0; /* Glow on hover */
+  }
 }

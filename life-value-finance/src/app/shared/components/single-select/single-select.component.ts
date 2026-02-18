@@ -45,42 +45,37 @@ export class SingleSelectComponent {
 
   getColor(option: string): string {
     const map: Record<string, string> = {
-      // Priority
-      'Must Have': '#ef4444', 
-      'Need': '#f59e0b',
-      'Want': '#10b981',
-      'Emergency': '#000000', // Black
-      'Gift': '#8b5cf6',
+      // Priority (mapped to theme vars)
+      'Must Have': 'var(--danger-color)', 
+      'Need': 'var(--warning-color)',
+      'Want': 'var(--success-color)',
+      'Emergency': 'var(--text-primary)', // Adapts to theme (Black in light, White in dark)
+      'Gift': 'var(--border-focus)', // Purple
       
-      // Type (Updated as requested)
-      'Variable': '#ef4444', // Red
-      'Fixed': '#f59e0b',    // Warning (Orange/Amber)
-      'Savings': '#10b981',  // Green
+      // Type
+      'Variable': 'var(--danger-color)',
+      'Fixed': 'var(--warning-color)',
+      'Savings': 'var(--success-color)',
 
       // Fallback
-      'High': '#ef4444',
-      'Medium': '#f59e0b',
-      'Low': '#10b981'
+      'High': 'var(--danger-color)',
+      'Medium': 'var(--warning-color)',
+      'Low': 'var(--success-color)'
     };
     return map[option] || 'transparent';
   }
 
   getBadgeColor(option: string): string {
+    // For text color on badge, we usually want the strong color
     return this.getColor(option);
   }
 
   getBadgeBg(option: string): string {
-    const color = this.getColor(option);
-    // Rough mapping of color -> background
-    const bgMap: Record<string, string> = {
-      '#ef4444': '#fee2e2', // Red 100
-      '#f59e0b': '#fef3c7', // Amber 100
-      '#10b981': '#d1fae5', // Emerald 100
-      '#7f1d1d': '#fecaca',
-      '#8b5cf6': '#ede9fe',
-      '#3b82f6': '#dbeafe',
-      '#000000': '#e5e7eb', // Black -> Gray 200
-    };
-    return bgMap[color] || '#f3f4f6';
+    const colorVar = this.getColor(option);
+    if (colorVar === 'transparent') return 'var(--bg-input)';
+    
+    // Use color-mix for automatic light/dark background handling
+    // 10% opacity of the color on top of surface
+    return `color-mix(in srgb, ${colorVar}, transparent 85%)`;
   }
 }

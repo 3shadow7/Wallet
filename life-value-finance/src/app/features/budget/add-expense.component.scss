@@ -1,0 +1,90 @@
+@use '../../theme/variables' as v;
+@use '../../theme/mixins' as m;
+
+:host {
+  display: block;
+  width: 100%;
+  position: relative; /* Ensure z-index works */
+  z-index: 50; /* Higher than content below it */
+}
+
+// Ensure app-single-select behaves like a block input
+app-single-select {
+    display: block;
+    width: 100%;
+}
+
+.add-expense-card {
+  @include m.card-style;  
+  z-index: 2;
+    border: 8px dashed v.$border-color;
+  h3 {
+    margin: 0 0 v.$spacing-md;
+    color: v.$text-primary;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .add-form {
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-md;
+
+    @media (min-width: 768px) {
+      flex-direction: row;
+      align-items: flex-end;
+    }
+
+    .form-row {
+      display: contents; 
+      
+      @media (min-width: 768px) {
+        display: flex;
+        flex: 1;
+        gap: v.$spacing-md;
+        width: 100%;
+      }
+    }
+
+    // Input Group Wrapper
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: v.$spacing-xs;
+      flex: 1;
+
+      &.name-input { flex: 2; }
+      &.prio-input { flex: 1.5; }
+      &.type-input { flex: 1.2; }
+      &.amt-input { flex: 1; }
+
+      label {
+        font-size: 0.75rem;
+        color: v.$text-secondary;
+        font-weight: 500;
+        margin-left: v.$spacing-xs;
+      }
+    }
+
+    input {
+      @include m.input-style;
+    }
+
+    select {
+      @include m.select-style;
+    }
+
+    button {
+      @include m.btn-primary;
+      height: 46px; // Match input height roughly
+      align-self: flex-end;
+      min-width: 100px;
+      
+      &:disabled {
+        background: v.$text-secondary;
+        cursor: not-allowed;
+        transform: none;
+      }
+    }
+  }
+}

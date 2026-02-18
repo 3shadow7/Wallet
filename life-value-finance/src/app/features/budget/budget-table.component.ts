@@ -2,6 +2,7 @@ import { Component, inject, Signal, ChangeDetectionStrategy, ViewEncapsulation, 
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
+import { ThemeService } from '@core/services/theme.service';
 import { 
   ColDef, 
   GridOptions, 
@@ -27,6 +28,7 @@ export class BudgetTableComponent {
   private budgetState = inject(BudgetStateService);
   private fb = inject(FormBuilder);
   private platformId = inject(PLATFORM_ID);
+  public themeService = inject(ThemeService);
   
   isBrowser = isPlatformBrowser(this.platformId);
   

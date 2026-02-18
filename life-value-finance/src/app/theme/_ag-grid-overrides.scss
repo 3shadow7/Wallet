@@ -5,15 +5,19 @@
 // Standard AG Grid Quartz Overrides
 // Use this class on all AG Grid instances for consistent app-wide style
 
-::ng-deep .ag-theme-quartz {
+::ng-deep .ag-theme-quartz, 
+::ng-deep .ag-theme-quartz-dark {
   // Colors & Theme Vars
-  --ag-header-background-color: #fafafa;
+  --ag-header-background-color: var(--bg-surface-hover);
   --ag-header-foreground-color: var(--text-secondary);
+  --ag-foreground-color: var(--text-primary);
   --ag-background-color: var(--bg-surface);
-  --ag-odd-row-background-color: #fcfcfc;
+  --ag-odd-row-background-color: var(--bg-surface); // Or a slightly different shade if available
   --ag-border-color: var(--border-color);
-  --ag-row-hover-color: color-mix(in srgb, var(--primary-color), transparent 97%);
-  --ag-selected-row-background-color: color-mix(in srgb, var(--primary-color), transparent 92%);
+  
+  // Use color-mix to handle transparency over theme variables
+  --ag-row-hover-color: color-mix(in srgb, var(--primary-color), transparent 90%);
+  --ag-selected-row-background-color: color-mix(in srgb, var(--primary-color), transparent 85%);
   
   // Font
   --ag-font-family: var(--font-family-body);

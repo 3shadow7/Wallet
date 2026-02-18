@@ -2,7 +2,7 @@
     display: inline-block;
     min-width: 140px;
     position: relative;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-family-body);
   }
   
   .custom-select-container {
@@ -15,19 +15,18 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0.75rem;
-    background: #f2f3f7; /* Match var(--bg-input) */
-    border: 1px solid #e2e8f0; /* Match var(--border-color) */
+    background: var(--bg-input); /* Match var(--bg-input) */
+    border: 1px solid var(--border-color); /* Match var(--border-color) */
     border-radius: 12px;
     cursor: pointer;
     font-size: 1rem;
-    color: #1e293b; 
+    color: var(--text-primary); 
     user-select: none;
     transition: all 0.2s ease;
-    height: 42px;
     
     &:hover {
-      background-color: #fcfcfd;
-      border-color: #8b5cf6;
+      background-color: var(--bg-surface-hover);
+      border-color: var(--border-focus);
     }
 
     .trigger-content {
@@ -84,9 +83,9 @@
   }
   
   .custom-select-container.open .select-trigger {
-      border-color: #8b5cf6; /* v.$primary-color */
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-      background: white;
+      border-color: var(--border-focus); /* v.$primary-color */
+      box-shadow: var(--shadow-focus);
+      background: var(--bg-surface);
       position: relative;
       z-index: 101; /* Ensure trigger stays above content */
   }
@@ -97,10 +96,10 @@
     left: 0;
     width: 100%;
     min-width: 160px; /* Ensure content fits */
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-xl);
     z-index: 1000; /* Extremely high to beat chart layers */
     max-height: 250px;
     overflow-y: auto;
@@ -131,12 +130,12 @@
     }
 
     &:hover {
-      background: #f1f5f9;
+      background: var(--bg-input);
     }
 
     &.selected {
-      background: #f3e8ff; /* Light purple tint */
-      color: #1e293b; /* Keep text standard color */
+      background: color-mix(in srgb, var(--primary-color), transparent 90%);
+      color: var(--text-primary);
       font-weight: 500; 
     }
     
@@ -146,6 +145,6 @@
 
     .check-icon {
       font-size: 0.8rem;
-      color: #8b5cf6;
+      color: var(--primary-color);
     }
   }

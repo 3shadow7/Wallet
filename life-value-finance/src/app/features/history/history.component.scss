@@ -86,9 +86,16 @@ header h1 {
                         border: 1px solid v.$border-color;
                         border-radius: 4px;
                         background: transparent;
+                        color: v.$text-secondary;
                         cursor: pointer;
                         transition: all 0.2s;
                         font-size: 0.9rem;
+
+                        &:hover {
+                            color: v.$text-primary;
+                            border-color: v.$text-primary;
+                            background: v.$bg-surface-hover;
+                        }
                         
                         &.active {
                             background: v.$primary-color;

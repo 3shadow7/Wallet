@@ -1,60 +1,20 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ThemeService } from '../../core/services/theme.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
-  template: `
-    <header class="app-header">
-      <div class="logo">
-        <h1>Life Value Finance</h1>
-      </div>
-      <nav>
-        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-        <a routerLink="/history" routerLinkActive="active">History & Savings</a>
-      </nav>
-    </header>
-  `,
-  styles: [`
-    .app-header {
-      background: var(--primary-color-dark, #2c3e50);
-      color: white;
-      padding: var(--spacing-md) var(--spacing-lg);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: var(--shadow-md);
-
-      .logo h1 {
-        margin: 0;
-        font-size: var(--font-size-lg);
-        font-weight: var(--font-weight-bold);
-      }
-
-      nav {
-        display: flex;
-        gap: var(--spacing-lg);
-
-        a {
-          color: rgba(255, 255, 255, 0.8);
-          text-decoration: none;
-          font-weight: var(--font-weight-medium);
-          transition: color 0.2s;
-          font-size: var(--font-size-md);
-
-          &:hover {
-            color: white;
-          }
-
-          &.active {
-            color: var(--warning-color, #fb8c00);
-            border-bottom: 2px solid var(--warning-color, #fb8c00);
-          }
-        }
-      }
-    }
-  `],
+  imports: [CommonModule, RouterLink, RouterLinkActive], // Added CommonModule for async pipe if needed, though signals are synchronous
+  templateUrl: './header.component.html',
+  styleUrl: './header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  themeService = inject(ThemeService);
+
+  toggleTheme() {
+    this.themeService.toggleTheme();
+  }
+}

@@ -40,6 +40,8 @@
 
 @mixin card-style {
     background-color: var(--bg-surface);
+    backdrop-filter: blur(12px); 
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
@@ -68,7 +70,6 @@
     box-sizing: border-box;
     transition: all 0.2s ease;
     font-family: var(--font-family-body);
-    height: 42px; // Consistent height
 
     &:hover {
         background-color: var(--bg-surface-hover); // Use defined hover

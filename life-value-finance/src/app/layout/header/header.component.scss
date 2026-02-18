@@ -1,0 +1,102 @@
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: rgba(255, 255, 255, 0.8); // Fallback
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(12px);
+  
+  /* Support for dark mode transparency if needed */
+  [data-theme="dark"] & {
+    background-color: rgba(30, 41, 59, 0.8);
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 64px;
+    padding: 0 var(--spacing-md);
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--primary-color);
+    text-decoration: none;
+    cursor: default;
+    
+    .logo-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .brand-name {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+      letter-spacing: -0.025em;
+    }
+  }
+
+  .main-nav {
+    display: flex;
+    gap: var(--spacing-lg);
+
+    a {
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-weight: var(--font-weight-medium);
+      font-size: var(--font-size-sm);
+      transition: all 0.2s ease;
+      position: relative;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--radius-sm);
+
+      &:hover {
+        color: var(--text-primary);
+        background-color: var(--bg-surface-hover);
+      }
+
+      &.active {
+        color: var(--primary-color);
+        background-color: var(--primary-color-light); 
+        // Using light background for active state is nice
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: var(--spacing-sm);
+      border-radius: var(--radius-full); // Circle button
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: var(--bg-surface-hover);
+        color: var(--text-primary);
+        border-color: var(--text-secondary);
+      }
+      
+      svg {
+        display: block; // Fix line-height issues
+      }
+    }
+  }
+}

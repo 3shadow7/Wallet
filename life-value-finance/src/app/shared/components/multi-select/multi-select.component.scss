@@ -91,7 +91,7 @@
     user-select: none;
     
     &:hover {
-      background: #f1f5f9;
+      background: var(--bg-input);
     }
 
     input[type="checkbox"] {
