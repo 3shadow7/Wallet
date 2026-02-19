@@ -211,6 +211,12 @@ export class BudgetTableComponent {
     }
   }
 
+  deleteMobile(id: string, name: string) {
+    if (confirm(`Delete "${name}"?`)) {
+        this.budgetState.removeExpense(id);
+    }
+  }
+
   startNewMonth() {
     if (confirm('Start a new month? This will:\n1. Archive current month to history\n2. Clear variable expenses\n3. Keep fixed expenses')) {
         this.budgetState.archiveAndResetMonth();

@@ -1,8 +1,8 @@
 <div class="table-container">
   
 
-  <!-- Grid Card -->
-  <div class="grid-card">
+  <!-- Grid Card (Desktop Only) -->
+  <div class="grid-card desktop-view">
     <div class="card-header">
       <div class="header-content">
           <h3>Budget Breakdown</h3>
@@ -28,5 +28,38 @@
       </ag-grid-angular>
       }
     </div>
+  </div>
+
+  <!-- Mobile Card List View -->
+  <div class="mobile-budget-list mobile-view">
+    <div class="mobile-header">
+        <h3>Budget Items ({{ expenses().length }})</h3>
+        <button class="btn-archive-mobile" (click)="startNewMonth()">
+            📅 New Month
+        </button>
+    </div>
+
+    @for (item of expenses(); track item.id) {
+        <div class="budget-card">
+            <div class="card-main">
+                <div class="card-top">
+                    <span class="category-name">{{ item.name }}</span>
+                    <span class="amount-value">{{ item.amount | currency }}</span>
+                </div>
+                <div class="card-meta">
+                    <span class="priority-label" [class]="item.priority.toLowerCase().replace(' ', '-')">{{ item.priority }}</span>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <div class="tags-group">
+                    <span class="tag type-tag" [class]="item.type.toLowerCase()">{{ item.type }}</span>
+                </div>
+                <button class="btn-delete-mobile" (click)="deleteMobile(item.id, item.name)" aria-label="Delete">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    }
   </div>
 </div>
