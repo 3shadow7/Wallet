@@ -1,5 +1,5 @@
 <div class="calculator-container">
-  <h2><span class="emoji">🛍️</span> Value Calculator</h2>
+  <h2>🛍️ Value Calculator</h2>
   
   <p class="intro-text">
       Understand the <strong>real cost</strong> of your purchases in terms of your life energy.
@@ -21,30 +21,46 @@
 
   <div class="results-card" [ngClass]="painClass">
     <div class="result-header">
-      <div class="impact-badge">{{ painEmoji() }} {{ analysis().impactLevel }}</div>
+      <div class="impact-badge">{{ analysis().impactLevel }}</div>
     </div>
-
+    
     <div class="result-grid">
+        <!-- Life Energy Cost -->
         <div class="result-item time-cost">
-        <span class="label">Life Energy Cost</span>
-        <span class="value highlight">{{ analysis().timeCostFormatted }}</span>
-        <span class="sub-text">of work required</span>
+          <div class="card-glow time"></div>
+          <span class="label">Life Energy Cost</span>
+          <span class="value highlight">
+             <span class="val-num">{{ analysis().timeCostFormatted }}</span> 
+          </span>
+          <span class="sub-text">of work required</span>
         </div>
 
-        <div class="divider"></div>
-
+        <!-- Budget Impact -->
         <div class="result-item financial-impact">
-        <span class="label">Budget Impact</span>
-        <span class="value">{{ analysis().financialImpactPercent }}%</span>
-        <span class="sub-text">of free money</span>
+          <div class="card-glow budget"></div>
+          <span class="label">Budget Impact</span>
+          <span class="value highlight">
+             <span class="val-num">{{ analysis().financialImpactPercent }}</span><span class="val-unit">%</span>
+          </span>
+          <span class="sub-text">of free money</span>
         </div>
     </div>
 
-    <div class="progress-bar-container" title="Impact on remaining budget">
-      <div 
-        class="progress-bar" 
-        [style.width.%]="analysis().financialImpactPercent > 100 ? 100 : analysis().financialImpactPercent"
-      ></div>
+    <div class="emoji-feedback">
+        <!-- Low Impact -->
+        <div *ngIf="analysis().financialImpactPercent <= 5" class="feedback-content low">
+            <p><strong>😌 Safe to buy.</strong> This barely dents your free money.</p>
+        </div>
+        
+        <!-- Medium Impact -->
+        <div *ngIf="analysis().financialImpactPercent > 5 && analysis().financialImpactPercent <= 20" class="feedback-content medium">
+            <p><strong>🤨 Think twice.</strong> This costs you substantial time/money.</p>
+        </div>
+
+        <!-- High Impact -->
+        <div *ngIf="analysis().financialImpactPercent > 20" class="feedback-content high">
+            <p><strong>😱 Danger Zone!</strong> This takes a huge chunk of your freedom.</p>
+        </div>
     </div>
   </div>
 </div>

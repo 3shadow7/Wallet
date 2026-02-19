@@ -27,7 +27,7 @@ export interface ExpenseItem {
   category?: string;
   name: string;
   amount: number;
-  type: 'Fixed' | 'Variable' | 'Savings'; // Updated per requirements
+  type: 'Responsibility' | 'Burning' | 'Saving'; // Updated per user preference
   priority: PriorityLevel;
 }
 

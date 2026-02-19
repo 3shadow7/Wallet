@@ -60,10 +60,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   selectedYear = signal<string>(new Date().getFullYear().toString());
   
   // Multi-select signals
-  filterType = signal<string[]>(['Fixed', 'Variable', 'Savings']);
+  filterType = signal<string[]>(['Burning', 'Responsibility', 'Saving']);
   filterPriority = signal<string[]>(['Must Have', 'Need', 'Want', 'Emergency', 'Gift']);
 
-  availableTypes = ['Fixed', 'Variable', 'Savings'];
+  availableTypes = ['Burning', 'Responsibility', 'Saving'];
   availablePriorities = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
 
   // Computed: Years Available
@@ -545,8 +545,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
 
     if (this.breakdownMode === 'type') {
-        // Aggregate by Type: Fixed, Variable, Savings
-        const types = ['Fixed', 'Variable', 'Savings'] as const;
+        // Aggregate by Type: Burning, Responsibility, Saving
+        const types = ['Burning', 'Responsibility', 'Saving'] as const;
         series = types.map(type => {
             return {
                 name: type,

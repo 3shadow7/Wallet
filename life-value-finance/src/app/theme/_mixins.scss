@@ -46,7 +46,7 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     padding: var(--spacing-lg);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: box-shadow 0.2s ease, transform 0.2s ease , border-color 2s ease-in-out;
     /* Ensure positioned context for children, but avoid aggressive stacking */
     position: relative;
     z-index: 1; 
@@ -68,7 +68,7 @@
     color: var(--text-primary);
     width: 100%;
     box-sizing: border-box;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease , border-color 2s ease-in-out; 
     font-family: var(--font-family-body);
 
     &:hover {
@@ -119,7 +119,7 @@
     font-weight: var(--font-weight-bold);
     font-size: var(--font-size-md);
     cursor: pointer;
-    transition: filter 0.2s, transform 0.1s;
+    transition: filter 0.2s, transform 0.1s , border-color 2s ease-in-out;
     display: inline-flex;
     align-items: center;
     justify-content: center;

@@ -148,10 +148,10 @@ export class BudgetStateService {
     
     // 0. Update Savings Module with this month's snapshot
     // Logic: 
-    // - Savings Items are treated as allocated funds, so they are added back to "transferred" calculation.
+    // - "Saving" Items are treated as allocated funds, so they are added back to "transferred" calculation.
     // - If Remaining Income is negative (overspending), we must DEDUCT that deficit from savings storage.
     const savingsExpensesTotal = expenses
-        .filter(item => item.type === 'Savings') // Ensure strict match with ExpenseItem type
+        .filter(item => item.type === 'Saving') // Ensure strict match with ExpenseItem type
         .reduce((sum, item) => sum + item.amount, 0);
 
     // Calculate true net result: Income - (Real Expenses + Savings Contribution)
@@ -186,9 +186,9 @@ export class BudgetStateService {
     // 1. Archive current state
     this.history.update(current => [...current, currentState]);
     
-    // 2. Clear Variable Expenses, Keep Fixed AND Savings
+    // 2. Clear Burning Expenses, Keep Responsibility AND Saving
     this.expenses.update(current => 
-        current.filter(item => item.type === 'Fixed' || item.type === 'Savings')
+        current.filter(item => item.type === 'Responsibility' || item.type === 'Saving')
     );
   }
 }

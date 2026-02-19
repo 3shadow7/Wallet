@@ -53,10 +53,10 @@ export class SingleSelectComponent {
       'Gift': 'var(--border-focus)', // Purple
       
       // Type
-      'Variable': 'var(--danger-color)',
-      'Fixed': 'var(--warning-color)',
-      'Savings': 'var(--success-color)',
-
+      'Burning': 'var(--danger-color)',
+      'Responsibility': 'var(--warning-color)',
+      'Saving': 'var(--success-color)',
+      
       // Fallback
       'High': 'var(--danger-color)',
       'Medium': 'var(--warning-color)',

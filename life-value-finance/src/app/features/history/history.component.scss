@@ -3,12 +3,47 @@
 @use '../../theme/mixins' as m;
 
 .history-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: v.$spacing-lg;
-  display: flex;
-  flex-direction: column;
-  gap: v.$spacing-xl;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: v.$spacing-lg;
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-xl;
+    min-height: 100vh;
+    background-color: v.$bg-color;
+    position: relative;
+    overflow: hidden; // Keep blobs contained
+
+    // --- Background Ambient Blobs ---
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        width: 800px;
+        /* Big Huge Circle */
+        height: 800px;
+        border-radius: 50%;
+        filter: blur(80px);
+        /* Blur effect */
+        z-index: 0;
+        opacity: 0.15;
+        /* Barely seeing */
+        pointer-events: none;
+    }
+
+    &::before {
+        // Top Right Blob
+        background: var(--primary-color);
+        top: -300px;
+        right: -300px;
+    }
+
+    &::after {
+        // Bottom Left Blob
+        background: var(--border-focus); // Secondary purple/accent
+        bottom: -300px;
+        left: -300px;
+    }
 }
 
 header h1 {
@@ -27,7 +62,7 @@ header h1 {
         display: flex;
         flex-direction: column;
         gap: v.$spacing-xs;
-        
+
         h3 {
             font-size: 0.9rem;
             color: v.$text-secondary;
@@ -40,11 +75,11 @@ header h1 {
             font-weight: 700;
             color: v.$primary-color;
         }
-        
+
         .mini-detail {
             display: flex;
             flex-direction: column;
-            
+
             .sub {
                 font-size: 0.8rem;
                 color: v.$text-secondary;
@@ -65,12 +100,14 @@ header h1 {
     .chart-card {
         @include m.card-style;
         min-height: 400px;
-        
-        h3 { margin-bottom: v.$spacing-lg; }
+
+        h3 {
+            margin-bottom: v.$spacing-lg;
+        }
 
         &.full-width {
             grid-column: 1 / -1;
-            
+
             .chart-header {
                 display: flex;
                 justify-content: space-between;
@@ -80,7 +117,7 @@ header h1 {
                 .toggle-group {
                     display: flex;
                     gap: v.$spacing-sm;
-                    
+
                     button {
                         padding: v.$spacing-xs v.$spacing-md;
                         border: 1px solid v.$border-color;
@@ -96,7 +133,7 @@ header h1 {
                             border-color: v.$text-primary;
                             background: v.$bg-surface-hover;
                         }
-                        
+
                         &.active {
                             background: v.$primary-color;
                             color: white;
@@ -111,23 +148,22 @@ header h1 {
                     flex-direction: column;
                     align-items: flex-start;
                     gap: v.$spacing-md;
-                    
+
                     // New Filter Control Row
                     .filter-controls {
                         display: flex;
                         gap: v.$spacing-lg;
                         align-items: center;
                         flex-wrap: wrap;
-                        margin-bottom: v.$spacing-sm;
                         width: 100%;
                         padding-bottom: v.$spacing-sm;
                         border-bottom: 1px solid v.$border-color;
-                        
+
                         .control-group {
                             display: flex;
                             align-items: center;
                             gap: v.$spacing-xs;
-                            
+
                             label {
                                 font-size: 0.8rem;
                                 color: v.$text-secondary;
@@ -143,7 +179,7 @@ header h1 {
                                 font-size: 0.9rem;
                                 cursor: pointer;
                                 min-width: 120px;
-                                
+
                                 &:focus {
                                     outline: none;
                                     border-color: v.$primary-color;
@@ -158,17 +194,19 @@ header h1 {
                         align-items: center;
                         gap: v.$spacing-md;
                         width: 100%;
+                        height: 3rem;
+                        align-self: center;
                         background: v.$bg-input;
                         padding: v.$spacing-md;
                         border-radius: 8px;
-                        
-                        .label { 
-                            font-size: 0.8rem; 
-                            color: v.$text-secondary; 
+
+                        .label {
+                            font-size: 0.8rem;
+                            color: v.$text-secondary;
                             font-weight: 600;
                             min-width: 60px;
                         }
-                        
+
                         .slider-wrapper {
                             flex: 1;
                             height: 80px; // Ensure space for slider and labels
@@ -176,7 +214,7 @@ header h1 {
                             align-items: center;
                         }
                     }
-                } 
+                }
             }
         }
     }
@@ -184,8 +222,11 @@ header h1 {
 
 .table-card {
     @include m.card-style;
-    h3 { margin-bottom: v.$spacing-md; }
-    
+
+    h3 {
+        margin-bottom: v.$spacing-md;
+    }
+
     .history-grid {
         width: 100%;
         height: 500px;

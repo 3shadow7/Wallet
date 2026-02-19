@@ -37,10 +37,10 @@ export class ValueCalculatorComponent {
   // Derived UI Helpers
   painEmoji = computed(() => {
     switch (this.analysis().impactLevel) {
-      case 'Low Impact': return '??';
-      case 'Consider Carefully': return '??';
-      case 'High Financial Impact': return '??';
-      default: return '??';
+      case 'Low Impact': return '😌';
+      case 'Consider Carefully': return '🤨';
+      case 'High Financial Impact': return '😱';
+      default: return '😐';
     }
   });
 
@@ -49,7 +49,7 @@ export class ValueCalculatorComponent {
     switch (this.analysis().impactLevel) {
       case 'Low Impact': return 'low';
       case 'Consider Carefully': return 'medium';
-      case 'High Financial Impact': return 'extreme';
+      case 'High Financial Impact': return 'high';
       default: return '';
     }
   }

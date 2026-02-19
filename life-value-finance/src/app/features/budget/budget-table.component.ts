@@ -63,7 +63,7 @@ export class BudgetTableComponent {
     {
       field: 'priority',
       headerName: 'Importance',
-      width: 120,
+      width: 140,
       flex: 0,
       editable: true,
       cellEditor: 'agSelectCellEditor',
@@ -89,22 +89,22 @@ export class BudgetTableComponent {
     },
     { 
       field: 'type', 
-      headerName: 'Type',
-      width: 130,
+      headerName: 'Category', // More friendly header
+      width: 140,
       flex: 0,
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
-        values: [ 'Variable','Fixed', 'Savings']
+        values: ['Burning', 'Responsibility', 'Saving']
       },
       cellRenderer: (params: ICellRendererParams) => {
         const val = params.value;
         if (!val || val === '--') return '';
         
         const styleMap: Record<string, {bg: string, color: string, border: string}> = {
-            'Variable': { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' }, // Red (was Blue)
-            'Fixed': { bg: '#fef3c7', color: '#b45309', border: '#fcd34d' },    // Warning (was Red)
-            'Savings': { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' }   // Green (was Purple)
+            'Burning': { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' }, // Red (Variable)
+            'Responsibility': { bg: '#fef3c7', color: '#b45309', border: '#fcd34d' },    // Yellow/Orange (Fixed)
+            'Saving': { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' }   // Green (Savings)
         };
         
         const style = styleMap[val] || { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
@@ -176,8 +176,8 @@ export class BudgetTableComponent {
     updatedExpense.amount = newAmount; // Ensure number type
 
     // Logic: 
-    // If 'Savings', ensure we have enough funds.
-    if (updatedExpense.type === 'Savings') {
+    // If 'Saving', ensure we have enough funds.
+    if (updatedExpense.type === 'Saving') {
         const currentFreeMoney = this.budgetState.remainingIncome();
         
         let diff = 0;

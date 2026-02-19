@@ -20,7 +20,7 @@ export class AddExpenseComponent {
   private budgetState = inject(BudgetStateService);
 
   priorityOptions = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
-  typeOptions = ['Variable','Fixed',  'Savings'];
+  typeOptions = ['Burning', 'Responsibility', 'Saving'];
 
   expenseForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
@@ -35,10 +35,10 @@ export class AddExpenseComponent {
       const amount = Number(val.amount);
       
       // Validation: Cannot add Savings if it exceeds remaining free money
-      if (val.type === 'Savings') {
+      if (val.type === 'Saving') {
           const currentFreeMoney = this.budgetState.remainingIncome();
           if (amount > currentFreeMoney) {
-              alert(`Cannot add savings of $${amount} because you only have $${currentFreeMoney.toFixed(2)} free money remaining.`);
+              alert(`Cannot add to saving of $${amount} because you only have $${currentFreeMoney.toFixed(2)} free money remaining.`);
               return;
           }
       }
