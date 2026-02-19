@@ -14,25 +14,32 @@
 
 @mixin respond-to($breakpoint) {
     @if $breakpoint =='sm' {
-        @media (min-width: 640px) {
+        @media (min-width: 40rem) {
+            @content;
+        }
+    }
+    
+    // New breakpoint for max-width (mobile-only styling)
+    @else if $breakpoint =='max-xs' {
+        @media (max-width: 30rem) {
             @content;
         }
     }
 
     @else if $breakpoint =='md' {
-        @media (min-width: 768px) {
+        @media (min-width: 48rem) {
             @content;
         }
     }
 
     @else if $breakpoint =='lg' {
-        @media (min-width: 1024px) {
+        @media (min-width: 64rem) {
             @content;
         }
     }
 
     @else if $breakpoint =='xl' {
-        @media (min-width: 1280px) {
+        @media (min-width: 80rem) {
             @content;
         }
     }
@@ -40,9 +47,9 @@
 
 @mixin card-style {
     background-color: var(--bg-surface);
-    backdrop-filter: blur(12px); 
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-color);
+    backdrop-filter: blur(0.75rem); 
+    -webkit-backdrop-filter: blur(0.75rem);
+    border: 0.0625rem solid var(--border-color);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     padding: var(--spacing-lg);
@@ -52,7 +59,7 @@
     z-index: 1; 
 
     &:hover {
-        /* transform: translateY(-2px); REMOVED to prevent stacking context issues with dropdowns */
+        /* transform: translateY(-0.125rem); REMOVED to prevent stacking context issues with dropdowns */
         box-shadow: var(--shadow-md);
         z-index: 10; /* Raise card on hover so dropdowns might show above others */
     }
@@ -60,7 +67,7 @@
 
 @mixin input-style {
     background-color: var(--bg-input);
-    border: 1px solid var(--border-color); // Added border for better visibility
+    border: 0.0625rem solid var(--border-color); // Added border for better visibility
     // ... rest
     border-radius: var(--radius-md);
     padding: 0.5rem 0.75rem; // Increased padding slightly
@@ -106,7 +113,7 @@
     option {
         color: var(--text-primary);
         background: var(--bg-surface);
-        padding: 8px;
+        padding: 0.5rem;
     }
 }
 
@@ -131,7 +138,7 @@
     }
 
     &:active {
-        transform: translateY(1px);
+        transform: translateY(0.0625rem);
     }
 
     &:disabled {

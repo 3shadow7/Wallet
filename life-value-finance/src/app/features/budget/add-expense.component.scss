@@ -17,7 +17,7 @@ app-single-select {
 .add-expense-card {
   @include m.card-style;  
   z-index: 2;
-    border: 8px dashed v.$border-color;
+  border: 0.5rem dashed v.$border-color;
   h3 {
     margin: 0 0 v.$spacing-md;
     color: v.$text-primary;
@@ -30,7 +30,7 @@ app-single-select {
     flex-direction: column;
     gap: v.$spacing-md;
 
-    @media (min-width: 768px) {
+    @media (min-width: 48rem) {
       flex-direction: row;
       align-items: flex-end;
     }
@@ -38,7 +38,7 @@ app-single-select {
     .form-row {
       display: contents; 
       
-      @media (min-width: 768px) {
+      @media (min-width: 48rem) {
         display: flex;
         flex: 1;
         gap: v.$spacing-md;
@@ -76,9 +76,9 @@ app-single-select {
 
     button {
       @include m.btn-primary;
-      height: 46px; // Match input height roughly
+      height: 2.875rem; // Match input height roughly
       align-self: flex-end;
-      min-width: 100px;
+      min-width: 6.25rem;
       
       &:disabled {
         background: v.$text-secondary;

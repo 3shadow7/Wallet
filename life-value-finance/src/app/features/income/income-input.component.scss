@@ -5,7 +5,7 @@
 
 .income-card {
   @include m.card-style;
-  border-top: 4px solid var(--primary-color);
+  border-top: 0.25rem solid var(--primary-color);
   margin-bottom: 0;
   height: auto;
   display: flex;
@@ -29,15 +29,15 @@
 
 .edit-btn {
     background: var(--bg-input);
-    border: 1px solid var(--border-color);
+    border: 0.0625rem solid var(--border-color);
     border-radius: var(--radius-sm);
-    padding: 4px 12px;
+    padding: 0.25rem 0.75rem;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.25rem;
     transition: all 0.2s;
 
     &:hover {
@@ -85,7 +85,7 @@
 }
 
 .divider {
-    height: 1px;
+    height: 0.0625rem;
     background: var(--border-color);
     margin: var(--spacing-xs) 0;
 }
@@ -120,20 +120,20 @@
 .toggle-group {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem;
 
     .toggles {
         display: flex;
         background: v.$bg-input;
-        padding: 4px;
+        padding: 0.25rem;
         border-radius: var(--radius-sm);
-        gap: 4px;
+        gap: 0.25rem;
 
         button {
             flex: 1;
             border: none;
             background: transparent;
-            padding: 6px;
+            padding: 0.375rem;
             font-size: 0.8rem;
             opacity: 0.7;
             cursor: pointer;
@@ -156,7 +156,7 @@
     // Approximation of primary color tint if rgba fails
     background: #f3f0ff; 
     color: var(--primary-color);
-    padding: 8px;
+    padding: 0.5rem;
     border-radius: var(--radius-sm);
     text-align: center;
     font-weight: 600;
@@ -166,7 +166,7 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
 
   label {
     font-size: var(--font-size-sm);
@@ -191,7 +191,7 @@
 
   button {
     flex: 1;
-    padding: 10px;
+    padding: 0.625rem;
     border-radius: var(--radius-md);
     font-weight: 600;
     cursor: pointer;
@@ -204,7 +204,7 @@
 
   .btn-cancel {
     background: transparent;
-    border: 1px solid v.$border-color;
+    border: 0.0625rem solid v.$border-color;
     color: v.$text-secondary;
     
     &:hover {

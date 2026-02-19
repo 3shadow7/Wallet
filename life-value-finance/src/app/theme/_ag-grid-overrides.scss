@@ -21,17 +21,17 @@
   
   // Font
   --ag-font-family: var(--font-family-body);
-  --ag-font-size: 14px;
+  --ag-font-size: 0.875rem;
   
   // Spacing
-  --ag-row-height: 48px;
-  --ag-header-height: 48px;
-  --ag-cell-horizontal-padding: 16px;
+  --ag-row-height: 3rem;
+  --ag-header-height: 3rem;
+  --ag-cell-horizontal-padding: 1rem;
 
   /* Specific overrides */
   .ag-root-wrapper {
     border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
+    border: 0.0625rem solid var(--border-color);
   }
 
   // Header Styling
@@ -39,7 +39,7 @@
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.03125rem;
     color: var(--text-secondary);
   }
   
@@ -57,8 +57,8 @@
 
   // Tags/Badges
   .type-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
     font-size: 0.75rem;
     font-weight: 600;
     
@@ -86,8 +86,8 @@
       background: none;
       border: none;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
+      padding: 0.25rem;
+      border-radius: 0.25rem;
       transition: all 0.2s;
       opacity: 0.6;
       font-size: 1.1rem;

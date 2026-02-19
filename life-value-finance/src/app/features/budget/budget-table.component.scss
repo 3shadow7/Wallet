@@ -28,7 +28,7 @@
   // Header inside the card
   .card-header {
     padding: v.$spacing-md v.$spacing-lg;
-    border-bottom: 1px solid v.$border-color;
+    border-bottom: 0.0625rem solid v.$border-color;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -41,9 +41,9 @@
 
     button.btn-archive {
       background: transparent;
-      border: 1px solid v.$border-color;
+      border: 0.0625rem solid v.$border-color;
       border-radius: v.$radius-sm;
-      padding: 6px 12px;
+      padding: 0.375rem 0.75rem;
       margin-left: auto;
       font-size: 0.8rem;
       font-weight: 500;
@@ -51,7 +51,7 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 0.375rem;
       transition: all 0.2s ease;
       
       &:hover {
@@ -69,12 +69,12 @@
 
     .row-count {
       background: v.$bg-color;
-      padding: 4px 12px;
-      border-radius: 12px;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.75rem;
       font-size: 0.75rem;
       color: v.$text-secondary;
       font-weight: 600;
-      border: 1px solid v.$border-color;
+      border: 0.0625rem solid v.$border-color;
     }
   }
 

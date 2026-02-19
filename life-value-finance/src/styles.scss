@@ -8,6 +8,11 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: var(--font-family-body, 'Inter', sans-serif);
+  overflow-x: hidden; // Prevent horizontal scroll
+  
+  // Default font size (16px base)
+  font-size: 16px; 
+  
   background-color: var(--bg-secondary);
   color: var(--text-primary);
   line-height: 1.5;
@@ -18,6 +23,10 @@ html, body {
     background-color 1.5s ease-in-out,
     color 0.3s ease-in-out,
     border-color 1.2s ease-in-out;
+
+  @include m.respond-to('max-xs') {
+      font-size: 12px; 
+  }
 }
 
 // Global Transition Rule
@@ -63,12 +72,12 @@ button, .btn-primary {
 .btn-primary {
   background-color: var(--primary-color);
   color: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1); 
 
   &:hover:not(:disabled) {
     background-color: hsl(var(--color-primary-hue), var(--color-primary-sat), 45%); 
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+    transform: translateY(-0.0625rem);
+    box-shadow: 0 0.25rem 0.375rem rgba(0,0,0,0.15);
   }
 }
 
@@ -81,7 +90,7 @@ input, select {
 
 // Global Cards
 .card-container {
-    max-width: 1200px;
+    max-width: 75rem;
     margin: 0 auto;
     padding: var(--spacing-lg);
 }
@@ -89,16 +98,16 @@ input, select {
 /* --- Glassmorphism Effect --- */
 .glass-panel {
   background: rgba(255, 255, 255, 0.03); /* Extremely subtle fill */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: blur(0.75rem);
+  border: 0.0625rem solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Dark Mode Specific Glass override if needed */
 [data-theme="dark"] .glass-panel {
   background: rgba(0, 0, 0, 0.2); 
-  border: 1px solid rgba(255, 255, 255, 0.05); /* Lighter border for visibility */
+  border: 0.0625rem solid rgba(255, 255, 255, 0.05); /* Lighter border for visibility */
 }
 
 
@@ -113,8 +122,8 @@ input, select {
   &::before {
     content: "";
     position: absolute;
-    inset: -2px; /* Border thickness */
-    border-radius: calc(var(--radius-lg) + 2px); 
+    inset: -0.125rem; /* Border thickness */
+    border-radius: calc(var(--radius-lg) + 0.125rem); 
     background: linear-gradient(
       135deg, 
       rgba(255, 255, 255, 0.1),
