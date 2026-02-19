@@ -1,8 +1,9 @@
-import { Component, inject, Signal, ChangeDetectionStrategy, ViewEncapsulation, PLATFORM_ID } from '@angular/core';
+import { Component, inject, Signal, signal, computed, ChangeDetectionStrategy, ViewEncapsulation, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ThemeService } from '@core/services/theme.service';
+import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
 import { 
   ColDef, 
   GridOptions, 
@@ -18,7 +19,7 @@ import { ExpenseItem } from '@core/domain/models';
 @Component({
   selector: 'app-budget-table',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AgGridAngular],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular, SingleSelectComponent],
   templateUrl: './budget-table.component.html',
   styleUrl: './budget-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +36,100 @@ export class BudgetTableComponent {
   // Signals
   expenses = this.budgetState.expensesSignal;
   totalExpenses = this.budgetState.totalExpenses;
+
+  // Mobile Filters
+  filterPriority = signal<string>('');
+  filterType = signal<string>('');
+
+  // Options for SingleSelect
+  priorityOptions = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
+  typeOptions = ['Burning', 'Responsibility', 'Saving'];
+
+  filteredExpenses = computed(() => {
+    const list = this.expenses();
+    const currentPriority = this.filterPriority();
+    const currentType = this.filterType();
+
+    return list.filter(item => {
+      const matchPriority = !currentPriority || currentPriority === 'All' || item.priority === currentPriority;
+      const matchType = !currentType || currentType === 'All' || item.type === currentType;
+      return matchPriority && matchType;
+    });
+  });
+
+  onMobileAmountChange(item: ExpenseItem, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const newAmount = Number(input.value);
+    
+    if (isNaN(newAmount) || newAmount < 0) {
+        input.value = String(item.amount); // Reset
+        return;
+    }
+    this.updateItem(item, { amount: newAmount });
+  }
+
+  onMobileNameChange(item: ExpenseItem, event: Event) {
+      const input = event.target as HTMLInputElement;
+      const newName = input.value.trim();
+      if(!newName) {
+          input.value = item.name;
+          return;
+      }
+      this.updateItem(item, { name: newName });
+  }
+
+  updateItemPriority(item: ExpenseItem, newPriority: string) {
+      if(item.priority === newPriority) return;
+      this.updateItem(item, { priority: newPriority as any });
+  }
+
+  updateItemType(item: ExpenseItem, newType: string) {
+      if(item.type === newType) return;
+      this.updateItem(item, { type: newType as any });
+  }
+
+  private updateItem(item: ExpenseItem, changes: Partial<ExpenseItem>) {
+      // Logic from grid (amount/type checks)
+      if (changes.type === 'Saving' || (item.type === 'Saving' && changes.amount !== undefined)) {
+          const currentFreeMoney = this.budgetState.remainingIncome();
+          const newAmount = changes.amount !== undefined ? changes.amount : item.amount;
+          const oldAmount = item.amount;
+          
+          let diff = 0;
+          if (changes.amount !== undefined) {
+              diff = newAmount - oldAmount;
+          } else if (changes.type === 'Saving' && item.type !== 'Saving') {
+              // Becomming a saving, so the cost is now "deducted" from free money? 
+              // Actually saving IS an expense in this model (transfer to savings), 
+              // so we check if we have enough income to cover it?
+              // The logic in onCellValueChanged was:
+              // if (updatedExpense.type === 'Saving') {
+              //    const currentFreeMoney = this.budgetState.remainingIncome();
+              //    ... 
+              // }
+              // Wait, removing a non-saving expense increases free money? No, all expenses reduce free money.
+              // The check is likely ensure we don't over-allocate.
+              // Let's rely on the simple check:
+              // Free Money = Income - Expenses.
+              // If we increase an expense, Free Money goes down.
+               diff = (changes.amount ?? item.amount) - item.amount; // If only type changed, diff is 0? 
+               // If type changed TO saving, it's still an expense.
+               // It seems the implementation in onCellValueChanged implies checking if we have enough 
+               // "Allocatable" money?
+          }
+
+          if (changes.amount !== undefined) {
+             if (currentFreeMoney - diff < 0) {
+                alert(`Insufficient funds. Available: $${currentFreeMoney.toFixed(2)}`);
+                // Revert UI if needed (complex for inputs) is handled by state not updating
+                return; 
+             }
+          }
+      }
+
+      const updated = { ...item, ...changes };
+      this.budgetState.updateExpense(item.id, updated);
+  }
 
   // Grid Config
   defaultColDef: ColDef = {

@@ -33,33 +33,82 @@
   <!-- Mobile Card List View -->
   <div class="mobile-budget-list mobile-view">
     <div class="mobile-header">
-        <h3>Budget Items ({{ expenses().length }})</h3>
+        <h3>Budget Items ({{ filteredExpenses().length }})</h3>
         <button class="btn-archive-mobile" (click)="startNewMonth()">
             📅 New Month
         </button>
     </div>
 
-    @for (item of expenses(); track item.id) {
+    <div class="mobile-filters">
+        <app-single-select
+            [options]="priorityOptions"
+            [value]="filterPriority() || 'All'"
+            variant="dot"
+            (valueChange)="filterPriority.set($event)"
+            placeholder="All Priority">
+        </app-single-select>
+        
+        <app-single-select
+            [options]="typeOptions"
+            [value]="filterType() || 'All'"
+            variant="dot"
+            (valueChange)="filterType.set($event)"
+            placeholder="All Types">
+        </app-single-select>
+    </div>
+
+    <div class="cards-scroll-container">
+    @for (item of filteredExpenses(); track item.id) {
         <div class="budget-card">
             <div class="card-main">
                 <div class="card-top">
-                    <span class="category-name">{{ item.name }}</span>
-                    <span class="amount-value">{{ item.amount | currency }}</span>
+                    <input type="text" 
+                        class="category-name-input" 
+                        [value]="item.name" 
+                        (change)="onMobileNameChange(item, $event)">
+                    
+                    <div class="amount-group">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" 
+                            [value]="item.amount" 
+                            (change)="onMobileAmountChange(item, $event)" 
+                            class="amount-input"
+                            step="0.01">
+                    </div>
                 </div>
+                
                 <div class="card-meta">
-                    <span class="priority-label" [class]="item.priority.toLowerCase().replace(' ', '-')">{{ item.priority }}</span>
+                    <div class="mobile-select-group">
+                        <label>Importance:</label>
+                        <app-single-select
+                            [options]="priorityOptions"
+                            [value]="item.priority"
+                            variant="dot"
+                            (valueChange)="updateItemPriority(item, $event)"
+                            class="inline-single-select">
+                        </app-single-select>
+                    </div>
                 </div>
             </div>
             
             <div class="card-footer">
-                <div class="tags-group">
-                    <span class="tag type-tag" [class]="item.type.toLowerCase()">{{ item.type }}</span>
+                <div class="mobile-select-group">
+                    <label>Type:</label>
+                    <app-single-select
+                        [options]="typeOptions"
+                        [value]="item.type"
+                        variant="badge"
+                        (valueChange)="updateItemType(item, $event)"
+                        class="inline-single-select">
+                    </app-single-select>
                 </div>
+                
                 <button class="btn-delete-mobile" (click)="deleteMobile(item.id, item.name)" aria-label="Delete">
                     🗑️
                 </button>
             </div>
         </div>
     }
+    </div>
   </div>
 </div>
