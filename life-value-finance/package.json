@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "serve -s dist/life-value-finance/browser -l 4000",
+    "start": "npm run serve:ssr:life-value-finance",
+    "start:static": "serve -s dist/life-value-finance/browser -l 4000",
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
