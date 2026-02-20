@@ -42,7 +42,7 @@ export class BudgetTableComponent {
   filterType = signal<string>('');
 
   // Options for SingleSelect
-  priorityOptions = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
+  priorityOptions = ['Must Have', 'Want', 'Emergency', 'Gift'];
   typeOptions = ['Burning', 'Responsibility', 'Saving'];
 
   // Savings Analysis
@@ -178,7 +178,7 @@ export class BudgetTableComponent {
   // Grid Config
   defaultColDef: ColDef = {
     sortable: true,
-    filter: true,
+    filter: false,
     resizable: true,
     editable: true,
     flex: 1,
@@ -207,14 +207,13 @@ export class BudgetTableComponent {
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
-        values: ['Must Have', 'Need', 'Want', 'Emergency', 'Gift']
+        values: ['Must Have', 'Want', 'Emergency', 'Gift']
       },
       cellRenderer: (params: ICellRendererParams) => {
         const val = params.value;
         if (!val || val === '--') return '';
         const colorMap: Record<string, string> = {
             'Must Have': '#ef4444',     // High (Must Have - Red)
-            'Need': '#f59e0b',          // Medium (Need - Amber)
             'Want': '#10b981',          // Low (Want - Green)
             'Emergency': '#000000',     // Emergency (Black)
             'Gift': '#8b5cf6'           // Gift (Purple)
@@ -233,6 +232,7 @@ export class BudgetTableComponent {
       flex: 0,
       editable: true,
       cellEditor: 'agSelectCellEditor',
+      cellStyle: { 'display': 'flex', 'align-items': 'center' },
       cellEditorParams: {
         values: ['Burning', 'Responsibility', 'Saving']
       },
@@ -255,7 +255,7 @@ export class BudgetTableComponent {
              const percent = Math.floor(this.savingsStatus().percentFunded);
              // Change to warning style (similar to Burning/Danger to indicate risk)
              style = { bg: '#fee2e2', color: '#991b1b', border: '#ef4444' };
-             warningHtml = `<span style="margin-right:4px;">⚠️</span>`;
+             warningHtml = `<span>⚠️</span>`;
              tooltip = `Partially Funded (Only ${percent}% available)`;
         }
         
@@ -303,13 +303,24 @@ export class BudgetTableComponent {
     }
   ];
 
+  // Grid Config
+  // Use a getter or a method to ensure 'this' context is correct if needed,
+  // but arrow function property should capture 'this'.
+  // Grid Config
   gridOptions: GridOptions = {
     theme: 'legacy',
     domLayout: 'autoHeight',
     rowSelection: 'single',
     animateRows: true, // Legacy, but supported
     stopEditingWhenCellsLoseFocus: true,
-    suppressCellFocus: false 
+    suppressCellFocus: false,
+    // Add rowClassRules here for conditional styling
+    rowClassRules: {
+        'row-saving-deficit': (params) => {
+            // Must use arrow function to access 'this'
+            return params.data && params.data.type === 'Saving' && this.savingsStatus().hasDeficit;
+        }
+    }
   };
 
   onCellValueChanged(event: CellValueChangedEvent) {

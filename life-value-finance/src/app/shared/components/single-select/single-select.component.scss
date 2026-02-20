@@ -14,7 +14,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.75rem;
     background: var(--bg-input); /* Match var(--bg-input) */
     border: 0.0625rem solid var(--border-color); /* Match var(--border-color) */
     border-radius: 0.75rem;
@@ -22,7 +22,7 @@
     font-size: 1rem;
     color: var(--text-primary); 
     user-select: none;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease, border-color 2s ease-in-out;
     
     &:hover {
       background-color: var(--bg-surface-hover);

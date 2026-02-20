@@ -176,6 +176,8 @@ export class BudgetStateService {
         income: summary.totalIncome,
         expenses: summary.totalExpenses,
         freeMoney: rawRemaining, // Record actual processed result (can be negative)
+        plannedSavings: savingsExpensesTotal,
+        savingsImpact: rawRemaining < 0 ? rawRemaining : 0, // Records how much deficit ate into savings
         transferredToSavings: transferredAmount,
         manualAdded: this.manualSavingsLog()
     });

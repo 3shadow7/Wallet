@@ -7,6 +7,8 @@ export interface MonthlyRecord {
   expenses: number;
   freeMoney: number;
   transferredToSavings: number;
+  plannedSavings: number; // The goal (sum of 'Saving' items)
+  savingsImpact: number;  // The deficit (if any) caused by overspending
   manualAdded?: number; // New field for direct additions
   savingsTotalAfterTransfer: number;
   date: string; // ISO date of closing
@@ -77,6 +79,7 @@ export class SavingsService {
     // We only need to add the budget transfer amount.
     const newTotal = currentTotal + record.transferredToSavings;
     
+    // Default new fields for old records (fallback)
     const fullRecord: MonthlyRecord = {
       ...record,
       savingsTotalAfterTransfer: newTotal,

@@ -13,6 +13,22 @@
   height: 100%;
 }
 
+// Grid styles overrides
+.row-saving-deficit {
+        background-color: color-mix(in srgb, var(--danger-color), transparent 92%) !important;
+        
+        .ag-cell {
+            color: var(--danger-color) !important;
+            font-weight: 500;
+        }
+
+        // Keep action buttons visible
+        button {
+            opacity: 1;
+        }
+    }
+
+
 .savings-alert {
     background-color: var(--danger-color);
     background: linear-gradient(90deg, 
@@ -102,7 +118,7 @@
       display: flex;
       align-items: center;
       gap: 0.375rem;
-      transition: all 0.2s ease;
+      transition: all 0.2s ease, border-color 2s ease-in-out;
 
       &:hover {
         background: v.$bg-input;
@@ -382,7 +398,7 @@
 
             // Deep selector to target the inner component structure
             .select-trigger {
-              padding: 0.25rem 0.3125rem;
+              padding: 0.3rem 0.3125rem;
               height: auto;
               min-height: 0;
               line-height: 1.2;
@@ -436,7 +452,7 @@
           // --border-color: transparent; // Hide default border until hover
 
           .select-trigger {
-            padding: 0.25rem 0.3125rem;
+            padding: 0.3rem 0.3125rem;
             height: auto;
             min-height: 0;
             line-height: 1.2;

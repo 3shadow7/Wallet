@@ -61,10 +61,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   
   // Multi-select signals
   filterType = signal<string[]>(['Burning', 'Responsibility', 'Saving']);
-  filterPriority = signal<string[]>(['Must Have', 'Need', 'Want', 'Emergency', 'Gift']);
+  filterPriority = signal<string[]>(['Must Have', 'Want', 'Emergency', 'Gift']);
 
   availableTypes = ['Burning', 'Responsibility', 'Saving'];
-  availablePriorities = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
+  availablePriorities = ['Must Have', 'Want', 'Emergency', 'Gift'];
 
   // Computed: Years Available
   availableYears = computed(() => {
@@ -105,9 +105,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   // Grid Config
   defaultColDef: ColDef = {
     sortable: true,
-    filter: true,
+    filter: false,
     resizable: true,
-    flex: 1
+    flex: 1,
+    valueFormatter: (params: ValueFormatterParams) => {
+      if (params.value === null || params.value === undefined || params.value === '') {
+        return '--';
+      }
+      return params.value;
+    }
   };
 
   colDefs: ColDef[] = [
@@ -123,14 +129,58 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         valueFormatter: p => `$${p.value.toFixed(2)}`
     },
     { 
+        field: 'plannedSavings', 
+        headerName: 'Target Savings',
+        headerTooltip: 'Total of all "Saving" items planned for this month',
+        cellStyle: { color: 'var(--primary-color)', fontWeight: '500' },
+        valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '$0.00'
+    },
+    { 
         field: 'freeMoney', 
-        headerName: 'Free Money (Net)',
-        cellStyle: params => params.value > 0 ? { color: 'green' } : { color: 'red' },
-        valueFormatter: p => `$${p.value.toFixed(2)}`
+        headerName: 'Free Money & Savings Impact',
+        width: 250,
+        minWidth: 250,
+        wrapText: true, // Allow wrapping for multi-line content
+        autoHeight: true, // Auto-adjust row height
+        cellRenderer: (params: any) => {
+            // Check for valid window/document (SSR safety)
+            if (typeof document === 'undefined') return params.value;
+
+            const val = params.value;
+            const container = document.createElement('div');
+            container.style.lineHeight = '1.4';
+            container.style.padding = '8px 0';
+            
+            if (val >= 0) {
+                 container.innerHTML = `<span style="color:var(--success-color, green); font-weight:bold;">$${val.toFixed(2)}</span>`;
+            } else {
+                // Negative Free Money: This is the impact on savings
+                const deficit = Math.abs(val);
+                const planned = params.data.plannedSavings || 0;
+                
+                let html = `<div style="display:flex; flex-direction:column;">`;
+                // Main Value
+                html += `<span style="color:var(--danger-color, red); font-weight:bold; font-size: 1.1em;">-$${deficit.toFixed(2)}</span>`;
+                
+                // Context
+                if (planned > 0) {
+                    const impactPct = Math.min(100, (deficit / planned) * 100).toFixed(1);
+                    html += `<span style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">⚠️ Reduced Saving Goal by ${impactPct}%</span>`;
+                    html += `<span style="font-size:0.8em; color:var(--text-muted); opacity:0.8;">(Saving Items affected by $${deficit.toFixed(2)})</span>`;
+                } else {
+                     html += `<span style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">⚠️ Dipped into Savings Storage</span>`;
+                }
+                
+                html += `</div>`;
+                container.innerHTML = html;
+            }
+            return container;
+        }
     },
     { 
         field: 'transferredToSavings', 
         headerName: 'From Budget',
+        tooltipValueGetter: (p: any) => p.data.plannedSavings ? `Planned: $${p.data.plannedSavings.toFixed(2)}` : '',
         cellStyle: params => params.value < 0 ? { color: 'var(--danger-color)', fontWeight: 'bold' } : { color: 'var(--primary-color)', fontWeight: 'bold' },
         valueFormatter: p => p.value < 0 ? `${p.value.toFixed(2)} (Deficit)` : `$${p.value.toFixed(2)}`
     },
@@ -558,8 +608,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             };
         });
     } else {
-        // Aggregate by Priority: Must Have, Need, Want, Emergency, Gift
-        const priorities = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'] as const;
+        // Aggregate by Priority: Must Have, Want, Emergency, Gift
+        const priorities = ['Must Have', 'Want', 'Emergency', 'Gift'] as const;
         series = priorities.map(p => {
             return {
                 name: p,

@@ -19,7 +19,7 @@ export class AddExpenseComponent {
   private fb = inject(FormBuilder);
   private budgetState = inject(BudgetStateService);
 
-  priorityOptions = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
+  priorityOptions = ['Must Have', 'Want', 'Emergency', 'Gift'];
   typeOptions = ['Burning', 'Responsibility', 'Saving'];
 
   expenseForm: FormGroup = this.fb.group({

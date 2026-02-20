@@ -20,7 +20,7 @@ export interface UserIncomeConfig {
   };
 }
 
-export type PriorityLevel = 'Must Have' | 'Need' | 'Want' | 'Emergency' | 'Gift';
+export type PriorityLevel = 'Must Have' | 'Want' | 'Emergency' | 'Gift';
 
 export interface ExpenseItem {
   id: string;

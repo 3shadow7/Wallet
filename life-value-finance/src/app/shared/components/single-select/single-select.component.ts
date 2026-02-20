@@ -47,7 +47,6 @@ export class SingleSelectComponent {
     const map: Record<string, string> = {
       // Priority (mapped to theme vars)
       'Must Have': 'var(--danger-color)', 
-      'Need': 'var(--warning-color)',
       'Want': 'var(--success-color)',
       'Emergency': 'var(--text-primary)', // Adapts to theme (Black in light, White in dark)
       'Gift': 'var(--border-focus)', // Purple

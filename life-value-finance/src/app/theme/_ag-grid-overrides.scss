@@ -5,8 +5,8 @@
 // Standard AG Grid Quartz Overrides
 // Use this class on all AG Grid instances for consistent app-wide style
 
-::ng-deep .ag-theme-quartz, 
-::ng-deep .ag-theme-quartz-dark {
+.ag-theme-quartz, 
+.ag-theme-quartz-dark {
   // Colors & Theme Vars
   --ag-header-background-color: var(--bg-surface-hover);
   --ag-header-foreground-color: var(--text-secondary);
@@ -25,7 +25,7 @@
   
   // Spacing
   --ag-row-height: 3rem;
-  --ag-header-height: 3rem;
+  --ag-header-height: 2.25rem; // Reduced from 3rem
   --ag-cell-horizontal-padding: 1rem;
 
   /* Specific overrides */
@@ -38,7 +38,7 @@
   .ag-header-cell-text {
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     letter-spacing: 0.03125rem;
     color: var(--text-secondary);
   }
@@ -102,3 +102,4 @@
     }
   }
 }
+
