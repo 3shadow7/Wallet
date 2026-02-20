@@ -13,6 +13,55 @@
   height: 100%;
 }
 
+.savings-alert {
+    background-color: var(--danger-color);
+    background: linear-gradient(90deg, 
+        color-mix(in srgb, var(--danger-color), transparent 85%) 0%, 
+        color-mix(in srgb, var(--bg-card), transparent 10%) 100%
+    );
+    border-left: 4px solid var(--danger-color);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+
+    .alert-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    h4 {
+        margin: 0 0 0.25rem 0;
+        color: var(--danger-color);
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--text-primary);
+        opacity: 0.9;
+    }
+
+    &.mobile-alert {
+        margin: 0.5rem 0;
+        padding: 0.75rem 1rem;
+        
+        .alert-icon { font-size: 1.25rem; }
+        h4 { font-size: 0.95rem; }
+        p { font-size: 0.85rem; }
+    }
+}
+
 // Grid Card (Main Table)
 .grid-card {
   @include m.card-style;
@@ -177,10 +226,58 @@
     flex-shrink: 0; // Don't shrink in scroll container
     box-shadow: none !important; // Remove shadow to emphasize border style
     background: v.$surface-color;
+    transition: transform 0.2s;
 
     // Dark mode adj
     @media (prefers-color-scheme: dark) {
       border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    &.unfunded-savings {
+      border: 2px solid var(--warning-color) !important; 
+      border-style: solid !important;
+      // Using a subtle gradient to indicate "not quite full"
+      background: linear-gradient(180deg, 
+          color-mix(in srgb, var(--warning-color), transparent 96%) 0%, 
+          transparent 50%
+      );
+      overflow: hidden;
+
+      .card-warning-stripe {
+          background-color: var(--warning-color);
+          color: #fff;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-align: center;
+          padding: 2px 0;
+          border-radius: 0.625rem;
+          margin: unset; 
+          letter-spacing: 0.5px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      }
+    }
+
+    &.unfunded-savings {
+      border: 2px solid var(--warning-color) !important; // Solid warning border
+      border-style: solid !important;
+      background: linear-gradient(180deg, 
+          color-mix(in srgb, var(--warning-color), transparent 96%) 0%, 
+          v.$surface-color 40%
+      );
+      overflow: visible;
+
+      .card-warning-stripe {
+          background-color: var(--warning-color);
+          color: #fff;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-align: center;
+          padding: 2px 0;
+          border-radius: 0.625rem;
+          margin: unset; 
+          letter-spacing: 0.5px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      }
     }
 
     .card-main {

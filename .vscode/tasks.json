@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "dummy_action",
+			"type": "shell",
+			"command": "echo \"No task needed\"",
+			"args": [],
+			"group": "none"
+		}
+	]
+}

@@ -12,6 +12,23 @@
         📅 Start New Month
       </button>
     </div>
+
+    <!-- Savings Warning Banner -->
+    @if (savingsStatus().hasDeficit) {
+    <div class="savings-alert">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+            <h4>Savings Overcommitted</h4>
+            <p>
+                You planned <strong>${{ savingsStatus().plannedSavings | number:'1.2-2' }}</strong> in savings, 
+                but high expenses leave only <strong>${{ savingsStatus().availableForSavings | number:'1.2-2' }}</strong> available.
+                <br/>
+                Your savings are <strong>{{ savingsStatus().percentFunded | number:'1.0-1' }}% funded</strong>. 
+                Consider reducing variable expenses or adjusting savings goals.
+            </p>
+        </div>
+    </div>
+    }
     
     <div class="grid-container">
       @if (isBrowser) {
@@ -39,6 +56,20 @@
         </button>
     </div>
 
+    <!-- Savings Warning Banner (Mobile) -->
+    @if (savingsStatus().hasDeficit) {
+    <div class="savings-alert mobile-alert">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+            <h4>Savings At Risk</h4>
+            <p>
+                Only <strong>${{ savingsStatus().availableForSavings | number:'1.2-2' }}</strong> available for your 
+                <strong>${{ savingsStatus().plannedSavings | number:'1.2-2' }}</strong> savings goal.
+            </p>
+        </div>
+    </div>
+    }
+
     <div class="mobile-filters">
         <app-single-select
             [options]="priorityOptions"
@@ -59,7 +90,12 @@
 
     <div class="cards-scroll-container">
     @for (item of filteredExpenses(); track item.id) {
-        <div class="budget-card">
+        <div class="budget-card" [class.unfunded-savings]="savingsStatus().hasDeficit && item.type === 'Saving'">
+            <!-- Show Warning on Savings Card -->
+            @if (savingsStatus().hasDeficit && item.type === 'Saving') {
+                <div class="card-warning-stripe">⚠️ Partially Funded ({{ savingsStatus().percentFunded | number:'1.0-0' }}%)</div>
+            }
+            
             <div class="card-main">
                 <div class="card-top">
                     <input type="text" 

@@ -45,6 +45,33 @@ export class BudgetTableComponent {
   priorityOptions = ['Must Have', 'Need', 'Want', 'Emergency', 'Gift'];
   typeOptions = ['Burning', 'Responsibility', 'Saving'];
 
+  // Savings Analysis
+  savingsStatus = computed(() => {
+    const list = this.expenses();
+    const income = this.budgetState.incomeConfigSignal().monthlyIncome;
+    
+    const savingItems = list.filter(i => i.type === 'Saving');
+    const plannedSavings = savingItems.reduce((sum, i) => sum + i.amount, 0);
+    
+    // Expenses that MUST be paid (Burning + Responsibility)
+    // We treat everything NOT 'Saving' as mandatory for this calculation
+    const mandatoryExpenses = list.filter(i => i.type !== 'Saving')
+                              .reduce((sum, i) => sum + i.amount, 0);
+    
+    // Money left after mandatory expenses
+    const availableForSavings = Math.max(0, income - mandatoryExpenses);
+    
+    const deficit = Math.max(0, plannedSavings - availableForSavings);
+    
+    return {
+        hasDeficit: deficit > 0,
+        deficitAmount: deficit,
+        plannedSavings,
+        availableForSavings,
+        percentFunded: plannedSavings > 0 ? (availableForSavings / plannedSavings) * 100 : 100
+    };
+  });
+
   filteredExpenses = computed(() => {
     const list = this.expenses();
     const currentPriority = this.filterPriority();
@@ -65,7 +92,11 @@ export class BudgetTableComponent {
         input.value = String(item.amount); // Reset
         return;
     }
-    this.updateItem(item, { amount: newAmount });
+    
+    const success = this.updateItem(item, { amount: newAmount });
+    if (!success) {
+        input.value = String(item.amount);
+    }
   }
 
   onMobileNameChange(item: ExpenseItem, event: Event) {
@@ -88,7 +119,11 @@ export class BudgetTableComponent {
       this.updateItem(item, { type: newType as any });
   }
 
-  private updateItem(item: ExpenseItem, changes: Partial<ExpenseItem>) {
+  /**
+   * Updates an item with validation logic.
+   * Returns true if update was successful/applied, false if blocked by validation.
+   */
+  private updateItem(item: ExpenseItem, changes: Partial<ExpenseItem>): boolean {
       // Logic from grid (amount/type checks)
       if (changes.type === 'Saving' || (item.type === 'Saving' && changes.amount !== undefined)) {
           const currentFreeMoney = this.budgetState.remainingIncome();
@@ -99,36 +134,45 @@ export class BudgetTableComponent {
           if (changes.amount !== undefined) {
               diff = newAmount - oldAmount;
           } else if (changes.type === 'Saving' && item.type !== 'Saving') {
-              // Becomming a saving, so the cost is now "deducted" from free money? 
-              // Actually saving IS an expense in this model (transfer to savings), 
-              // so we check if we have enough income to cover it?
-              // The logic in onCellValueChanged was:
-              // if (updatedExpense.type === 'Saving') {
-              //    const currentFreeMoney = this.budgetState.remainingIncome();
-              //    ... 
-              // }
-              // Wait, removing a non-saving expense increases free money? No, all expenses reduce free money.
-              // The check is likely ensure we don't over-allocate.
-              // Let's rely on the simple check:
-              // Free Money = Income - Expenses.
-              // If we increase an expense, Free Money goes down.
-               diff = (changes.amount ?? item.amount) - item.amount; // If only type changed, diff is 0? 
-               // If type changed TO saving, it's still an expense.
-               // It seems the implementation in onCellValueChanged implies checking if we have enough 
-               // "Allocatable" money?
+               // When switching TO Saving, we validate if we can afford the full amount?
+               // Or if the amount stayed same, diff is 0?
+               // Usually switching type doesn't change amount, so diff is effectively 0 relative to "total expenses".
+               // BUT, "Saving" relies on "Free Money" (Income - Expenses).
+               // Switching a normal expense to Saving doesn't change Total Expenses, so Free Money is same.
+               // The validation logic is: "Do I have enough free money to allocate THIS amount to savings?"
+               // If it was already an expense, it was already deducted from income to calculate free money?
+               // Wait... Free Money = Income - Total Expenses (including Savings).
+               // So if I have $1000 Income, $500 Expenses (inc $100 saving). Free Money = $500.
+               // We ensure Free Money >= 0.
+               // If I increase Savings by $100, Expenses becomes $600. Free Money becomes $400.
+               // The validation: `currentFreeMoney - diff < 0` => `500 - 100 = 400`. Valid.
+               
+               // If I have $1000 Income, $1000 Expenses. Free Money = 0.
+               // I increase Savings by $10. Expenses = $1010. Free Money = -10.
+               // Validation: `0 - 10 = -10`. Invalid. Correct.
+               
+               // Case: Switch Type.
+               // Expense $100 (Burning). Total Exp $100. Free Money $900.
+               // Switch to Saving. Expense still $100. Total Exp $100. Free Money $900.
+               // diff = 0. `900 - 0 = 900`. Valid.
+               
+               // So switching type generally is safe UNLESS the logic implies something else about "Free Money".
+               // But let's keep the diff calculation simple.
+               diff = (changes.amount ?? item.amount) - item.amount; 
           }
 
-          if (changes.amount !== undefined) {
+          if (changes.amount !== undefined || changes.type === 'Saving') {
+             // Only validate amount changes or type switches to saving (though type switch diff is usually 0)
              if (currentFreeMoney - diff < 0) {
                 alert(`Insufficient funds. Available: $${currentFreeMoney.toFixed(2)}`);
-                // Revert UI if needed (complex for inputs) is handled by state not updating
-                return; 
+                return false; 
              }
           }
       }
 
       const updated = { ...item, ...changes };
       this.budgetState.updateExpense(item.id, updated);
+      return true;
   }
 
   // Grid Config
@@ -202,9 +246,20 @@ export class BudgetTableComponent {
             'Saving': { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' }   // Green (Savings)
         };
         
-        const style = styleMap[val] || { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
+        let style = styleMap[val] || { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
+        let warningHtml = '';
+        let tooltip = '';
+
+        // Check for Savings Deficit
+        if (val === 'Saving' && this.savingsStatus().hasDeficit) {
+             const percent = Math.floor(this.savingsStatus().percentFunded);
+             // Change to warning style (similar to Burning/Danger to indicate risk)
+             style = { bg: '#fee2e2', color: '#991b1b', border: '#ef4444' };
+             warningHtml = `<span style="margin-right:4px;">⚠️</span>`;
+             tooltip = `Partially Funded (Only ${percent}% available)`;
+        }
         
-        return `<span style="
+        return `<span title="${tooltip}" style="
           background-color: ${style.bg};
           color: ${style.color};
           border: 1px solid ${style.border};
@@ -212,9 +267,10 @@ export class BudgetTableComponent {
           border-radius: 12px;
           font-size: 0.85rem;
           font-weight: 500;
-          display: inline-block;
+          display: flex;
+          align-items: center;
           line-height: 1.2;
-        ">${val}</span>`;
+        ">${warningHtml}${val}</span>`;
       }
     },
     { 
