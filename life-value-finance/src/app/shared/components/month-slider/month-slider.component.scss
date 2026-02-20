@@ -43,6 +43,16 @@
     box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1);
     transition: transform 0.1s ease, box-shadow 0.1s ease;
     
+    // Increase touch target size without changing visual size
+    &::after {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+    }
+
     &:hover { transform: translate(-50%, -50%) scale(1.1); }
     &:active { cursor: grabbing; box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.2); }
 
@@ -77,36 +87,67 @@
   .ticks {
     position: relative;
     margin-top: 1rem;
-    display: flex;
-    justify-content: space-between;
+    // We use absolute positioning for ticks now for perfect alignment with slider math
+    width: 100%;
+    height: 2rem;
     
     .tick {
-      position: relative;
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%); // Force center alignment on the value point
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 0; 
+      cursor: pointer;
+      width: 2rem; // Touch target width
+      z-index: 5;
       
+      // Ensure hit area covers the mark and label
+      padding-top: 0.5rem; 
+      margin-top: -0.5rem;
+
       .tick-mark {
           font-size: 0.6rem;
-          color: #ccc;
+          color: #cbd5e1; // Slate-300
           margin-bottom: 0.25rem;
           font-weight: bold;
+          transition: color 0.2s;
       }
       
       .tick-label {
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           color: #94a3b8;
           font-weight: 500;
-      }
-
-      &.active .tick-label {
-          color: #8b5cf6;
-          font-weight: 700;
+          transition: color 0.2s, font-weight 0.2s;
+          user-select: none;
       }
       
-      &.active .tick-mark {
-          color: #8b5cf6;
+      // Active State (Selected Range)
+      &.active {
+          .tick-mark { color: #8b5cf6; }
+          .tick-label { 
+              color: #7c3aed; 
+              font-weight: 700;
+          }
+      }
+
+      // Responsive adjustments
+      @media (max-width: 640px) {
+          .tick-label { font-size: 0.65rem; }
+          
+          &:nth-child(even) .tick-label {
+              display: none; // Hide label for Feb, Apr... on tiny screens
+          }
+          &:nth-child(even) .tick-mark {
+              height: 4px; // Make mark smaller/subtle
+          }
+      }
+      
+      @media (min-width: 400px) and (max-width: 640px) {
+           &:nth-child(even) .tick-label {
+              display: block; // Restore if space permits
+              font-size: 0.6rem;
+          }
       }
     }
   }

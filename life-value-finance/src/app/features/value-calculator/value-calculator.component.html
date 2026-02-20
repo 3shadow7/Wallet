@@ -2,7 +2,7 @@
   <h2>🛍️ Value Calculator</h2>
   
   <p class="intro-text">
-      Understand the <strong>real cost</strong> of your purchases in terms of your life energy.
+      Understand the <strong>real cost</strong> of your purchases in terms of your life time.
   </p>
 
   <div class="card input-card">
@@ -28,7 +28,7 @@
         <!-- Life Energy Cost -->
         <div class="result-item time-cost">
           <div class="card-glow time"></div>
-          <span class="label">Life Energy Cost</span>
+          <span class="label">Life time Cost</span>
           <span class="value highlight">
              <span class="val-num">{{ analysis().timeCostFormatted }}</span> 
           </span>
@@ -49,17 +49,20 @@
     <div class="emoji-feedback">
         <!-- Low Impact -->
         <div *ngIf="analysis().financialImpactPercent <= 5" class="feedback-content low">
-            <p><strong>😌 Safe to buy.</strong> This barely dents your free money.</p>
+            <span class="emoji">😌</span>
+            <p><strong>Safe to buy.</strong> This barely dents your free money.</p>
         </div>
         
         <!-- Medium Impact -->
         <div *ngIf="analysis().financialImpactPercent > 5 && analysis().financialImpactPercent <= 20" class="feedback-content medium">
-            <p><strong>🤨 Think twice.</strong> This costs you substantial time/money.</p>
+            <span class="emoji">🤨</span>
+            <p><strong>Think twice.</strong> This costs you substantial time/money.</p>
         </div>
 
         <!-- High Impact -->
         <div *ngIf="analysis().financialImpactPercent > 20" class="feedback-content high">
-            <p><strong>😱 Danger Zone!</strong> This takes a huge chunk of your freedom.</p>
+            <span class="emoji">😱</span>
+            <p><strong>Danger Zone!</strong> This takes a huge chunk of your freedom.</p>
         </div>
     </div>
   </div>

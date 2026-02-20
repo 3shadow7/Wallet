@@ -207,9 +207,10 @@ h2 {
       }
 
       .emoji {
-        font-size: 2rem;
+        font-size: 4rem; // Made bigger as requested
         display: block;
-        margin-bottom: var(--spacing-xs);
+        margin-bottom: var(--spacing-sm);
+        animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
       }
 
       p {
@@ -233,6 +234,14 @@ h2 {
     transform: translateY(0);
   }
 }
+
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); opacity: 1; }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
 
 // --- Impact State Styles ---
 

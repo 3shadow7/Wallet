@@ -3,7 +3,6 @@
 @use '../../theme/mixins' as m;
 
 .history-container {
-    max-width: 87.5rem;
     margin: 0 auto;
     padding: v.$spacing-lg;
     display: flex;
@@ -192,26 +191,40 @@ header h1 {
                     .month-selector {
                         display: flex;
                         align-items: center;
-                        gap: v.$spacing-md;
+                        // gap: v.$spacing-md;
                         width: 100%;
-                        height: 3rem;
+                        // height: 3rem; // Remove fixed height to allow content to flow
+                        min-height: 3rem; // Ensure enough touch space
                         align-self: center;
                         background: v.$bg-input;
-                        padding: v.$spacing-md;
-                        border-radius: 0.5rem;
+                        padding: v.$spacing-md v.$spacing-lg; // More horizontal padding
+                        // border-radius: 0.5rem;
+                        
+                        @include m.respond-to('max-sm') {
+                            flex-direction: column;
+                            align-items: flex-start;
+                            padding: v.$spacing-md;
+                            gap: 0; // Let the slider margin handle it
+                        }
 
                         .label {
                             font-size: 0.8rem;
                             color: v.$text-secondary;
                             font-weight: 600;
                             min-width: 3.75rem;
+                            
+                            @include m.respond-to('max-sm') {
+                                margin-bottom: 1rem; // Add space below label on mobile
+                            }
                         }
 
                         .slider-wrapper {
                             flex: 1;
-                            height: 5rem; // Ensure space for slider and labels
+                            width: 100%; // Ensure full width on mobile
+                            // height: 5rem; // Let component define its height
                             display: flex;
                             align-items: center;
+                            padding-top: 0.5rem; // Give space for handles
                         }
                     }
                 }
@@ -248,7 +261,7 @@ header h1 {
         gap: 0.5rem; // Reduced gap between header and list
         
         // Constrain height for scrolling
-        max-height: 70vh; 
+        max-height: 78vh; 
         min-height: 25rem;
         overflow: hidden; // Contain the scrolling child
         position: relative; // Context
@@ -273,7 +286,7 @@ header h1 {
         flex-direction: column;
         gap: 1.25rem;
         // Ample bottom padding to ensure last card visibility
-        padding: 0.5rem 0.5rem 4rem 0.5rem; 
+    padding: 0.5rem 0.5rem 1.5rem 0.5rem;
         
         // Scrollbar styling for webkit
         &::-webkit-scrollbar {

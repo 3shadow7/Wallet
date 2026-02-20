@@ -2,7 +2,6 @@
 @use '../../theme/mixins' as m;
 
 .dashboard-container {
-  max-width: 87.5rem;
   margin: 0 auto;
   padding: v.$spacing-lg;
   display: flex;

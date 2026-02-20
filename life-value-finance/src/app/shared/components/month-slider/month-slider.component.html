@@ -1,4 +1,6 @@
-<div class="slider-container" #container (mousedown)="onContainerClick($event)">
+<div class="slider-container" #container 
+     (mousedown)="onContainerClick($event)" 
+     (touchstart)="onContainerClick($event)">
       <div class="track-bg"></div>
       
       <!-- Colored Range between handles -->
@@ -10,14 +12,16 @@
       <!-- Handle Min -->
       <div class="handle min-handle" 
            [style.left.%]="leftPercent()"
-           (mousedown)="startDrag('min', $event)">
+           (mousedown)="startDrag('min', $event)"
+           (touchstart)="startDrag('min', $event)">
          <div class="tooltip">{{ getMonthName(currentMin()) }}</div>
       </div>
 
       <!-- Handle Max -->
       <div class="handle max-handle" 
            [style.left.%]="rightPercent()"
-           (mousedown)="startDrag('max', $event)">
+           (mousedown)="startDrag('max', $event)"
+           (touchstart)="startDrag('max', $event)">
          <div class="tooltip">{{ getMonthName(currentMax()) }}</div>
       </div>
 
@@ -25,8 +29,8 @@
       <div class="ticks">
         <span *ngFor="let m of monthLabels; let i = index" 
               class="tick" 
-              [class.active]="(i + 1) >= currentMin() && (i + 1) <= currentMax()"
-              (click)="jumpTo(i + 1)">
+              [style.left.%]="toPercent(i + 1)"
+              [class.active]="(i + 1) >= currentMin() && (i + 1) <= currentMax()"> 
           <span class="tick-mark">|</span>
           <span class="tick-label">{{ m }}</span>
         </span>
