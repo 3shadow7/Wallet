@@ -115,30 +115,65 @@
             <h3>Monthly Log</h3>
         </div>
 
-        @for (item of history(); track item.date) {
-            <div class="history-card">
-                <div class="card-top">
-                    <span class="month-label">{{ item.month }}</span>
-                    <span class="net-value" [class.positive]="item.freeMoney >= 0" [class.negative]="item.freeMoney < 0">
-                        {{ item.freeMoney | currency }}
-                    </span>
+        <div class="mobile-scroll-container">
+            @for (item of history(); track item.date) {
+                <div class="history-card">
+                    <div class="card-header">
+                        <span class="month-label">{{ item.month }}</span>
+                        <span class="balance-badge">
+                            <span class="label">Total Balance:</span>
+                            <span class="val">{{ item.savingsTotalAfterTransfer | currency:'USD':'symbol':'1.0-0' }}</span>
+                        </span>
+                    </div>
+                    
+                    <div class="card-grid">
+                        <!-- Income & Expense Row -->
+                        <div class="stat-group">
+                            <span class="label">Income</span>
+                            <span class="val income">{{ item.income | currency:'USD':'symbol':'1.0-0' }}</span>
+                        </div>
+                        <div class="stat-group">
+                            <span class="label">Expenses</span>
+                            <span class="val expense">{{ item.expenses | currency:'USD':'symbol':'1.0-0' }}</span>
+                        </div>
+
+                        <!-- Target & Actual Row -->
+                        <div class="stat-group">
+                            <span class="label">Target Savings</span>
+                            <span class="val target">{{ item.plannedSavings | currency:'USD':'symbol':'1.0-0' }}</span>
+                        </div>
+                        <div class="stat-group">
+                            <span class="label">Actual Saved</span>
+                            <span class="val saved" [class.deficit]="item.transferredToSavings < 0">{{ item.transferredToSavings | currency:'USD':'symbol':'1.0-0' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Savings Impact Section -->
+                    <div class="impact-section" [class.negative]="item.freeMoney < 0" [class.positive]="item.freeMoney >= 0">
+                        <div class="impact-header">
+                            <span class="label">Free Money / Impact</span>
+                            <span class="val">{{ item.freeMoney | currency }}</span>
+                        </div>
+                        @if (item.freeMoney < 0) {
+                            <div class="impact-details">
+                                @if ((item.plannedSavings || 0) > 0) {
+                                    <span class="warning">⚠️ Reduced Goal by {{ ((Math.abs(item.freeMoney) / item.plannedSavings) * 100) | number:'1.0-1' }}%</span>
+                                } @else {
+                                    <span class="warning">⚠️ Dipped into Savings</span>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Manual Additions -->
+                    @if (item.manualAdded && item.manualAdded !== 0) {
+                        <div class="manual-add-row">
+                            <span class="icon">➕</span>
+                            <span>Direct Add: {{ item.manualAdded | currency }}</span>
+                        </div>
+                    }
                 </div>
-                
-                <div class="card-stats">
-                    <div class="stat-row">
-                        <span class="label">In</span>
-                        <span class="val income">{{ item.income | currency:'USD':'symbol':'1.0-0' }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="label">Out</span>
-                        <span class="val expense">{{ item.expenses | currency:'USD':'symbol':'1.0-0' }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="label">Save</span>
-                        <span class="val saved">{{ item.transferredToSavings | currency:'USD':'symbol':'1.0-0' }}</span>
-                    </div>
-                </div>
-            </div>
-        }
+            }
+        </div>
     </div>
   </div>

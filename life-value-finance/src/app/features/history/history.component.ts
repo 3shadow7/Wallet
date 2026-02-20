@@ -26,6 +26,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private budgetState = inject(BudgetStateService);
   private platformId = inject(PLATFORM_ID);
   public themeService = inject(ThemeService); // Made public for template if needed
+  protected Math = Math; // Expose Math to template
   
   isBrowser = isPlatformBrowser(this.platformId);
   breakdownMode: 'type' | 'priority' = 'type';
