@@ -18,9 +18,7 @@
     align-items: center;
     height: 4rem;
     padding: 0 var(--spacing-md);
-    max-width: 80rem;
-    width: 100%; // Ensure it doesn't overflow
-    margin: 0 auto;
+    width: auto;
   }
 
   .brand {
@@ -48,6 +46,8 @@
   .main-nav {
     display: flex;
     gap: var(--spacing-lg);
+    flex: 1 1 auto;
+    justify-content: center;
 
     a {
       text-decoration: none;
