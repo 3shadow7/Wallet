@@ -23,9 +23,20 @@
             }
       </div>
       @if (isCurrentMonth()) {
-        <button class="btn-archive" (click)="startNewMonth()" title="Archive current month and start new">
-          📅 Start New Month
-        </button>
+        <div class="header-actions">
+            <!-- New Month Button -->
+            <button class="btn-archive" (click)="startNewMonth()" title="Archive current month and start new">
+              📅 Start New Month
+            </button>
+            
+            <!-- Revert / Reset Logic -->
+            @if (canRevertMonth()) {
+                <button class="btn-revert" (click)="revertMonth()" title="Delete this month and revert to previous">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                    Delete Month
+                </button>
+            }
+        </div>
       }
     </div>
 
@@ -65,23 +76,35 @@
 
   <!-- Mobile Card List View -->
   <div class="mobile-budget-list mobile-view">
+
     <div class="mobile-header" [class.history-header]="!isCurrentMonth()">
         <div class="header-top">
             <h3>{{ filteredExpenses().length }} Items</h3>
-            <div class="month-nav-mobile">
-                <button class="nav-btn" (click)="prevMonth()" title="Previous Month">
-                  <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
-                </button>
-                <span class="active-month">{{ viewedMonth() | date:'MMM yyyy' }}</span>
-                <button class="nav-btn" (click)="nextMonth()" [disabled]="isCurrentMonth()" title="Next Month">
-                  <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
-                </button>
+            <div class="mobile-nav-group">
+                <div class="month-nav-mobile">
+                    <button class="nav-btn" (click)="prevMonth()" title="Previous Month">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
+                    </button>
+                    <span class="active-month">{{ viewedMonth() | date:'MMM yyyy' }}</span>
+                    <button class="nav-btn" (click)="nextMonth()" [disabled]="isCurrentMonth()" title="Next Month">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
+                    </button>
+                </div>
+                <!-- Delete Month Button (Under Nav) -->
+                @if (canRevertMonth() && isCurrentMonth()) {
+                    <button class="btn-delete-month-full" (click)="revertMonth()">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                        Delete This Month
+                    </button>
+                }
             </div>
         </div>
         @if (isCurrentMonth()) {
-            <button class="btn-archive-mobile" (click)="startNewMonth()">
-                📅 New Month
-            </button>
+            <div class="mobile-header-actions">
+                <button class="btn-archive-mobile" (click)="startNewMonth()">
+                    📅 New Month
+                </button>
+            </div>
         } @else {
             <div class="history-badge-mobile">HISTORY VIEW</div>
         }
@@ -129,9 +152,12 @@
         }
 
         @for (item of filteredExpenses(); track item.id) {
-        <div class="budget-card" [class.unfunded-savings]="savingsStatus().hasDeficit && item.type === 'Saving'">
+        <div class="budget-card" 
+             [class.unfunded-savings]="savingsStatus().hasDeficit && item.type === 'Saving' && !item.isIgnored"
+             [class.ignored-card]="item.isIgnored">
+            
             <!-- Show Warning on Savings Card -->
-            @if (savingsStatus().hasDeficit && item.type === 'Saving') {
+            @if (savingsStatus().hasDeficit && item.type === 'Saving' && !item.isIgnored) {
                 <div class="card-warning-stripe">⚠️ Partially Funded ({{ savingsStatus().percentFunded | number:'1.0-0' }}%)</div>
             }
             
@@ -188,9 +214,27 @@
                     </app-single-select>
                 </div>
                 
-                <button class="btn-delete-mobile" (click)="deleteMobile(item.id, item.name)" aria-label="Delete">
-                    🗑️
-                </button>
+
+                <div class="mobile-actions">
+                  @if (item.type === 'Saving' || item.type === 'Responsibility') {
+                    <button class="btn-ignore-mobile" 
+                            [class.active]="!item.isIgnored"
+                            [class.ignored-btn]="item.isIgnored"
+                            (click)="toggleIgnore(item.id, !!item.isIgnored)" 
+                            [title]="item.isIgnored ? 'Activate (Include)' : 'Ignore (Exclude)'">
+                        @if(!item.isIgnored) {
+                            <!-- Normal State: Click to Ignore -->
+                             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z"/></svg>
+                        } @else {
+                            <!-- Ignored State: Click to Activate -->
+                             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T702-576l-84-86q39-16 80-25t82-9q146 0 266 81.5T920-500q-26 65-67 117t-91 87ZM240-84l-52-52 116-116q-19-14-36.5-30.5T234-318q-72-46-126-107T40-500q54-137 174-218.5T480-800q77 0 148 23t135 65l65-64 52 52-640 640ZM480-200q-70 0-134-21.5T226-282q-13-10-25-21t-23-23q51 45 111 75.5T480-200Zm112-256-42-42q-3 6-4.5 12.5T544-474q-5-38-31-64t-65-30q-7 0-13 1.5t-13 4.5l-42-42q22-12 47-18t53-6q75 0 127.5 52.5T660-500q0 28-6 53t-18 47q-9-19-21-36.5T592-456Z"/></svg>
+                        }
+                    </button>
+                  }
+                  <button class="btn-delete-mobile" (click)="deleteMobile(item.id, item.name)" aria-label="Delete">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                  </button>
+                </div>
             </div>
         </div>
     }

@@ -34,6 +34,7 @@ export interface ExpenseItem {
   amount: number; // Total Cost (Unit Price * Quantity)
   unitPrice: number; // Base cost for one item
   quantity: number; // Default 1
+  isIgnored?: boolean; // If true, excluded from calculations for this month
   type: 'Responsibility' | 'Burning' | 'Saving'; // Updated per user preference
   priority: PriorityLevel;
 }

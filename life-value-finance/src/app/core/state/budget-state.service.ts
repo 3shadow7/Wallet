@@ -83,9 +83,12 @@ export class BudgetStateService {
         }
     }
 
+    // Filter out ignored items before calculation
+    const activeExpenses = expenses.filter(e => !e.isIgnored);
+
     return FinancialCalculatorService.calculateBudget(
       incomeConfig,
-      expenses
+      activeExpenses
     );
   });
 
@@ -336,7 +339,7 @@ export class BudgetStateService {
     // - "Saving" Items are treated as allocated funds, so they are added back to "transferred" calculation.
     // - If Remaining Income is negative (overspending), we must DEDUCT that deficit from savings storage.
     const savingsExpensesTotal = expenses
-        .filter(item => item.type === 'Saving') // Ensure strict match with ExpenseItem type
+        .filter(item => item.type === 'Saving' && !item.isIgnored) // Only count ACTIVE Savings
         .reduce((sum, item) => sum + item.amount, 0);
 
     // Calculate true net result: Income - (Real Expenses + Savings Contribution)
@@ -370,12 +373,19 @@ export class BudgetStateService {
     this.manualSavingsLog.set(0);
 
     // 1. Archive current state
-    this.history.update(current => [...current, currentState]);
+    // Filter out ignored items from history so they don't pollute the record
+    const historyState = { 
+        ...currentState, 
+        expenses: currentState.expenses.filter(e => !e.isIgnored) 
+    };
+    this.history.update(current => [...current, historyState]);
     
     // 2. Clear Burning Expenses, Keep Responsibility AND Saving
-    // Note: We use 'currentMonthExpenses' signal now
+    // Note: We keep ignored items for next month (resetting them to active)
     this.currentMonthExpenses.update(current => 
-        current.filter(item => item.type === 'Responsibility' || item.type === 'Saving')
+        current
+            .filter(item => item.type === 'Responsibility' || item.type === 'Saving')
+            .map(item => ({ ...item, isIgnored: false })) // Reset ignore status for new month
     );
     
     // 3. Advance Date to Next Month
@@ -387,5 +397,69 @@ export class BudgetStateService {
     this.settings.update(s => ({ ...s, lastActiveMonth: nextMonth }));
     this.viewedMonth.set(nextMonth);
   }
+
+  // --- REVERT / UNDO LOGIC ---
+  
+  /**
+   * Attempts to undo the last "Start New Month" action.
+   * Logic based on user requirement:
+   * 1. If currently in a future month (relative to real date), revert fully to previous month.
+   * 2. If currently in real month, just reset/clear current items (don't go back to past).
+   */
+  // --- REVERT / UNDO LOGIC ---
+  
+  canRevertMonth(): boolean {
+      const currentActive = this.settings().lastActiveMonth;
+      const now = new Date();
+      const realMonthStr = now.toISOString().slice(0, 7);
+      const history = this.history();
+      
+      // Can only revert if:
+      // 1. We have history to go back to.
+      // 2. The *current active month* is in the future relative to real time.
+      return history.length > 0 && currentActive > realMonthStr;
+  }
+
+  isFutureMonth(): boolean {
+      const currentActive = this.settings().lastActiveMonth;
+      const now = new Date();
+      const realMonthStr = now.toISOString().slice(0, 7);
+      return currentActive > realMonthStr;
+  }
+
+  revertToPreviousMonth() {
+      const history = this.history();
+      if (history.length === 0) return;
+
+      const lastArchived = history[history.length - 1];
+
+      // 1. Reverse Savings Impact
+      this.savingsService.removeLastSnapshot();
+
+      // 2. Restore State
+      this.currentMonthExpenses.set(lastArchived.expenses);
+      this.incomeConfig.set(lastArchived.incomeConfig);
+      
+      this.settings.update(s => ({ ...s, lastActiveMonth: lastArchived.month }));
+      this.viewedMonth.set(lastArchived.month);
+
+      // 3. Remove from History
+      this.history.update(h => h.slice(0, -1));
+  }
+  
+  resetCurrentMonthItems() {
+       this.currentMonthExpenses.update(items => 
+          items.map(item => {
+              // Reset values but keep structure
+              return { 
+                  ...item, 
+                  amount: 0, 
+                  quantity: 1, 
+                  unitPrice: 0 
+              };
+          })
+       );
+  }
 }
+
 

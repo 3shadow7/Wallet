@@ -189,8 +189,20 @@ export class BudgetTableComponent {
           if (changes.amount !== undefined || changes.type === 'Saving') {
              // Only validate amount changes or type switches to saving (though type switch diff is usually 0)
              if (currentFreeMoney - diff < 0) {
-                alert(`Insufficient funds. Available: $${currentFreeMoney.toFixed(2)}`);
-                return false; 
+                const deficit = Math.abs(currentFreeMoney - diff);
+                const msg = `⚠️ Over Budget Warning\n\n` + 
+                            `This change exceeds your available free money by $${deficit.toFixed(2)}.\n` + 
+                            `You only have $${currentFreeMoney.toFixed(2)} available.\n\n` +
+                            `If you proceed:\n` + 
+                            `1. Your savings plan will be marked as "Partially Funded".\n` + 
+                            `2. You will see a warning indicator.\n` + 
+                            `3. This amount will be deducted from your total planned savings.\n\n` + 
+                            `Do you want to proceed anyway?`;
+                
+                if (!confirm(msg)) {
+                    return false; // User rejected
+                }
+                // User accepted, proceed (returns true at end)
              }
           }
       }
@@ -198,6 +210,18 @@ export class BudgetTableComponent {
       const updated = { ...item, ...changes };
       this.budgetState.updateExpense(item.id, updated);
       return true;
+  }
+
+  // Toggle Ignore Status
+  toggleIgnore(id: string, currentlyIgnored: boolean) {
+      if (currentlyIgnored) {
+          // Re-activating: Might trigger budget validation if it's a Saving item?
+          // For now, simple toggle.
+          this.budgetState.updateExpense(id, { isIgnored: false });
+      } else {
+          // Ignoring
+          this.budgetState.updateExpense(id, { isIgnored: true });
+      }
   }
 
   // Grid Config
@@ -322,19 +346,50 @@ export class BudgetTableComponent {
       editable: true,
       cellStyle: { 'font-weight': '500' }
     },
+
     {
       headerName: '',
       field: 'id',
       editable: false,
       sortable: false,
       filter: false,
-      width: 70,
+      width: 100, // Slightly wider for 2 buttons
       flex: 0,
       cellClass: 'action-cell',
       cellRenderer: (params: ICellRendererParams) => {
-        return '<button class="delete-btn" data-action="delete" title="Delete">🗑️</button>';
+        const item = params.data;
+        if (!item) return '';
+        
+        const canIgnore = item.type === 'Saving' || item.type === 'Responsibility';
+        let ignoreBtn = '';
+        
+        if (canIgnore) {
+            const isIgnored = item.isIgnored;
+            // SVGs for visual clarity
+            const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z"/></svg>`;
+            const eyeSlash = `<svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T702-576l-84-86q39-16 80-25t82-9q146 0 266 81.5T920-500q-26 65-67 117t-91 87ZM240-84l-52-52 116-116q-19-14-36.5-30.5T234-318q-72-46-126-107T40-500q54-137 174-218.5T480-800q77 0 148 23t135 65l65-64 52 52-640 640ZM480-200q-70 0-134-21.5T226-282q-13-10-25-21t-23-23q51 45 111 75.5T480-200Zm112-256-42-42q-3 6-4.5 12.5T544-474q-5-38-31-64t-65-30q-7 0-13 1.5t-13 4.5l-42-42q22-12 47-18t53-6q75 0 127.5 52.5T660-500q0 28-6 53t-18 47q-9-19-21-36.5T592-456Z"/></svg>`;
+            
+            // Logic: 
+            // If Ignored (isIgnored=true) -> State is "Hidden". Action is "Show". Icon: Eye Slash (Grayed out)
+            // If Active (isIgnored=false) -> State is "Visible". Action is "Hide". Icon: Eye Open (Normal)
+            
+            const icon = isIgnored ? eyeSlash : eyeOpen;
+            const title = isIgnored ? 'Ignored (Click to Include)' : 'Active (Click to Ignore)';
+            const activeClass = isIgnored ? 'ignored-btn' : 'active-btn';
+            
+            ignoreBtn = `<button class="action-btn toggle-ignore-btn ${activeClass}" data-action="toggle-ignore" title="${title}">
+                           ${icon}
+                         </button>`;
+        }
+
+        return `<div style="display: flex; gap: 8px; justify-content: flex-end;">
+                  ${ignoreBtn}
+                  <button class="action-btn delete-btn" data-action="delete" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                  </button>
+                </div>`;
       },
-      cellStyle: { 'display': 'flex', 'justify-content': 'center', 'align-items': 'center' }
+      cellStyle: { 'display': 'flex', 'justify-content': 'flex-end', 'align-items': 'center', 'padding-right': '10px' }
     }
   ];
 
@@ -353,8 +408,10 @@ export class BudgetTableComponent {
     rowClassRules: {
         'row-saving-deficit': (params) => {
             // Must use arrow function to access 'this'
-            return params.data && params.data.type === 'Saving' && this.savingsStatus().hasDeficit;
-        }
+            // Ignored items should NOT show deficit warning
+            return params.data && !params.data.isIgnored && params.data.type === 'Saving' && this.savingsStatus().hasDeficit;
+        },
+        'row-ignored': (params) => params.data && params.data.isIgnored
     }
   };
 
@@ -362,6 +419,11 @@ export class BudgetTableComponent {
     const updatedExpense: ExpenseItem = event.data;
     if (!updatedExpense) return;
 
+    // ... (rest of logic) ...
+    // Update validation to check for ignore status
+    // If ignored, skip validation? 
+    // Usually user edits ACTIVE items. If ignored, editing amount should filter through updateItem anyway.
+  
     const field = event.colDef.field;
 
     // Handle Quantity Change special logic
@@ -382,6 +444,12 @@ export class BudgetTableComponent {
         if (event.node) {
            event.api.refreshCells({ rowNodes: [event.node], columns: ['amount'] });
         }
+        return;
+    }
+    
+    // IMPORTANT: If item is IGNORED, we skip validation logic because it doesn't affect budget
+    if (updatedExpense.isIgnored) {
+        this.budgetState.updateExpense(updatedExpense.id, updatedExpense);
         return;
     }
 
@@ -410,15 +478,25 @@ export class BudgetTableComponent {
         
         // Check if projected free money < 0
         if (currentFreeMoney - diff < 0) {
-            alert(`Insufficient funds for this savings amount. You only have $${currentFreeMoney.toFixed(2)} available.`);
+             const deficit = Math.abs(currentFreeMoney - diff);
+             const msg = `⚠️ Over Budget Warning\n\n` + 
+                            `This change exceeds your available free money by $${deficit.toFixed(2)}.\n` + 
+                            `You only have $${currentFreeMoney.toFixed(2)} available.\n\n` +
+                            `If you proceed:\n` + 
+                            `1. Your savings plan will be marked as "Partially Funded".\n` + 
+                            `2. You will see a warning indicator.\n` + 
+                            `3. This amount will be deducted from your total planned savings.\n\n` + 
+                            `Do you want to proceed anyway?`;
             
-            // Revert changes in local object
-            if (field === 'amount') updatedExpense.amount = Number(event.oldValue);
-            if (field === 'type') updatedExpense.type = event.oldValue;
+            if (!confirm(msg)) {
+                 // Revert changes in local object
+                if (field === 'amount') updatedExpense.amount = Number(event.oldValue);
+                if (field === 'type') updatedExpense.type = event.oldValue;
 
-            // Force grid refresh to show reverted values
-            event.api.applyTransaction({ update: [updatedExpense] });
-            return;
+                // Force grid refresh to show reverted values
+                event.api.applyTransaction({ update: [updatedExpense] });
+                return;
+            }
         }
     }
 
@@ -427,10 +505,15 @@ export class BudgetTableComponent {
 
   onCellClicked(event: CellClickedEvent) {
     const target = event.event?.target as HTMLElement;
-    if (target && target.getAttribute('data-action') === 'delete') {
+    const action = target?.getAttribute?.('data-action') || target?.parentElement?.getAttribute?.('data-action'); 
+    
+    if (action === 'delete') {
       if (confirm(`Delete expense "${event.data.name}"?`)) {
         this.budgetState.removeExpense(event.data.id);
       }
+    } else if (action === 'toggle-ignore') {
+        const item = event.data as ExpenseItem;
+        this.toggleIgnore(item.id, !!item.isIgnored);
     }
   }
 
@@ -444,6 +527,22 @@ export class BudgetTableComponent {
     if (confirm('Start a new month? This will:\n1. Archive current month to history\n2. Advance date to next month\n3. Keep current expenses as template')) {
         this.budgetState.archiveAndResetMonth();
     }
+  }
+
+  isFutureMonth(): boolean {
+      return this.budgetState.isFutureMonth();
+  }
+
+  canRevertMonth(): boolean {
+      return this.budgetState.canRevertMonth();
+  }
+
+  async revertMonth() {
+      if (this.canRevertMonth()) {
+          if (confirm(`Are you sure you want to DELETE ${this.viewedMonth()} and revert to the previous month? This cannot be undone.`)) {
+             this.budgetState.revertToPreviousMonth();
+          }
+      }
   }
   
   // Navigation

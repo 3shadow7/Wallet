@@ -575,6 +575,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       if (this.breakdownChartEl) {
         this.bChart = new ApexCharts(this.breakdownChartEl.nativeElement, options);
         this.bChart.render();
+        // Initialize data immediately
+        this.updateBreakdownChart();
       }
   }
 

@@ -93,11 +93,18 @@
       font-size: 1.1rem;
       color: var(--text-secondary);
 
-      &:hover {
+      &.delete-btn:hover {
         opacity: 1;
         background: color-mix(in srgb, var(--danger-color) 10%, transparent);
         transform: scale(1.1);
         color: var(--danger-color);
+      }
+
+      &.ignore-btn:hover {
+          opacity: 1;
+          background: color-mix(in srgb, var(--success-color) 10%, transparent);
+          transform: scale(1.1);
+          color: var(--success-color);
       }
     }
   }

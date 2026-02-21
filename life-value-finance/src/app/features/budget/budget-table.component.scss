@@ -13,147 +13,162 @@
   height: 100%;
 }
 
-.month-nav, .month-nav-mobile {
+.month-nav,
+.month-nav-mobile {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 1rem;
+  background: v.$surface-color; // Cleaner background
+  padding: 0.125rem;
+  border-radius: v.$radius-md;
+  border: 1px solid v.$border-color; // Subtler border
+  box-shadow: v.$shadow-sm; // Add subtle lift
+
+  button.nav-btn {
+    background: transparent;
+    border: 1px solid transparent; // ready for hover
+    width: 28px;
+    height: 28px;
+    border-radius: v.$radius-sm; // Rounded square instead of circle
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    margin: 0 1rem;
-    background: v.$surface-color; // Cleaner background
-    padding: 0.125rem;
-    border-radius: v.$radius-md;
-    border: 1px solid v.$border-color; // Subtler border
-    box-shadow: v.$shadow-sm; // Add subtle lift
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    color: v.$text-secondary;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    button.nav-btn {
-        background: transparent;
-        border: 1px solid transparent; // ready for hover
-        width: 28px;
-        height: 28px;
-        border-radius: v.$radius-sm; // Rounded square instead of circle
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        padding: 0;
-        color: v.$text-secondary;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        
-        &:hover:not(:disabled) {
-            background: color-mix(in srgb, var(--primary-color), transparent 85%);
-            color: v.$primary-color;
-            border-color: transparent;
-        }
-
-        &:active:not(:disabled) {
-            background: v.$primary-color;
-            color: white;
-            transform: scale(0.95);
-        }
-        
-        &:disabled {
-            opacity: 0.2;
-            cursor: not-allowed;
-        }
-
-        svg {
-          fill: currentColor; // Ensure SVG takes the text color
-          opacity: 1;
-        }
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--primary-color), transparent 85%);
+      color: v.$primary-color;
+      border-color: transparent;
     }
 
-    .active-month {
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: v.$text-primary;
-        min-width: 110px;
-        text-align: center;
-        padding: 0 0.5rem;
-        user-select: none;
+    &:active:not(:disabled) {
+      background: v.$primary-color;
+      color: white;
+      transform: scale(0.95);
     }
+
+    &:disabled {
+      opacity: 0.2;
+      cursor: not-allowed;
+    }
+
+    svg {
+      fill: currentColor; // Ensure SVG takes the text color
+      opacity: 1;
+    }
+  }
+
+  .active-month {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: v.$text-primary;
+    min-width: 110px;
+    text-align: center;
+    padding: 0 0.5rem;
+    user-select: none;
+  }
 }
 
 
 .title-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    
-    h3 { margin: 0; }
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  h3 {
+    margin: 0;
+  }
 }
 
-.history-badge, .history-badge-mobile {
-    background: #f59e0b;
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
+.history-badge,
+.history-badge-mobile {
+  background: #f59e0b;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.history-badge-mobile {
+  margin-right: 0.75rem;
 }
 
 // Grid styles overrides
 .row-saving-deficit {
-        background-color: color-mix(in srgb, var(--danger-color), transparent 92%) !important;
-        
-        .ag-cell {
-            color: var(--danger-color) !important;
-            font-weight: 500;
-        }
+  background-color: color-mix(in srgb, var(--danger-color), transparent 92%) !important;
 
-        // Keep action buttons visible
-        button {
-            opacity: 1;
-        }
-    }
+  .ag-cell {
+    color: var(--danger-color) !important;
+    font-weight: 500;
+  }
+
+  // Keep action buttons visible
+  button {
+    opacity: 1;
+  }
+}
 
 
 .savings-alert {
-    background-color: var(--danger-color);
-    background: linear-gradient(90deg, 
-        color-mix(in srgb, var(--danger-color), transparent 85%) 0%, 
-        color-mix(in srgb, var(--bg-card), transparent 10%) 100%
-    );
-    border-left: 4px solid var(--danger-color);
-    border-radius: 8px;
-    padding: 1rem 1.5rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+  background-color: var(--danger-color);
+  background: linear-gradient(90deg,
+      color-mix(in srgb, var(--danger-color), transparent 85%) 0%,
+      color-mix(in srgb, var(--bg-card), transparent 10%) 100%);
+  border-left: 4px solid var(--danger-color);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.05);
+
+  .alert-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .alert-content {
+    flex: 1;
+  }
+
+  h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--danger-color);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    opacity: 0.9;
+  }
+
+  &.mobile-alert {
+    margin: 0.5rem 0;
+    padding: 0.75rem 1rem;
 
     .alert-icon {
-        font-size: 1.5rem;
-        line-height: 1;
-    }
-
-    .alert-content {
-        flex: 1;
+      font-size: 1.25rem;
     }
 
     h4 {
-        margin: 0 0 0.25rem 0;
-        color: var(--danger-color);
-        font-size: 1rem;
-        font-weight: 600;
+      font-size: 0.95rem;
     }
 
     p {
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.5;
-        color: var(--text-primary);
-        opacity: 0.9;
+      font-size: 0.85rem;
     }
-
-    &.mobile-alert {
-        margin: 0.5rem 0;
-        padding: 0.75rem 1rem;
-        
-        .alert-icon { font-size: 1.25rem; }
-        h4 { font-size: 0.95rem; }
-        p { font-size: 0.85rem; }
-    }
+  }
 }
 
 // Grid Card (Main Table)
@@ -181,14 +196,14 @@
 
     // History Mode Styling
     &.history-header {
-        background: linear-gradient(to right, #fffbeb, #fff7ed); // Amber-50 to Orange-50 (Warm tint)
-        border-bottom-color: #fdd8a8; // Amber-200
-        
-        // In dark mode this needs to be handled? Using transparency might be safest if I can't detect dark mode easily in SCSS without a class.
-        // Assuming dark mode applies to :root or body. 
-        // Let's use a subtle rgba overlay instead to support dark mode naturally.
-        background: rgba(245, 158, 11, 0.08); // Warning color with low opacity
-        border-bottom-color: rgba(245, 158, 11, 0.2);
+      background: linear-gradient(to right, #fffbeb, #fff7ed); // Amber-50 to Orange-50 (Warm tint)
+      border-bottom-color: #fdd8a8; // Amber-200
+
+      // In dark mode this needs to be handled? Using transparency might be safest if I can't detect dark mode easily in SCSS without a class.
+      // Assuming dark mode applies to :root or body. 
+      // Let's use a subtle rgba overlay instead to support dark mode naturally.
+      background: rgba(245, 158, 11, 0.08); // Warning color with low opacity
+      border-bottom-color: rgba(245, 158, 11, 0.2);
     }
 
     .header-content {
@@ -197,26 +212,58 @@
       align-items: center;
       flex: 1;
     }
-
-    button.btn-archive {
-      background: transparent;
-      border: 0.0625rem solid v.$border-color;
-      border-radius: v.$radius-sm;
-      padding: 0.375rem 0.75rem;
+    
+    .header-actions {
       margin-left: auto;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: v.$text-secondary;
-      cursor: pointer;
       display: flex;
+      gap: 0.5rem;
       align-items: center;
-      gap: 0.375rem;
-      transition: all 0.2s ease, border-color 2s ease-in-out;
 
-      &:hover {
-        background: v.$bg-input;
-        color: v.$primary-color;
-        border-color: v.$primary-color;
+      button {
+        background: transparent;
+        border: 0.0625rem solid v.$border-color;
+        border-radius: v.$radius-sm;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        transition: all 0.2s ease;
+        
+        &.btn-archive {
+            color: v.$text-secondary;
+            &:hover {
+                background: v.$bg-input;
+                color: v.$primary-color;
+                border-color: v.$primary-color;
+            }
+        }
+
+        &.btn-revert {
+            color: v.$error-color;
+            border-color: var(--border-subtle);
+            background: rgba(var(--danger-color), 0.05);
+
+            &:hover {
+                background: v.$error-color;
+                color: white;
+                border-color: v.$error-color;
+            }
+        }
+
+        &.btn-reset {
+            color: #d97706; // Amber-600
+            border-color: var(--border-subtle);
+            background: rgba(245, 158, 11, 0.05);
+
+            &:hover {
+                background: #f59e0b;
+                color: white;
+                border-color: #f59e0b;
+            }
+        }
       }
     }
 
@@ -277,51 +324,150 @@
     transition: all 0.3s ease;
 
     &.history-header {
-        background: rgba(245, 158, 11, 0.08); // Warning/Amber tint
-        padding: 0.75rem;
-        border-radius: v.$radius-md;
-        border: 1px solid rgba(245, 158, 11, 0.2);
-    }
-    
-    .header-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        
-        h3 {
-          margin: 0;
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: v.$text-primary;
-        }
-
-        .month-nav-mobile {
-            // Revert to shared styles for consistency
-            // but ensure margin/padding fits
-            margin-left: auto; // Push to right
-            
-            // Allow slightly larger touch targets
-            .nav-btn { width: 32px; height: 32px; }
-            .active-month { font-size: 0.9rem; min-width: 90px; }
-        }
-    }
-
-    button.btn-archive-mobile {
-      width: 100%;
-      background: v.$surface-color;
-      border: 1px solid v.$border-color;
-      padding: 0.5rem;
+      background: rgba(245, 158, 11, 0.08); // Warning/Amber tint
+      padding: 0 0 0.75rem 0.75rem;
       border-radius: v.$radius-md;
-      font-size: 0.9rem;
-      color: v.$primary-color;
-      font-weight: 600;
-      box-shadow: v.$shadow-sm;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.5rem;
+      border: 1px solid rgba(245, 158, 11, 0.2);
     }
-  }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start; // Align to top
+
+      h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: v.$text-primary;
+        align-self: center; // Center title vertically relative to nav group
+      }
+
+      .mobile-nav-group {
+         display: flex;
+         flex-direction: column;
+         gap: 0;           // No gap, stick together
+         align-items: stretch;
+         margin-left: auto;
+         margin-top: 0.5rem;
+
+         .month-nav-mobile {
+            // Revert to shared styles for consistency
+            margin: 0; 
+            margin-right: 0.75rem; // Add right margin to separate from edge
+            border-bottom-left-radius: 0; // Top card style
+            border-bottom-right-radius: 0;
+            border-bottom: 1px solid v.$border-color; // Separator
+            z-index: 2; // Keep on top
+            
+            .nav-btn {
+              width: 32px;
+              height: 32px;
+            }
+
+            .active-month {
+              font-size: 0.9rem;
+              min-width: 90px;
+            }
+         }
+
+          .btn-delete-month-full {
+             width: 100%;
+             padding: 0.25rem; // Small height
+             font-size: 0.7rem;
+             font-weight: 600;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             gap: 0.3rem;
+             
+             // Use color-mix for automatic dark mode support
+             background: color-mix(in srgb, var(--danger-color), transparent 90%);
+             color: var(--danger-color);
+             
+             // Bottom Card Style
+             border: 1px solid v.$border-color; // Match desktop card border
+             border-top: none; // Connect to top
+             border-radius: 0 0 v.$radius-md v.$radius-md;
+             margin-top: 0;
+             
+             transition: all 0.2s ease , border-color 2s ease-in-out ;
+             cursor: pointer;
+             z-index: 1;
+             
+             &:hover {
+                 background: color-mix(in srgb, var(--danger-color), transparent 80%);
+                 color: var(--danger-color);
+             }
+
+             svg {
+                 width: 14px; // Smaller icon
+                 height: 14px;
+             }
+         }
+      }
+    }
+
+    .mobile-header-actions {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        
+        .btn-archive-mobile {
+          flex: 1;
+          background: v.$surface-color;
+          color: v.$primary-color;
+          border: 1px solid var(--border-subtle);
+          border-radius: v.$radius-md;
+          padding: 0.75rem;
+          font-size: 0.95rem;
+          font-weight: 600;
+          text-align: center;
+          cursor: pointer;
+          box-shadow: v.$shadow-sm; // Add lift
+          
+          &:active {
+            transform: scale(0.98);
+          }
+        }
+        
+        .btn-revert-mobile {
+          width: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(var(--danger-color), 0.1);
+          color: v.$error-color;
+          border: 1px solid rgba(var(--danger-color), 0.2);
+          border-radius: v.$radius-md;
+          cursor: pointer;
+          
+          &:active {
+            background: rgba(var(--danger-color), 0.2);
+          }
+        }
+
+        .btn-reset-mobile {
+          width: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(245, 158, 11, 0.1); // Amber
+          color: #d97706;
+          border: 1px solid rgba(245, 158, 11, 0.2);
+          border-radius: v.$radius-md;
+          cursor: pointer;
+
+          &:active {
+             background: rgba(245, 158, 11, 0.2);
+          }
+        }
+    }
+  } // Close .mobile-header
+
+    
+    // Legacy button removal
+    // button.btn-archive-mobile { ... replaced by .mobile-header-actions .btn-archive-mobile }
 
   .mobile-filters {
     display: flex;
@@ -354,23 +500,23 @@
       background: v.$surface-color;
       border-radius: v.$radius-lg;
       border: 1px dashed v.$border-color;
-      
+
       .empty-icon {
-          font-size: 2.5rem;
-          margin-bottom: 0.5rem;
-          opacity: 0.7;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.7;
       }
-      
+
       h4 {
-          margin: 0 0 0.5rem 0;
-          color: v.$text-primary;
-          font-weight: 600;
+        margin: 0 0 0.5rem 0;
+        color: v.$text-primary;
+        font-weight: 600;
       }
-      
+
       p {
-          margin: 0;
-          color: v.$text-secondary;
-          font-size: 0.9rem;
+        margin: 0;
+        color: v.$text-secondary;
+        font-size: 0.9rem;
       }
     }
 
@@ -386,7 +532,6 @@
 
   .budget-card {
     @include m.card-style;
-    border: 2px dashed rgba(0, 0, 0, 0.4) !important; // Darker dashed border
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
@@ -395,57 +540,55 @@
     flex-shrink: 0; // Don't shrink in scroll container
     box-shadow: none !important; // Remove shadow to emphasize border style
     background: v.$surface-color;
-    transition: transform 0.2s;
+    transition: transform 0.2s ease, border-color 2s ease-in-out;
 
     // Dark mode adj
-    @media (prefers-color-scheme: dark) {
+    @media (prefers-color-scheme: light) {
       border-color: rgba(255, 255, 255, 0.3) !important;
     }
 
     &.unfunded-savings {
-      border: 2px solid var(--warning-color) !important; 
+      border: 2px solid var(--warning-color) !important;
       border-style: solid !important;
       // Using a subtle gradient to indicate "not quite full"
-      background: linear-gradient(180deg, 
-          color-mix(in srgb, var(--warning-color), transparent 96%) 0%, 
-          transparent 50%
-      );
+      background: linear-gradient(180deg,
+          color-mix(in srgb, var(--warning-color), transparent 96%) 0%,
+          transparent 50%);
       overflow: hidden;
 
       .card-warning-stripe {
-          background-color: var(--warning-color);
-          color: #fff;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-align: center;
-          padding: 2px 0;
-          border-radius: 0.625rem;
-          margin: unset; 
-          letter-spacing: 0.5px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        background-color: var(--warning-color);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        padding: 2px 0;
+        border-radius: 0.625rem;
+        margin: unset;
+        letter-spacing: 0.5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
     }
 
     &.unfunded-savings {
       border: 2px solid var(--warning-color) !important; // Solid warning border
       border-style: solid !important;
-      background: linear-gradient(180deg, 
-          color-mix(in srgb, var(--warning-color), transparent 96%) 0%, 
-          v.$surface-color 40%
-      );
+      background: linear-gradient(180deg,
+          color-mix(in srgb, var(--warning-color), transparent 96%) 0%,
+          v.$surface-color 40%);
       overflow: visible;
 
       .card-warning-stripe {
-          background-color: var(--warning-color);
-          color: #fff;
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-align: center;
-          padding: 2px 0;
-          border-radius: 0.625rem;
-          margin: unset; 
-          letter-spacing: 0.5px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        background-color: var(--warning-color);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        padding: 2px 0;
+        border-radius: 0.625rem;
+        margin: unset;
+        letter-spacing: 0.5px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
     }
 
@@ -500,39 +643,39 @@
           .qty-wrapper {
             display: flex;
             align-items: center;
-            margin-right: 6px;
-            padding-right: 6px;
-            border-right: 1px solid rgba(var(--text-primary-hue), 0.2);
-            
+            padding-right: 0rem;
+            margin-right: 0.5rem;
+            border-right: 1px dashed var(--border-focus);
+
             span {
-                font-size: 0.8rem;
-                font-weight: 600;
-                color: v.$text-secondary;
-                margin-right: 2px;
+              font-size: 0.8rem;
+              font-weight: 600;
+              color: v.$text-secondary;
+              margin-right: 2px;
             }
 
             .qty-input {
-                width: 24px;
-                text-align: center;
-                border: none;
-                background: transparent;
-                font-weight: 600;
-                font-size: 0.9rem;
-                color: v.$text-primary;
-                padding: 0;
-                
-                &:focus {
-                    outline: none;
-                    background: rgba(0,0,0,0.05);
-                    border-radius: 4px;
-                }
-                
-                /* Hide spinners */
-                &::-webkit-inner-spin-button, 
-                &::-webkit-outer-spin-button { 
-                  -webkit-appearance: none; 
-                  margin: 0; 
-                }
+              width: 24px;
+              text-align: center;
+              border: none;
+              background: transparent;
+              font-weight: 600;
+              font-size: 0.9rem;
+              color: v.$text-primary;
+              padding: 0;
+
+              &:focus {
+                outline: none;
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 4px;
+              }
+
+              /* Hide spinners */
+              &::-webkit-inner-spin-button,
+              &::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+              }
             }
           }
 
@@ -667,22 +810,127 @@
         }
       }
 
-      .btn-delete-mobile {
-        padding: 0.4rem;
-        border: none;
-        background: rgba(var(--danger-color), 0.1);
-        border-radius: 50%;
-        width: 2rem;
-        height: 2rem;
+      .mobile-actions {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: background 0.2s;
+        gap: 0.5rem;
 
-        &:active {
-          background: rgba(var(--danger-color), 0.2);
+        button {
+          padding: 0.4rem;
+          border: none;
+          border-radius: 50%;
+          width: 2rem;
+          height: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.2s;
+          font-size: 1rem;
         }
+
+        .btn-ignore-mobile {
+          background: v.$bg-input;
+          color: v.$text-secondary;
+          border: 1px solid var(--border-subtle);
+
+          // Default (Active State - Click to Ignore)
+          &.active-btn {
+            &:hover {
+              color: v.$error-color; // Red on hover to indicate "Disable/Ignore"
+              background: rgba(var(--danger-color), 0.05);
+              border-color: v.$error-color;
+            }
+          }
+
+          // Ignored State - Click to Activate
+          &.ignored-btn {
+            background: v.$surface-color; // Pop out
+            color: v.$text-secondary;
+            border-style: dashed;
+
+            &:hover {
+              color: v.$success-color; // Green on hover to indicate "Restore"
+              background: rgba(var(--success-color), 0.1);
+              border: 1px solid v.$success-color;
+            }
+          }
+        }
+
+        .btn-delete-mobile {
+          background: rgba(var(--danger-color), 0.1);
+          color: v.$error-color;
+
+          &:active {
+            background: rgba(var(--danger-color), 0.2);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Global Grid Class for Ignored Rows (added via rowClassRules)
+.ag-row.row-ignored {
+  opacity: 0.65;
+  background-color: v.$bg-color !important;
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.03) 10px,
+      rgba(0, 0, 0, 0.03) 20px); // Subtle stripes
+
+  .ag-cell {
+    color: v.$text-secondary !important;
+    text-decoration: line-through; // Cross out text
+  }
+
+  // Keep action cell interactable and clear
+  .action-cell {
+    text-decoration: none !important; // Don't cross out button
+    opacity: 1 !important;
+
+    button {
+      pointer-events: auto; // Ensure clickable
+      opacity: 1 !important;
+      filter: grayscale(0) !important; // Keep color
+    }
+  }
+}
+
+// Ignored Card Style (Mobile)
+.budget-card.ignored-card {
+  opacity: 0.65;
+  background-color: var(--bg-app) !important;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.06) 10px, rgba(0, 0, 0, 0.06) 20px);
+  border: 1px dashed v.$text-secondary !important;
+  box-shadow: none;
+
+  .card-row {
+    filter: grayscale(1);
+    opacity: 0.6;
+    pointer-events: none; // Disable editing inputs
+    text-decoration: line-through;
+  }
+
+  .card-footer {
+    // Keep buttons interactive
+    pointer-events: auto;
+    opacity: 1;
+    border-top: 1px dashed var(--border-subtle);
+
+    // Hide select group
+    .mobile-select-group {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    // Ensure actions are visible
+    .mobile-actions {
+      opacity: 1;
+      filter: none;
+
+      button {
+        pointer-events: auto;
       }
     }
   }

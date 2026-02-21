@@ -115,4 +115,24 @@ export class SavingsService {
     localStorage.setItem(STORAGE_KEY_SAVINGS, this.totalSavings().toString());
     localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(this.history()));
   }
+
+  // --- REVERT LOGIC ---
+  removeLastSnapshot(): MonthlyRecord | null {
+      const records = this.history();
+      if (records.length === 0) return null;
+
+      const lastRecord = records[records.length - 1];
+      
+      // Revert the total savings calculation
+      // Logic: newTotal = oldTotal + transferredToSavings
+      // So: oldTotal = newTotal - transferredToSavings
+      const revertedTotal = this.totalSavings() - lastRecord.transferredToSavings;
+      
+      this.totalSavings.set(revertedTotal);
+      this.history.update(h => h.slice(0, -1)); // Remove last
+      this.saveState();
+      
+      return lastRecord;
+  }
 }
+
