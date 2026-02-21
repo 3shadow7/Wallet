@@ -36,6 +36,9 @@ export class BudgetTableComponent {
   // Signals
   expenses = this.budgetState.expensesSignal;
   totalExpenses = this.budgetState.totalExpenses;
+  viewedMonth = this.budgetState.viewedMonthSignal;
+  activeMonth = computed(() => this.budgetState.settingsSignal().lastActiveMonth);
+  isCurrentMonth = computed(() => this.viewedMonth() === this.activeMonth());
 
   // Mobile Filters
   filterPriority = signal<string>('');
@@ -107,6 +110,28 @@ export class BudgetTableComponent {
           return;
       }
       this.updateItem(item, { name: newName });
+  }
+
+  onMobileQuantityChange(item: ExpenseItem, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const newQty = Number(input.value);
+    
+    if (isNaN(newQty) || newQty < 1) {
+        input.value = String(item.quantity || 1); // Reset
+        return;
+    }
+    
+    // We update item with new quantity. BudgetStateService handles Amount recalculation.
+    // However, updateItem validation relies on 'amount' being correct.
+    // We should pre-calculate the new amount for validation purposes.
+    const projectedAmount = (item.unitPrice || item.amount) * newQty;
+    
+    // Pass both quantity and the projected amount for validation
+    // The service will recalculate precise amount anyway, but validation uses this.
+    const success = this.updateItem(item, { quantity: newQty, amount: projectedAmount });
+    if (!success) {
+        input.value = String(item.quantity || 1);
+    }
   }
 
   updateItemPriority(item: ExpenseItem, newPriority: string) {
@@ -273,6 +298,16 @@ export class BudgetTableComponent {
         ">${warningHtml}${val}</span>`;
       }
     },
+    {
+      field: 'quantity',
+      headerName: 'Qty',
+      type: 'numericColumn',
+      width: 70,
+      flex: 0,
+      editable: true,
+      valueParser: (params) => Number(params.newValue) || 1,
+      cellStyle: { 'font-weight': '500' }
+    },
     { 
       field: 'amount', 
       headerName: 'Cost ($)', 
@@ -328,10 +363,36 @@ export class BudgetTableComponent {
     if (!updatedExpense) return;
 
     const field = event.colDef.field;
-    if (field !== 'amount' && field !== 'type') {
-        // Just update directly if not amount/type
-        this.budgetState.updateExpense(updatedExpense.id, updatedExpense);
+
+    // Handle Quantity Change special logic
+    if (field === 'quantity') {
+        const qty = Number(updatedExpense.quantity) || 1;
+        const unitPrice = updatedExpense.unitPrice || (updatedExpense.amount / (Number(event.oldValue) || 1));
+        const newAmount = unitPrice * qty;
+        
+        // Update local object to reflect in UI immediately (if grid doesn't auto-refresh)
+        updatedExpense.quantity = qty;
+        updatedExpense.amount = newAmount;
+        updatedExpense.unitPrice = unitPrice;
+        
+        // Update State
+        this.budgetState.updateExpense(updatedExpense.id, { quantity: qty });
+        
+        // Force refresh of the 'amount' cell
+        if (event.node) {
+           event.api.refreshCells({ rowNodes: [event.node], columns: ['amount'] });
+        }
         return;
+    }
+
+    if (field === 'amount') {
+         const newAmount = Number(updatedExpense.amount);
+         const qty = updatedExpense.quantity || 1;
+         // Recalculate Unit Price based on new Total
+         const newUnitPrice = newAmount / qty;
+         
+         updatedExpense.unitPrice = newUnitPrice;
+         // Proceed to validation...
     }
 
     const newAmount = Number(updatedExpense.amount);
@@ -380,8 +441,17 @@ export class BudgetTableComponent {
   }
 
   startNewMonth() {
-    if (confirm('Start a new month? This will:\n1. Archive current month to history\n2. Clear variable expenses\n3. Keep fixed expenses')) {
+    if (confirm('Start a new month? This will:\n1. Archive current month to history\n2. Advance date to next month\n3. Keep current expenses as template')) {
         this.budgetState.archiveAndResetMonth();
     }
+  }
+  
+  // Navigation
+  prevMonth() {
+      this.budgetState.viewPreviousMonth();
+  }
+
+  nextMonth() {
+      this.budgetState.viewNextMonth();
   }
 }

@@ -3,14 +3,30 @@
 
   <!-- Grid Card (Desktop Only) -->
   <div class="grid-card desktop-view">
-    <div class="card-header">
+    <div class="card-header" [class.history-header]="!isCurrentMonth()">
       <div class="header-content">
-          <h3>Budget Breakdown</h3>
+          <div class="title-group">
+            <h3>Budget Breakdown</h3>
+            <div class="month-nav">
+              <button class="nav-btn" (click)="prevMonth()" title="Previous Month">
+                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
+              </button>
+              <span class="active-month">{{ viewedMonth() | date:'MMMM yyyy' }}</span>
+              <button class="nav-btn" (click)="nextMonth()" [disabled]="isCurrentMonth()" title="Next Month">
+                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
+              </button>
+            </div>
+          </div>
           <span class="row-count">{{ expenses().length }} Items</span>
+           @if (!isCurrentMonth()) {
+              <span class="history-badge">HISTORY</span>
+            }
       </div>
-      <button class="btn-archive" (click)="startNewMonth()" title="Archive current month and start new">
-        📅 Start New Month
-      </button>
+      @if (isCurrentMonth()) {
+        <button class="btn-archive" (click)="startNewMonth()" title="Archive current month and start new">
+          📅 Start New Month
+        </button>
+      }
     </div>
 
     <!-- Savings Warning Banner -->
@@ -49,11 +65,26 @@
 
   <!-- Mobile Card List View -->
   <div class="mobile-budget-list mobile-view">
-    <div class="mobile-header">
-        <h3>Budget Items ({{ filteredExpenses().length }})</h3>
-        <button class="btn-archive-mobile" (click)="startNewMonth()">
-            📅 New Month
-        </button>
+    <div class="mobile-header" [class.history-header]="!isCurrentMonth()">
+        <div class="header-top">
+            <h3>{{ filteredExpenses().length }} Items</h3>
+            <div class="month-nav-mobile">
+                <button class="nav-btn" (click)="prevMonth()" title="Previous Month">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
+                </button>
+                <span class="active-month">{{ viewedMonth() | date:'MMM yyyy' }}</span>
+                <button class="nav-btn" (click)="nextMonth()" [disabled]="isCurrentMonth()" title="Next Month">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
+                </button>
+            </div>
+        </div>
+        @if (isCurrentMonth()) {
+            <button class="btn-archive-mobile" (click)="startNewMonth()">
+                📅 New Month
+            </button>
+        } @else {
+            <div class="history-badge-mobile">HISTORY VIEW</div>
+        }
     </div>
 
     <!-- Savings Warning Banner (Mobile) -->
@@ -89,7 +120,15 @@
     </div>
 
     <div class="cards-scroll-container">
-    @for (item of filteredExpenses(); track item.id) {
+        @if (filteredExpenses().length === 0) {
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <h4>No Items found</h4>
+                <p>Start adding expenses to see them listed here.</p>
+            </div>
+        }
+
+        @for (item of filteredExpenses(); track item.id) {
         <div class="budget-card" [class.unfunded-savings]="savingsStatus().hasDeficit && item.type === 'Saving'">
             <!-- Show Warning on Savings Card -->
             @if (savingsStatus().hasDeficit && item.type === 'Saving') {
@@ -101,9 +140,19 @@
                     <input type="text" 
                         class="category-name-input" 
                         [value]="item.name" 
-                        (change)="onMobileNameChange(item, $event)">
+                        (change)="onMobileNameChange(item, $event)"
+                        placeholder="Item Name">
                     
                     <div class="amount-group">
+                        <div class="qty-wrapper">
+                            <span>x</span>
+                            <input type="number" 
+                                [value]="item.quantity || 1" 
+                                (change)="onMobileQuantityChange(item, $event)" 
+                                class="qty-input"
+                                min="1"
+                                title="Quantity">
+                        </div>
                         <span class="currency-symbol">$</span>
                         <input type="number" 
                             [value]="item.amount" 

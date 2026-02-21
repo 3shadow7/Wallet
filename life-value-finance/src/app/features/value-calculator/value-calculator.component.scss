@@ -286,17 +286,17 @@ h2 {
 
   // Make items slightly more visible on the colored background
   .result-item {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
     border: 0.0625rem solid rgba(255, 255, 255, 0.3);
   }
 
   .label {
-    color: color-mix(in srgb, var(--danger-color), black 20%);
+    color: color-mix(in srgb, var(--danger-color), black 0%);
     font-weight: 700;
   }
 
   .sub-text {
-    color: color-mix(in srgb, var(--danger-color), black 40%);
+    color: color-mix(in srgb, var(--danger-color), black 0%);
   }
 
   // Ensure feedback emoji box keeps its own distinct style

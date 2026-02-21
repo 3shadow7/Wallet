@@ -2,7 +2,7 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 const STORAGE_KEY = 'life_value_finance_data';
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2; // Incremented for new settings
 
 export interface AppStateData {
   version: number;
@@ -10,6 +10,7 @@ export interface AppStateData {
   expenses: any[];
   incomeConfig: any;
   history: any[]; // New history array
+  settings?: any; // New user settings
 }
 
 @Injectable({
@@ -27,7 +28,8 @@ export class PersistenceService {
         incomes: state.incomes || [],
         expenses: state.expenses || [],
         incomeConfig: state.incomeConfig || null,
-        history: state.history || []
+        history: state.history || [],
+        settings: state.settings || null
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (e) {

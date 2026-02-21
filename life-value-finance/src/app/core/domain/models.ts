@@ -6,6 +6,11 @@ export interface MonthlyIncome {
   frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly';
 }
 
+export interface UserSettings {
+  timezone: string;
+  lastActiveMonth: string; // "YYYY-MM"
+}
+
 export interface UserIncomeConfig {
   monthlyIncome: number;
   workHoursPerMonth?: number;
@@ -26,7 +31,9 @@ export interface ExpenseItem {
   id: string;
   category?: string;
   name: string;
-  amount: number;
+  amount: number; // Total Cost (Unit Price * Quantity)
+  unitPrice: number; // Base cost for one item
+  quantity: number; // Default 1
   type: 'Responsibility' | 'Burning' | 'Saving'; // Updated per user preference
   priority: PriorityLevel;
 }

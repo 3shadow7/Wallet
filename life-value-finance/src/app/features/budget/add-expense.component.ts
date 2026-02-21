@@ -48,6 +48,8 @@ export class AddExpenseComponent {
         name: val.name,
         // category is optional now
         amount: amount,
+        unitPrice: amount, // Default for single item
+        quantity: 1,       // Default for single item
         type: val.type,
         priority: val.priority
       };
