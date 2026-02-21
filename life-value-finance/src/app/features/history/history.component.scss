@@ -245,6 +245,50 @@ header h1 {
         height: 31.25rem;
     }
 }
+
+// Custom Legend Marker for "Budget Savings" (4th Series)
+:host ::ng-deep .Cash-Flow-Breakdown .apexcharts-legend-series:nth-child(4) .apexcharts-legend-marker {
+    background: transparent !important;
+    border: none !important;
+    position: relative !important;
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 0 !important;
+    
+    // Hide default SVG if present (from previous attempts or default rendering)
+    svg {
+        display: none !important;
+    }
+
+    // Top-Left Purple Triangle
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 12px 12px 0 0;
+        border-color: #8b5cf6 transparent transparent transparent;
+        z-index: 1;
+    }
+
+    // Bottom-Right Dark Triangle
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 0 12px 12px;
+        border-color: transparent transparent #1e293b transparent;
+        z-index: 1;
+    }
+}
+
 /* Mobile Responsive Styles */
 .desktop-view {
     display: block;
@@ -299,6 +343,37 @@ header h1 {
             background-color: var(--border-color);
             border-radius: 4px;
         }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1rem;
+            text-align: center;
+            background: v.$surface-color;
+            border-radius: v.$radius-lg;
+            border: 1px dashed v.$border-color;
+            margin-top: 1rem;
+
+            .empty-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+                opacity: 0.7;
+            }
+
+            h4 {
+                margin: 0 0 0.5rem 0;
+                color: v.$text-primary;
+                font-weight: 600;
+            }
+
+            p {
+                margin: 0;
+                color: v.$text-secondary;
+                font-size: 0.9rem;
+            }
+        }
     }
 
     .history-card {
@@ -312,7 +387,7 @@ header h1 {
         overflow: hidden;
 
         // Subtle gradient background for card
-        background: linear-gradient(135deg, v.$bg-color 0%, v.$surface-color 100%);
+        background: var(--bg-surface);
         border: 1px solid v.$border-color;
 
         .card-header {

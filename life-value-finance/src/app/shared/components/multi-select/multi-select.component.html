@@ -10,7 +10,20 @@
              [checked]="isSelected(option)" 
              (change)="onCheckboxChange(option, $event)">
       <span class="check-box"></span>
-      <span class="label-text">{{ option }}</span>
+      
+      <!-- Variant: Dot -->
+      <span class="color-dot" 
+            *ngIf="variant === 'dot' && getColor(option) !== 'transparent'" 
+            [style.background-color]="getColor(option)"></span>
+      
+      <!-- Variant: Badge -->
+      <span *ngIf="variant === 'badge' && getBadgeStyle(option)['background-color']"
+             [ngStyle]="getBadgeStyle(option)">
+          {{ option }}
+      </span>
+
+      <!-- Label Text (Hide if using badge since badge contains text) -->
+      <span class="label-text" *ngIf="variant !== 'badge'">{{ option }}</span>
     </label>
   </div>
 </div>

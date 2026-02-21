@@ -505,7 +505,11 @@ export class BudgetTableComponent {
 
   onCellClicked(event: CellClickedEvent) {
     const target = event.event?.target as HTMLElement;
-    const action = target?.getAttribute?.('data-action') || target?.parentElement?.getAttribute?.('data-action'); 
+    // Fix: Traverse up to find the button with data-action
+    const btn = target?.closest('button[data-action]');
+    if (!btn) return;
+    
+    const action = btn.getAttribute('data-action');
     
     if (action === 'delete') {
       if (confirm(`Delete expense "${event.data.name}"?`)) {

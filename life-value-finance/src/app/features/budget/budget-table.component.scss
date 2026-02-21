@@ -212,7 +212,7 @@
       align-items: center;
       flex: 1;
     }
-    
+
     .header-actions {
       margin-left: auto;
       display: flex;
@@ -231,38 +231,39 @@
         align-items: center;
         gap: 0.375rem;
         transition: all 0.2s ease;
-        
+
         &.btn-archive {
-            color: v.$text-secondary;
-            &:hover {
-                background: v.$bg-input;
-                color: v.$primary-color;
-                border-color: v.$primary-color;
-            }
+          color: v.$text-secondary;
+
+          &:hover {
+            background: v.$bg-input;
+            color: v.$primary-color;
+            border-color: v.$primary-color;
+          }
         }
 
         &.btn-revert {
-            color: v.$error-color;
-            border-color: var(--border-subtle);
-            background: rgba(var(--danger-color), 0.05);
+          color: v.$error-color;
+          border-color: var(--border-subtle);
+          background: rgba(var(--danger-color), 0.05);
 
-            &:hover {
-                background: v.$error-color;
-                color: white;
-                border-color: v.$error-color;
-            }
+          &:hover {
+            background: v.$error-color;
+            color: white;
+            border-color: v.$error-color;
+          }
         }
 
         &.btn-reset {
-            color: #d97706; // Amber-600
-            border-color: var(--border-subtle);
-            background: rgba(245, 158, 11, 0.05);
+          color: #d97706; // Amber-600
+          border-color: var(--border-subtle);
+          background: rgba(245, 158, 11, 0.05);
 
-            &:hover {
-                background: #f59e0b;
-                color: white;
-                border-color: #f59e0b;
-            }
+          &:hover {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+          }
         }
       }
     }
@@ -344,130 +345,132 @@
       }
 
       .mobile-nav-group {
-         display: flex;
-         flex-direction: column;
-         gap: 0;           // No gap, stick together
-         align-items: stretch;
-         margin-left: auto;
-         margin-top: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0; // No gap, stick together
+        align-items: stretch;
+        margin-left: auto;
+        margin-top: 0.5rem;
+        margin-right: 0.75rem; // Add right margin to separate from edge
 
-         .month-nav-mobile {
-            // Revert to shared styles for consistency
-            margin: 0; 
-            margin-right: 0.75rem; // Add right margin to separate from edge
-            border-bottom-left-radius: 0; // Top card style
-            border-bottom-right-radius: 0;
-            border-bottom: 1px solid v.$border-color; // Separator
-            z-index: 2; // Keep on top
-            
-            .nav-btn {
-              width: 32px;
-              height: 32px;
-            }
+        .month-nav-mobile {
+          // Revert to shared styles for consistency
+          margin: 0;
+          border-bottom-left-radius: 0; // Top card style
+          border-bottom-right-radius: 0;
+          border-bottom: 1px solid v.$border-color; // Separator
+          z-index: 2; // Keep on top
 
-            .active-month {
-              font-size: 0.9rem;
-              min-width: 90px;
-            }
-         }
+          .nav-btn {
+            width: 32px;
+            height: 32px;
+          }
 
-          .btn-delete-month-full {
-             width: 100%;
-             padding: 0.25rem; // Small height
-             font-size: 0.7rem;
-             font-weight: 600;
-             display: flex;
-             align-items: center;
-             justify-content: center;
-             gap: 0.3rem;
-             
-             // Use color-mix for automatic dark mode support
-             background: color-mix(in srgb, var(--danger-color), transparent 90%);
-             color: var(--danger-color);
-             
-             // Bottom Card Style
-             border: 1px solid v.$border-color; // Match desktop card border
-             border-top: none; // Connect to top
-             border-radius: 0 0 v.$radius-md v.$radius-md;
-             margin-top: 0;
-             
-             transition: all 0.2s ease , border-color 2s ease-in-out ;
-             cursor: pointer;
-             z-index: 1;
-             
-             &:hover {
-                 background: color-mix(in srgb, var(--danger-color), transparent 80%);
-                 color: var(--danger-color);
-             }
+          .active-month {
+            font-size: 0.9rem;
+            min-width: 90px;
+          }
+        }
 
-             svg {
-                 width: 14px; // Smaller icon
-                 height: 14px;
-             }
-         }
+        .btn-delete-month-full {
+          width: 100%;
+          padding: 0.25rem; // Small height
+          font-size: 0.7rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.3rem;
+
+          // Use color-mix for automatic dark mode support
+          background: color-mix(in srgb, var(--danger-color), transparent 90%);
+          color: var(--danger-color);
+
+          // Bottom Card Style
+          border: 1px solid v.$border-color; // Match desktop card border
+          border-top: none; // Connect to top
+          border-radius: 0 0 v.$radius-md v.$radius-md;
+          margin-top: 0;
+
+          transition: all 0.2s ease, border-color 2s ease-in-out;
+          cursor: pointer;
+          z-index: 1;
+
+          &:hover {
+            background: color-mix(in srgb, var(--danger-color), transparent 80%);
+            color: var(--danger-color);
+          }
+
+          svg {
+            width: 14px; // Smaller icon
+            height: 14px;
+          }
+        }
       }
     }
 
     .mobile-header-actions {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+
+      .btn-archive-mobile {
+        flex: 1;
+        background: v.$surface-color;
+        color: v.$primary-color;
+        border: 1px solid var(--border-subtle);
+        border-radius: v.$radius-md;
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-align: center;
+        cursor: pointer;
+        box-shadow: v.$shadow-sm; // Add lift
+
+        &:active {
+          transform: scale(0.98);
+        }
+      }
+
+      .btn-revert-mobile {
+        width: 44px;
         display: flex;
-        gap: 0.5rem;
-        width: 100%;
-        
-        .btn-archive-mobile {
-          flex: 1;
-          background: v.$surface-color;
-          color: v.$primary-color;
-          border: 1px solid var(--border-subtle);
-          border-radius: v.$radius-md;
-          padding: 0.75rem;
-          font-size: 0.95rem;
-          font-weight: 600;
-          text-align: center;
-          cursor: pointer;
-          box-shadow: v.$shadow-sm; // Add lift
-          
-          &:active {
-            transform: scale(0.98);
-          }
-        }
-        
-        .btn-revert-mobile {
-          width: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(var(--danger-color), 0.1);
-          color: v.$error-color;
-          border: 1px solid rgba(var(--danger-color), 0.2);
-          border-radius: v.$radius-md;
-          cursor: pointer;
-          
-          &:active {
-            background: rgba(var(--danger-color), 0.2);
-          }
-        }
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--danger-color), 0.1);
+        color: v.$error-color;
+        border: 1px solid rgba(var(--danger-color), 0.2);
+        border-radius: v.$radius-md;
+        cursor: pointer;
 
-        .btn-reset-mobile {
-          width: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(245, 158, 11, 0.1); // Amber
-          color: #d97706;
-          border: 1px solid rgba(245, 158, 11, 0.2);
-          border-radius: v.$radius-md;
-          cursor: pointer;
-
-          &:active {
-             background: rgba(245, 158, 11, 0.2);
-          }
+        &:active {
+          background: rgba(var(--danger-color), 0.2);
         }
+      }
+
+      .btn-reset-mobile {
+        width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(245, 158, 11, 0.1); // Amber
+        color: #d97706;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: v.$radius-md;
+        cursor: pointer;
+
+        &:active {
+          background: rgba(245, 158, 11, 0.2);
+        }
+      }
     }
-  } // Close .mobile-header
+  }
 
-    
-    // Legacy button removal
-    // button.btn-archive-mobile { ... replaced by .mobile-header-actions .btn-archive-mobile }
+  // Close .mobile-header
+
+
+  // Legacy button removal
+  // button.btn-archive-mobile { ... replaced by .mobile-header-actions .btn-archive-mobile }
 
   .mobile-filters {
     display: flex;
@@ -632,7 +635,7 @@
           background: rgba(var(--primary-color-hue), 0.05);
           /* Slight tint to indicate editable */
           padding: 4px 8px;
-          border-radius: 6px;
+          border-radius: var(--radius-md);
           flex-shrink: 0;
 
           &:focus-within {
@@ -867,6 +870,69 @@
       }
     }
   }
+}
+
+// Desktop Grid Action Buttons (injected via ::ng-deep because inside Ag-Grid)
+.expense-grid .action-cell {
+    display: flex !important;
+    align-items: center;
+    justify-content: center !important;
+    gap: 0.5rem;
+    padding-right: 0.5rem;
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s;
+        padding: 0; 
+        
+        svg {
+            pointer-events: none; // Ensure clicks pass to button
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        &:hover {
+            transform: scale(1.15); // Scale up effect requested
+        }
+
+        // Delete Button Style
+        &.delete-btn {
+            color: var(--text-secondary);
+            &:hover {
+                background-color: rgba(var(--danger-color), 0.1);
+                color: var(--danger-color);
+            }
+        }
+
+        // Ignore Button Style
+        &.toggle-ignore-btn {
+             // Default "Active" State (Eye Open)
+             color: var(--text-secondary);
+             
+             &:hover {
+                //  background-color: var(--bg-surface-hover);
+                 color: var(--text-primary);
+             }
+
+             // "Ignored" State (Eye Slash)
+             &.ignored-btn {
+                 color: var(--text-muted);
+                 
+                 &:hover {
+                     background-color: rgba(var(--success-color), 0.1); // Green bg requested
+                     color: var(--success-color);
+                 }
+             }
+        }
+    }
 }
 
 // Global Grid Class for Ignored Rows (added via rowClassRules)

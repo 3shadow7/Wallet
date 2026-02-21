@@ -512,12 +512,27 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       });
   }
 
+  private getCategoryColor(category: string): string {
+      const isDark = this.themeService.isDark();
+      const map: Record<string, string> = {
+          'Burning': '#ef4444', // Red
+          'Responsibility': '#f59e0b', // Amber
+          'Saving': '#10b981', // Green
+          
+          'Must Have': '#ef4444',
+          'Want': '#10b981', 
+          'Emergency': isDark ? '#ffffff' : '#000000', // Black/White
+          'Gift': '#8b5cf6' // Purple
+      };
+      return map[category] || '#94a3b8';
+  }
+
   private initBreakdownChart() {
       const isDark = this.themeService.isDark();
       const textColor = isDark ? '#e2e8f0' : '#1e293b';
       const themeMode = isDark ? 'dark' : 'light';
 
-      const options = {
+      const options: any = { // Use any to allow dynamic property updates easily
           series: [],
           title: { 
             text: 'Monthly Spending Breakdown',
@@ -536,18 +551,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             bar: {
               horizontal: true,
               borderRadius: 4,
-              dataLabels: {
-                total: {
-                  enabled: true,
-                  formatter: function (val: number) {
-                    return '$' + val.toLocaleString();
-                  },
-                  style: { fontWeight: 700, color: textColor }
-                }
-              }
-            },
+            }
           },
-          colors: ['#ef4444', '#3b82f6', '#8b5cf6', '#f59e0b', '#10b981'], // Red, Blue, Purple, Amber, Green
+          // Colors will be set on update
+          colors: [], 
           stroke: { width: 1, colors: ['#fff'] },
           xaxis: {
               categories: [],
@@ -587,19 +594,17 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     const data = this.detailedHistory();
     const categories = data.length > 0 ? data.map(d => d.month) : this.history().map(d => d.month);
     
-    // If detailed history is empty (e.g. migration issue or old data format), 
-    // chart will be empty.
-    
     let series: any[] = [];
+    let colors: string[] = [];
+
     if (!data || data.length === 0) {
-        // Fallback or empty state
         this.bChart.updateSeries([]);
         return;
     }
 
     if (this.breakdownMode === 'type') {
-        // Aggregate by Type: Burning, Responsibility, Saving
         const types = ['Burning', 'Responsibility', 'Saving'] as const;
+        colors = types.map(t => this.getCategoryColor(t));
         series = types.map(type => {
             return {
                 name: type,
@@ -611,8 +616,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             };
         });
     } else {
-        // Aggregate by Priority: Must Have, Want, Emergency, Gift
         const priorities = ['Must Have', 'Want', 'Emergency', 'Gift'] as const;
+        // Fix: Ensure correct color mapping array order for Stacked Chart
+        // Map returns colors in same order as priorities array
+        colors = priorities.map(p => this.getCategoryColor(p)); 
+        
         series = priorities.map(p => {
             return {
                 name: p,
@@ -626,7 +634,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
 
     this.bChart.updateOptions({
-        xaxis: { categories: categories }
+        xaxis: { categories: categories },
+        colors: colors.length > 0 ? colors : undefined
     });
 
     this.bChart.updateSeries(series);
@@ -736,7 +745,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         allExpenses = []; // No priorities selected
     }
 
-    // 3. Group Strategy: Flatten all items into one list for distributed colors
+    // 3. Group Strategy: Flatten items and use colors based on Type
     const combinedItems = allExpenses.reduce((acc, curr) => {
         const key = curr.name;
         // Group logic: sum amounts if name matches
@@ -744,10 +753,16 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         if (existing) {
             existing.y += curr.amount; // update sum
         } else {
-            acc.push({ x: key, y: curr.amount }); // new item
+            // Determine color based on Type (Matches Dashboard Badges)
+            let color = '#94a3b8'; // Default slate
+            if (curr.type === 'Burning') color = '#ef4444'; // Red
+            else if (curr.type === 'Responsibility') color = '#f59e0b'; // Amber
+            else if (curr.type === 'Saving') color = '#10b981'; // Green
+
+            acc.push({ x: key, y: curr.amount, fillColor: color }); 
         }
         return acc;
-    }, [] as { x: string, y: number }[]);
+    }, [] as { x: string, y: number, fillColor?: string }[]);
     
     // Sort descending by value (Standard Treemap logic)
     combinedItems.sort((a,b) => b.y - a.y);
@@ -757,6 +772,18 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         name: 'All Items',
         data: combinedItems
     }]);
+
+    // Force distributed false so it uses data point colors
+    this.iChart.updateOptions({
+        plotOptions: {
+            treemap: {
+                distributed: false, 
+                enableShades: false // Disable shades so our specific colors stick
+            }
+        },
+        colors: undefined // Clear default palette
+    });
   }
+
 }
 

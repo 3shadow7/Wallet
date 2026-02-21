@@ -9,6 +9,7 @@ html, body {
   margin: 0;
   font-family: var(--font-family-body, 'Inter', sans-serif);
   overflow-x: hidden; // Prevent horizontal scroll
+  scroll-behavior: smooth;
   
   // Default font size (16px base)
   font-size: 16px; 
@@ -137,5 +138,20 @@ input, select {
 
   &:hover::before {
     opacity: 0; /* Glow on hover */
+  }
+}
+
+/* Mobile: Disable user selection for interactive elements */
+@include m.respond-to('max-xs') {
+  *:not(span,p,h1,h2,h3,h4,h5,h6) {  
+    text-decoration: none;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
 }
