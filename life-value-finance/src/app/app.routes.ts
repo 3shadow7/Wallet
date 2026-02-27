@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'register', pathMatch: 'full' },
   { 
     path: 'login', 
     canActivate: [guestGuard],

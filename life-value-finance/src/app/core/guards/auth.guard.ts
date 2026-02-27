@@ -9,27 +9,34 @@ export const authGuard: CanActivateFn = () => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    // Allow if authenticated OR guest
-    if (authService.isAuthenticated() || authService.isGuest()) {
+    // If fully authenticated user, allow access
+    if (authService.isAuthenticated()) {
         return true;
     }
 
-    // Redirect to login if neither authenticated nor guest
-    return router.parseUrl('/login');
+    // If identifying as guest, allow access
+    if (authService.isGuest()) {
+        return true;
+    }
+
+    // Redirect to register if neither authenticated nor guest
+    return router.parseUrl('/register');
 };
 
 /**
  * Guest Guard to protect routes that should not be accessible if you are already identifying as someone (user or guest)
+ * Update: Allow guests to access login/register so they can upgrade their account.
  */
 export const guestGuard: CanActivateFn = () => {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-    // If neither authenticated nor guest, then they can see the login/register pages
-    if (!authService.isAuthenticated() && !authService.isGuest()) {
-        return true;
+    // If they are fully authenticated (logged in user), redirect them to dashboard
+    if (authService.isAuthenticated()) {
+        return router.parseUrl('/dashboard');
     }
 
-    // Redirect to home if identified
-    return router.parseUrl('/dashboard');
+    // Allow access to login/register if they are NOT authenticated 
+    // (even if they have the 'isGuest' flag so they can choose to register/login)
+    return true;
 };
