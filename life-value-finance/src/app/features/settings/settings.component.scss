@@ -28,7 +28,7 @@
   padding: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); // Slightly stronger shadow for depth
   border: 1px solid var(--border-color);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease , border-color 2s ease-in-out;
 
   &:hover {
     transform: translateY(-2px);
@@ -114,10 +114,10 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) , border-color 2s ease-in-out;
   border: none;
   font-size: 0.95rem;
-  
+  width: auto;
   @media (min-width: 768px) {
     width: auto;
   }
