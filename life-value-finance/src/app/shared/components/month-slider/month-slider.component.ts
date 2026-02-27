@@ -48,6 +48,7 @@ export class MonthSliderComponent implements OnDestroy {
       // Initialize last emitted values
       this.lastEmittedMin = this.min;
       this.lastEmittedMax = this.max;
+      this.rangeChange.emit({ min: this.min, max: this.max });
   }
 
   ngOnDestroy() {
@@ -229,7 +230,7 @@ export class MonthSliderComponent implements OnDestroy {
       
       if (min !== this.lastEmittedMin || max !== this.lastEmittedMax) {
           this.lastEmittedMin = min;
-          this.lastEmittedMax = max;
+          this.lastEmittedMax = max;          
           this.rangeChange.emit({ min, max });
       }
   }
