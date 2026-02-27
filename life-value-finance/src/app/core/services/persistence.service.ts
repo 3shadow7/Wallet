@@ -4,6 +4,9 @@ import { isPlatformBrowser } from '@angular/common';
 const STORAGE_KEY = 'life_value_finance_data';
 const CURRENT_VERSION = 2; // Incremented for new settings
 
+const STORAGE_KEY_SAVINGS = 'savingsStorage';
+const STORAGE_KEY_HISTORY = 'monthlyHistory';
+
 export interface AppStateData {
   version: number;
   incomes: any[];
@@ -11,6 +14,10 @@ export interface AppStateData {
   incomeConfig: any;
   history: any[]; // New history array
   settings?: any; // New user settings
+  savings?: {
+    totalSavings: number;
+    monthlyHistory: any[];
+  };
 }
 
 @Injectable({
@@ -23,12 +30,22 @@ export class PersistenceService {
     if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
     
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-        alert('No data found to export');
-        return;
+    const savings = localStorage.getItem(STORAGE_KEY_SAVINGS);
+    const history = localStorage.getItem(STORAGE_KEY_HISTORY);
+
+    let exportObj: any = {};
+    if (raw) {
+        exportObj = JSON.parse(raw);
     }
 
-    const blob = new Blob([raw], { type: 'application/json' });
+    if (savings || history) {
+        exportObj.savings = {
+            totalSavings: savings ? Number(savings) : 0,
+            monthlyHistory: history ? JSON.parse(history) : []
+        };
+    }
+
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -48,11 +65,19 @@ export class PersistenceService {
                 const data = JSON.parse(content);
                 
                 // Basic validation
-                if (!data.version || (!data.expenses && !data.incomeConfig)) {
+                if (!data.version && !data.savings) {
                     throw new Error('Invalid backup file format');
                 }
 
-                localStorage.setItem(STORAGE_KEY, content);
+                // Split data back into local storage keys
+                if (data.savings) {
+                    localStorage.setItem(STORAGE_KEY_SAVINGS, data.savings.totalSavings.toString());
+                    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(data.savings.monthlyHistory));
+                    // Cleanup from main object before saving to STORAGE_KEY
+                    delete data.savings;
+                }
+
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
                 resolve(true);
             } catch (err) {
                 console.error('Failed to import backup', err);

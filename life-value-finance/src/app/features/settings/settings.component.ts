@@ -31,13 +31,25 @@ export class SettingsComponent {
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
       this.budgetState.importBackup(file)
-        .then(() => {
-          this.importStatus = 'success';
+        .then((success) => {
+          if (success) {
+            this.importStatus = 'success';
+          } else {
+            this.importStatus = 'idle';
+          }
         })
         .catch(err => {
           this.importStatus = 'error';
           this.errorMessage = err.message || 'Failed to import data';
         });
+    }
+  }
+
+  factoryReset() {
+    const confirmed = window.confirm('ARE YOU SURE? This will permanently delete all your local budget data, history, and earnings settings. This action cannot be undone.');
+    if (confirmed) {
+      this.budgetState.resetAllData();
+      alert('Application has been reset to factory defaults.');
     }
   }
 

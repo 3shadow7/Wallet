@@ -342,7 +342,19 @@ export class BudgetStateService {
           if (success) {
               // Reload state from newly imported local storage
               await this.loadInitialState();
-              alert('Backup restored successfully!');
+              // Force SavingsService to re-read from localStorage
+              this.savingsService.refreshState();
+              return true; // Success
+          }
+      }
+      return false;
+  }
+
+  resetAllData() {
+      if (confirm('CRITICAL ACTION: This will permanently delete ALL your local budget history and settings. This cannot be undone. Are you sure?')) {
+          if (confirm('Are you ABSOLUTELY sure? Last chance to cancel.')) {
+              localStorage.clear(); // Wipes everything in browser
+              window.location.reload(); // Refresh to clean state
           }
       }
   }
