@@ -241,11 +241,25 @@ export class BudgetStateService {
         this.history.update(history => 
             history.map(entry => {
                 if (entry.month === view) {
-                    return { ...entry, expenses: [...entry.expenses, finalExpense] };
+                    const updatedExpenses = [...entry.expenses, finalExpense];
+                    // Recalculate summary for history entry
+                    const updatedSummary = FinancialCalculatorService.calculateBudget(
+                        entry.incomeConfig || this.incomeConfig(),
+                        updatedExpenses.filter(e => !e.isIgnored)
+                    );
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
                 }
                 return entry;
             })
         );
+        
+        // Also update SavingsService snapshot if it exists for this month
+        const summary = this.budgetSummary();
+        const transferToSavings = summary.remainingIncome > 0 ? summary.remainingIncome : 0;
+        
+        // This is a manual correction to the snapshot
+        // We'll need to add a specialized method to SavingsService later if we want full consistency,
+        // but updating history signal in BudgetState should handle UI refresh for now.
     }
   }
 
@@ -283,7 +297,12 @@ export class BudgetStateService {
         this.history.update(history => 
             history.map(entry => {
                 if (entry.month === view) {
-                    return { ...entry, expenses: updateFn(entry.expenses) };
+                    const updatedExpenses = updateFn(entry.expenses);
+                    const updatedSummary = FinancialCalculatorService.calculateBudget(
+                        entry.incomeConfig || this.incomeConfig(),
+                        updatedExpenses.filter(e => !e.isIgnored)
+                    );
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
                 }
                 return entry;
             })
@@ -299,12 +318,33 @@ export class BudgetStateService {
         this.history.update(history => 
             history.map(entry => {
                 if (entry.month === view) {
-                    return { ...entry, expenses: entry.expenses.filter(item => item.id !== id) };
+                    const updatedExpenses = entry.expenses.filter(item => item.id !== id);
+                    const updatedSummary = FinancialCalculatorService.calculateBudget(
+                        entry.incomeConfig || this.incomeConfig(),
+                        updatedExpenses.filter(e => !e.isIgnored)
+                    );
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
                 }
                 return entry;
             })
         );
     }
+  }
+
+  // --- Backup & Restore ---
+  exportBackup() {
+      this.persistenceService.exportState();
+  }
+
+  async importBackup(file: File) {
+      if (confirm('Importing this backup will OVERWRITE all your current Guest data. Are you sure?')) {
+          const success = await this.persistenceService.importState(file);
+          if (success) {
+              // Reload state from newly imported local storage
+              await this.loadInitialState();
+              alert('Backup restored successfully!');
+          }
+      }
   }
 
   private isCurrentMonthView(): boolean {

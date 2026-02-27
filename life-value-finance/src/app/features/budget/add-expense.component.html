@@ -1,5 +1,5 @@
-<div class="add-expense-card">
-    <h3>Add New Expense</h3>
+  <div class="add-expense-card">
+    <h3>Add Item to {{ viewedMonth() | date:'MMMM yyyy' }}</h3>
     <div [formGroup]="expenseForm" class="add-form">
       <div class="form-row">
         

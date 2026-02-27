@@ -4,6 +4,8 @@ import { BackupService } from '../../core/services/backup.service';
 import { AuthService } from '../../core/services/auth.service';
 import { RouterLink } from '@angular/router';
 
+import { BudgetStateService } from '../../core/state/budget-state.service';
+
 @Component({
   selector: 'app-settings',
   standalone: true,
@@ -12,27 +14,25 @@ import { RouterLink } from '@angular/router';
   styleUrl: './settings.component.scss'
 })
 export class SettingsComponent {
+  private budgetState = inject(BudgetStateService);
   private backupService = inject(BackupService);
   public authService = inject(AuthService);
-  
+
   importStatus: 'idle' | 'success' | 'error' = 'idle';
-  syncStatus = signal<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  syncStatus = signal<'idle' | 'syncing' | 'success' | 'error'>('idle');        
   errorMessage = '';
 
   exportData() {
-    this.backupService.exportData();
+    this.budgetState.exportBackup();
   }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      this.backupService.importData(file)
+      this.budgetState.importBackup(file)
         .then(() => {
           this.importStatus = 'success';
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
         })
         .catch(err => {
           this.importStatus = 'error';
