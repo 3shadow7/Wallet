@@ -12,9 +12,17 @@
     <nav class="main-nav">
       <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Dashboard</a>
       <a routerLink="/history" routerLinkActive="active">History</a>
+      <a routerLink="/settings" routerLinkActive="active">Settings</a>
     </nav>
 
     <div class="actions">
+      @if (authService.isAuthenticated()) {
+        <span class="user-info">{{ authService.currentUser()?.username }}</span>
+        <button class="auth-btn logout" (click)="logout()">Logout</button>
+      } @else {
+        <a routerLink="/login" class="auth-btn login">Login</a>
+      }
+
       <button class="theme-toggle" (click)="toggleTheme()" [title]="themeService.isDark() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
         @if (themeService.isDark()) {
           <!-- Sun Icon -->

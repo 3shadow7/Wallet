@@ -77,6 +77,42 @@
     align-items: center;
     gap: var(--spacing-sm);
 
+    .user-info {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--text-secondary);
+      margin-right: var(--spacing-xs);
+    }
+
+    .auth-btn {
+      padding: var(--spacing-xs) var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+
+      &.login {
+        background-color: var(--primary-color);
+        color: white;
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+
+      &.logout {
+        background: transparent;
+        border-color: var(--border-color);
+        color: var(--text-secondary);
+        &:hover {
+          background-color: var(--bg-surface-hover);
+          color: var(--text-primary);
+        }
+      }
+    }
+
     .theme-toggle {
       background: transparent;
       border: 0.0625rem solid var(--border-color);
