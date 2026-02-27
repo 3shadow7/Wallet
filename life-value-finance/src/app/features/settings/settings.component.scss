@@ -1,0 +1,272 @@
+.settings-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem; // Consistent gap between cards (like History route)
+}
+
+.page-header {
+  margin-bottom: 0; // Let container handle gap
+
+  h1 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+}
+
+.settings-card {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); // Slightly stronger shadow for depth
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  h2 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .description {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.action-group {
+  flex: 1;
+  background: var(--bg-app);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+  }
+
+  p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    flex-grow: 1; // Push buttons to bottom
+  }
+
+  .auth-options {
+    display: flex;
+    gap: 1rem;
+    
+    .btn {
+        flex: 1;
+        justify-content: center;
+    }
+  }
+
+  .hint {
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    &.success {
+        color: var(--success-color);
+    }
+  }
+}
+
+// Unified button styles for consistency
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  font-size: 0.95rem;
+  width: 100%; // Mobile full width
+  
+  @media (min-width: 768px) {
+    width: auto;
+  }
+
+  svg {
+    transition: transform 0.2s ease;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    
+    svg {
+        transform: scale(1.1);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &.btn-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  &.btn-secondary {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+
+  &.btn-outline {
+    background: transparent;
+    border: 2px solid var(--secondary-color);
+    color: var(--secondary-color);
+    
+    &:hover {
+        background: var(--secondary-accent);
+        color: white;
+        border-color: var(--secondary-color);
+    }
+  }
+
+  &.btn-danger {
+    background: #ef4444; // Standard red
+    color: white;
+    
+    &:hover {
+        background: #dc2626;
+    }
+  }
+
+  &.file-label {
+    margin: 0;
+    input {
+      display: none;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.danger-section {
+    border-color: rgba(var(--danger-color-rgb, 239, 68, 68), 0.2);
+    background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.05);
+
+    .danger-title {
+        color: var(--danger-color, #ef4444);
+    }
+
+    .action-group.danger {
+        border-color: rgba(var(--danger-color-rgb, 239, 68, 68), 0.3);
+        background: var(--bg-surface);
+    }
+}
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white; // Keep primary white for contrast
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+
+  &:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--primary-color);
+  }
+}
+
+.btn-danger {
+  background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.1);
+  color: var(--danger-color, #ef4444); 
+  border: 1px solid rgba(var(--danger-color-rgb, 239, 68, 68), 0.4);
+
+  &:not(:disabled):hover {
+    background: var(--danger-color, #ef4444);
+    color: var(--text-inverse, white);
+    border-color: var(--danger-color, #ef4444);
+  }
+}
+
+.file-input-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1rem;
+
+  .file-input {
+    position: absolute;
+    width: 0.1px;
+    height: 0.1px;
+    opacity: 0;
+    overflow: hidden;
+    z-index: -1;
+  }
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  
+  &.success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+  }
+
+  &.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+  }
+}

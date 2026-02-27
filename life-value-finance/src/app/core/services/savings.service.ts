@@ -51,15 +51,17 @@ export class SavingsService {
   });
 
   constructor() {
-    this.loadState();
+    this.refreshState();
   }
 
-  private loadState() {
+  public refreshState() {
     if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
 
     const savedSavings = localStorage.getItem(STORAGE_KEY_SAVINGS);
     if (savedSavings) {
       this.totalSavings.set(Number(savedSavings));
+    } else {
+      this.totalSavings.set(0);
     }
 
     const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
@@ -68,8 +70,15 @@ export class SavingsService {
         this.history.set(JSON.parse(savedHistory));
       } catch (e) {
         console.error('Failed to parse history', e);
+        this.history.set([]);
       }
+    } else {
+      this.history.set([]);
     }
+  }
+
+  private loadState() {
+    this.refreshState();
   }
 
   // Actions

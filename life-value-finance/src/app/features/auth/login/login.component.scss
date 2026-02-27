@@ -1,0 +1,280 @@
+@use "sass:color";
+@use "../../../theme/variables" as v;
+@use "../../../theme/mixins" as m;
+@use "../../../theme/assets-3d" as a3d;
+
+.auth-container {
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-app);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.auth-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: row;
+  background: var(--bg-surface);
+
+  @media (max-width: 1023px) {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+}
+
+.auth-content-side {
+  flex: 1.2;
+  background: var(--primary-gradient);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--spacing-xxl);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  @include a3d.scene-3d;
+
+  .three-d-anchor {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+
+    .mock-3d-object {
+      width: 30rem;
+      height: 30rem;
+      transform-style: preserve-3d;
+      transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      @include a3d.data-particles-3d;
+
+      .floating-wallet {
+        @include a3d.wallet-3d;
+
+        .credit-card {
+          @include a3d.credit-card-3d;
+        }
+
+        .floating-coins {
+          @include a3d.coins-3d;
+        }
+      }
+    }
+  }
+
+  /* Text & Branding */
+  .brand {
+    position: absolute;
+    top: var(--spacing-xl);
+    left: var(--spacing-xl);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    
+    .logo-icon {
+      background: rgba(255, 255, 255, 0.15);
+      padding: var(--spacing-sm);
+      border-radius: var(--radius-md);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand-name {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-black);
+      letter-spacing: -0.5px;
+    }
+  }
+
+  .hero-text {
+    position: relative;
+    z-index: 10;
+    max-width: 32rem;
+    
+    h2 {
+      font-size: var(--font-size-xxl);
+      line-height: 1.1;
+      font-weight: var(--font-weight-black);
+      margin-bottom: var(--spacing-md);
+    }
+    p {
+      font-size: var(--font-size-md);
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+  }
+
+  @media (max-width: 1023px) {
+    flex: none;
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    .three-d-anchor { display: none; }
+    .hero-text p { display: none; }
+    .brand { position: relative; top: 0; left: 0; margin-bottom: var(--spacing-lg); }
+  }
+}
+
+.auth-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  background: var(--bg-surface);
+
+  @media (max-width: 1023px) {
+    padding: var(--spacing-lg);
+  }
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.auth-header {
+  margin-bottom: var(--spacing-xl);
+
+  h1 {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-black);
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-xs);
+  }
+
+  .subtitle {
+    font-size: var(--font-size-md);
+    color: var(--text-secondary);
+  }
+
+  .error-msg {
+    font-size: var(--font-size-sm);
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid #ff5252;
+    margin: var(--spacing-sm) 0;
+    animation: slideDown 0.3s ease;
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+
+  label {
+    display: block;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .input-wrapper {
+    position: relative;
+    
+    .input-icon {
+      position: absolute;
+      left: var(--spacing-md);
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    input {
+      @include m.input-style;
+      height: 3.5rem;
+      padding-left: 3rem;
+    }
+  }
+}
+
+.auth-submit {
+  width: 100%;
+  height: 3.5rem;
+  border-radius: var(--radius-md);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: var(--spacing-lg);
+
+  &:hover:not(:disabled) {
+    background: var(--primary-color-hover);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.auth-footer {
+  margin-top: var(--spacing-xl);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+
+  .link {
+    color: var(--primary-color);
+    font-weight: var(--font-weight-bold);
+    text-decoration: none;
+    margin-left: var(--spacing-xs);
+    &:hover { text-decoration: underline; }
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-lg) 0;
+    &:before, &:after { content: ""; flex: 1; height: 1px; background: var(--border-color); }
+    span { font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); color: var(--text-muted); padding: 0 var(--spacing-sm); }
+  }
+
+  .guest-link {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    transition: all 0.2s;
+    &:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--primary-color);
+    }
+  }
+}
+
+.fade-in { animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

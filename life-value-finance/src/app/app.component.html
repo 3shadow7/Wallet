@@ -1,4 +1,6 @@
-<app-header />
-<main class="app-content">
+@if (showHeader()) {
+  <app-header />
+}
+<main [class.auth-layout]="!showHeader()">
   <router-outlet />
 </main>

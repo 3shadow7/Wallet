@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
@@ -21,6 +21,8 @@ export class AddExpenseComponent {
 
   priorityOptions = ['Must Have', 'Want', 'Emergency', 'Gift'];
   typeOptions = ['Burning', 'Responsibility', 'Saving'];
+
+  viewedMonth = this.budgetState.viewedMonthSignal;
 
   expenseForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],

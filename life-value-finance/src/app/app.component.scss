@@ -8,12 +8,17 @@
   color: var(--text-primary);
 }
 
-.app-content {
+.app-content, .auth-layout {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden; // Prevent horizontal scrolling within content area
-  padding: 0; // Remove default padding, let pages handle container
+  overflow-x: hidden;
+  padding: 0;
   scroll-behavior: smooth;
+}
+
+.auth-layout {
+  overflow-y: hidden; // Force no scroll for auth pages
+  height: 100vh;
 }
 
 .ag-root-wrapper {
