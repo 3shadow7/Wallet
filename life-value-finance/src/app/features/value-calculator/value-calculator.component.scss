@@ -68,8 +68,8 @@ h2 {
 .results-card {
   @include m.card-style;
   background: var(--bg-surface);
-  transition: all 0.3s ease;
-  padding: var(--spacing-lg);
+  transition: all 0.3s ease;    
+  padding: var(--spacing-md) var(--spacing-lg);
   border: 0.0625rem solid var(--border-color); // 1px
   position: relative;
   overflow: hidden;
@@ -98,7 +98,7 @@ h2 {
     font-weight: 700;
     background: var(--bg-secondary);
     color: var(--text-primary);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     box-shadow: var(--shadow-sm);
     margin-left: auto;
     margin-right: auto;
@@ -112,8 +112,8 @@ h2 {
   .result-grid {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
     position: relative;
     z-index: 1;
   }
@@ -187,7 +187,7 @@ h2 {
 
     .feedback-content {
       animation: fadeIn 0.5s ease-out;
-      padding: var(--spacing-md);
+      padding: var(--spacing-sm) var(--spacing-md);
       border-radius: var(--radius-md);
       background: var(--bg-secondary);
 

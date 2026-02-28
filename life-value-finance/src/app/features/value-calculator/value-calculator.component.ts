@@ -57,18 +57,16 @@ export class ValueCalculatorComponent {
   onPriceChange(event: Event) {
     const val = parseFloat((event.target as HTMLInputElement).value);
     this.productPrice.set(isNaN(val) ? null : val);
-    window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
+    this.scrollToBottom(); // Ensure results are visible on mobile when keyboard is open
   }
 
   scrollToBottom() {
     setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
-    }, 300); // Small delay to allow keyboard to pop up on mobile
+      const resultsCard = document.querySelector('.results-card');
+      if (resultsCard) {
+        resultsCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    } );
   }
+
 }
