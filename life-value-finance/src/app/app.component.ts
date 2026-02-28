@@ -51,13 +51,25 @@ export class AppComponent {
       // Swipe Right -> Go Left (Previous)
       if (currentIndex > 0) {
         this.router.navigate([routes[currentIndex - 1]]);
+        this.scrollToTop(); // Ensure we scroll to top when navigating via swipe
       }
     } else {
       // Swipe Left -> Go Right (Next)
       if (currentIndex < routes.length - 1) {
         this.router.navigate([routes[currentIndex + 1]]);
+        this.scrollToTop(); // Ensure we scroll to top when navigating via swipe
       }
     }
+  }
+
+  
+  scrollToTop() {
+    setTimeout(() => {
+      const body = document.querySelector('.header');
+      if (body) {
+        body.scrollIntoView({ behavior: 'instant', block: 'start' });
+      }
+    },100 );
   }
 
   showHeader(): boolean {
