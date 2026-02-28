@@ -66,7 +66,7 @@ export class ValueCalculatorComponent {
       if (resultsCard) {
         resultsCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
-    } );
+    },100 );
   }
 
 }

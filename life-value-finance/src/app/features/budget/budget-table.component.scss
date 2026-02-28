@@ -187,7 +187,8 @@
   // Header inside the card
   .card-header {
     padding: v.$spacing-md v.$spacing-lg;
-    border-bottom: 0.0625rem solid v.$border-color;
+    margin-bottom: 0;
+    /* border-bottom: 0.0625rem solid var(--border-color); */
     display: flex;
     justify-content: space-between;
     align-items: center;
