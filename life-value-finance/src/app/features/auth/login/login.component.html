@@ -6,7 +6,7 @@
         <!-- Mock 3D Object that tracks mouse -->
         <div class="mock-3d-object" 
              [style.transform]="'rotateY(' + mouseX() + 'deg) rotateX(' + -mouseY() + 'deg)'">
-          <div class="floating-wallet">
+          <div class="floating-wallet" #floatingWallet>
             <div class="wallet-body">
               <div class="credit-card"><div class="card-deco"></div></div>
             </div>
