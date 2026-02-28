@@ -26,6 +26,27 @@ export interface AppStateData {
 export class PersistenceService {
   private platformId = inject(PLATFORM_ID);
 
+  // Return savings stored separately (kept for backward compatibility)
+  getSavings(): { totalSavings: number; monthlyHistory: any[] } {
+    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return { totalSavings: 0, monthlyHistory: [] };
+    const savings = localStorage.getItem(STORAGE_KEY_SAVINGS);
+    const history = localStorage.getItem(STORAGE_KEY_HISTORY);
+    return {
+      totalSavings: savings ? Number(savings) : 0,
+      monthlyHistory: history ? JSON.parse(history) : []
+    };
+  }
+
+  setSavings(totalSavings: number, monthlyHistory: any[]): void {
+    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(STORAGE_KEY_SAVINGS, totalSavings.toString());
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(monthlyHistory || []));
+    } catch (e) {
+      console.error('Failed to persist savings data', e);
+    }
+  }
+
   exportState(): void {
     if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
     

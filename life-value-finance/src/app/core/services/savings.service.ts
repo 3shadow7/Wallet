@@ -1,5 +1,6 @@
 import { Injectable, signal, computed, effect, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { PersistenceService } from '@core/services/persistence.service';
 
 export interface MonthlyRecord {
   month: string; // YYYY-MM
@@ -27,6 +28,7 @@ const STORAGE_KEY_HISTORY = 'monthlyHistory';
 })
 export class SavingsService {
   private platformId = inject(PLATFORM_ID);
+  private persistenceService = inject(PersistenceService);
   
   // State
   private totalSavings = signal<number>(0);
@@ -55,26 +57,9 @@ export class SavingsService {
   }
 
   public refreshState() {
-    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
-
-    const savedSavings = localStorage.getItem(STORAGE_KEY_SAVINGS);
-    if (savedSavings) {
-      this.totalSavings.set(Number(savedSavings));
-    } else {
-      this.totalSavings.set(0);
-    }
-
-    const savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
-    if (savedHistory) {
-      try {
-        this.history.set(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error('Failed to parse history', e);
-        this.history.set([]);
-      }
-    } else {
-      this.history.set([]);
-    }
+    const s = this.persistenceService.getSavings();
+    this.totalSavings.set(s.totalSavings || 0);
+    this.history.set(s.monthlyHistory || []);
   }
 
   private loadState() {
@@ -120,9 +105,7 @@ export class SavingsService {
   }
 
   private saveState() {
-    if (!isPlatformBrowser(this.platformId)) return;
-    localStorage.setItem(STORAGE_KEY_SAVINGS, this.totalSavings().toString());
-    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(this.history()));
+    this.persistenceService.setSavings(this.totalSavings(), this.history());
   }
 
   // --- REVERT LOGIC ---

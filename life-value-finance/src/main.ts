@@ -15,9 +15,11 @@ bootstrapApplication(AppComponent, appConfig)
               .catch((err) => console.warn('Service Worker registration failed:', err));
           }
           console.log('ngsw-worker.js not present (status ' + resp.status + '), skipping SW registration.');
+          return Promise.resolve(undefined);
         })
         .catch((err) => {
           console.log('Could not fetch ngsw-worker.js — skipping SW registration.', err);
+          return Promise.resolve(undefined);
         });
     }
   })
