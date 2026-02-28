@@ -18,7 +18,7 @@ export class ValueCalculatorComponent {
   private budgetState = inject(BudgetStateService);
 
   // Inputs
-  productPrice = signal<number>(0);
+  productPrice = signal<number | null>(null);
 
   // Context from State
   monthlyIncome = this.budgetState.incomeConfigSignal; // Not used directly, but state is source
@@ -56,6 +56,19 @@ export class ValueCalculatorComponent {
 
   onPriceChange(event: Event) {
     const val = parseFloat((event.target as HTMLInputElement).value);
-    this.productPrice.set(isNaN(val) ? 0 : val);
+    this.productPrice.set(isNaN(val) ? null : val);
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+  }
+
+  scrollToBottom() {
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+    }, 300); // Small delay to allow keyboard to pop up on mobile
   }
 }

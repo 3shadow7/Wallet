@@ -12,8 +12,10 @@
         appNumericInput
         class="price-input"
         type="text" 
+        inputmode="decimal"
         [value]="productPrice()"
         (input)="onPriceChange($event)"
+        (focus)="scrollToBottom()"
         placeholder="0.00"
       >
     </div>

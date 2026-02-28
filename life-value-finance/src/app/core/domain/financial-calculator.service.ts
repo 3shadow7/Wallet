@@ -36,8 +36,9 @@ export class FinancialCalculatorService {
   /**
    * Analyzes a potential purchase against the user's budget.
    */
-  static analyzePurchase(price: number, remainingIncome: number, hourlyRate: number): ValueAnalysis {
-    if (price < 0) price = 0;
+  static analyzePurchase(price: number | null, remainingIncome: number, hourlyRate: number): ValueAnalysis {
+    
+    if (price === null || price < 0) price = 0;
     
     // Time Cost Calculation
     const effectiveHourly = hourlyRate > 0 ? hourlyRate : 1; // Prevent division by zero
