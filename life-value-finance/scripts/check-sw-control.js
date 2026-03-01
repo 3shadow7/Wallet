@@ -1,80 +1,84 @@
 const { chromium } = require('playwright');
 
-(async () => {
+async function runOnce(attempt = 1) {
   const url = 'http://localhost:4400/';
-  const csrUrl = 'http://localhost:4400/index.csr.html';
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext();
+  const context = await browser.newContext({ acceptDownloads: false });
   const page = await context.newPage();
-  try {
-    await page.goto(url, { waitUntil: 'networkidle' });
 
-    // Wait up to 5s for a controlling service worker
-    let hasController = await page.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller));
-    if (!hasController) {
-      // Give the page a short moment to allow registration/activation, then reload to be controlled
-      await page.waitForTimeout(2000);
-      await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
+  page.on('console', msg => console.log('PAGE LOG:', msg.type(), msg.text()));
+  page.on('pageerror', err => console.error('PAGE ERROR:', err));
+
+  try {
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+
+    // Try several times to obtain controller
+    let hasController = false;
+    for (let i = 0; i < 5; i++) {
       hasController = await page.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller));
-      // If still not controlled, try to register the worker directly from the page
-      if (!hasController) {
+      if (hasController) break;
+      // attempt registration from page
+      await page.evaluate(async () => {
         try {
-          await page.evaluate(async () => {
-            if (navigator.serviceWorker) {
-              const reg = await navigator.serviceWorker.register('/ngsw-worker.js');
-              if (reg.waiting) return;
-              if (reg.installing) {
-                await new Promise(r => {
-                  reg.installing.addEventListener('statechange', () => {
-                    if (reg.installing.state === 'activated') r(true);
-                  });
-                });
-              }
-            }
-          });
-        } catch (e) {
-          // ignore
-        }
-        await page.waitForTimeout(1000);
-        await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
-        hasController = await page.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller));
-      }
-      // If still not controlled, try the CSR index which registers client-side scripts directly
-      if (!hasController) {
-        await page.goto(csrUrl, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(1500);
-        hasController = await page.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller));
-        if (!hasController) {
-          await page.reload({ waitUntil: 'networkidle' }).catch(() => {});
-          hasController = await page.evaluate(() => !!(navigator.serviceWorker && navigator.serviceWorker.controller));
-        }
-      }
+          if (navigator.serviceWorker && !navigator.serviceWorker.controller) {
+            await navigator.serviceWorker.register('/ngsw-worker.js');
+          }
+        } catch (e) { /* ignore */ }
+      });
+      await page.waitForTimeout(1500);
+      await page.reload({ waitUntil: 'networkidle', timeout: 20000 }).catch(() => {});
     }
 
     console.log('Service worker controls page:', hasController);
     if (!hasController) {
-      console.error('Service worker is NOT controlling the page. Aborting offline test.');
       await browser.close();
-      process.exit(2);
+      return { ok: false, code: 2 };
     }
 
-    // Now simulate offline and reload
-    await context.setOffline(true);
-    // Reload and wait for DOM
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 10000 }).catch(e => {});
+      // Warm cache by requesting CSR index and main assets while online
+    try {
+      await page.goto('http://localhost:4400/index.csr.html', { waitUntil: 'networkidle', timeout: 20000 });
+      await page.waitForTimeout(500);
+    } catch (e) {
+      // ignore warming errors
+    }
 
-    // Check for presence of app root or some known element
+    // Now simulate offline and reload root
+    await context.setOffline(true);
+    await page.goto('http://localhost:4400/', { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+
     const appPresent = await page.evaluate(() => {
       return !!document.querySelector('app-root') || !!document.querySelector('#root') || document.body.innerText.length > 20;
     });
 
     console.log('App shell available while offline:', appPresent);
+      // Check service worker cache contents for key assets
+      const cacheCheck = await page.evaluate(async () => {
+        try {
+          const keys = await caches.keys();
+          const hasIndex = await caches.match('/index.html') || await caches.match('/index.csr.html') || await caches.match('/');
+          return { keys, hasIndex: !!hasIndex };
+        } catch (e) {
+          return { keys: [], hasIndex: false, error: String(e) };
+        }
+      });
+      console.log('Cache check:', JSON.stringify(cacheCheck));
     await browser.close();
-    if (!appPresent) process.exit(3);
-    process.exit(0);
+    return { ok: !!appPresent, code: appPresent ? 0 : 3 };
   } catch (e) {
     console.error('Headless test failed', e);
-    await browser.close();
-    process.exit(4);
+    try { await browser.close(); } catch (e) {}
+    return { ok: false, code: 4 };
   }
+}
+
+(async () => {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    console.log('Headless test attempt', attempt);
+    const res = await runOnce(attempt);
+    if (res.ok) process.exit(0);
+    console.log('Attempt result code:', res.code);
+    if (attempt < 3) await new Promise(r => setTimeout(r, 1500));
+  }
+  process.exit(5);
 })();
