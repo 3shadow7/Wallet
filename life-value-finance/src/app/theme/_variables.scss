@@ -104,7 +104,7 @@
   --primary-color-hover: hsl(var(--color-primary-hue), var(--color-primary-sat), 75%);
   --primary-color-light: hsl(var(--color-primary-hue), var(--color-primary-sat), 20%); // Darker background for badges
   
-  --primary-gradient: linear-gradient(135deg, hsl(260, 60%, 65%) 0%, hsl(280, 60%, 60%) 100%);
+  --primary-gradient: linear-gradient(135deg, hsl(260, 70%, 55%) 0%, hsl(280, 70%, 50%) 100%);
 
   /* Status Colors - Adjust for visibility on dark */
   --danger-color: #f87171; // Red-400
