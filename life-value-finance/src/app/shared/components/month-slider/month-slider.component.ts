@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NoSwipeDirective } from '../../../shared/no-swipe.directive';
 
 export interface SliderRange {
   min: number;
@@ -9,7 +10,7 @@ export interface SliderRange {
 @Component({
   selector: 'app-month-slider',
   standalone: true,
-  imports: [CommonModule],
+    imports: [CommonModule, NoSwipeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './month-slider.component.html',
   styleUrl: './month-slider.component.scss'

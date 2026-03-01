@@ -1,6 +1,6 @@
-<div class="slider-container" #container 
-     (mousedown)="onContainerClick($event)" 
-     (touchstart)="onContainerClick($event)">
+<div class="slider-container" #container noSwipe
+  (mousedown)="onContainerClick($event)" 
+  (touchstart)="onContainerClick($event)">
       <div class="track-bg"></div>
       
       <!-- Colored Range between handles -->

@@ -15,12 +15,11 @@ export const authGuard: CanActivateFn = () => {
     }
 
     // If identifying as guest, allow access
-    if (authService.isGuest()) {
+    else if (authService.isGuest()) {
         return true;
     }
-
     // Redirect to register if neither authenticated nor guest
-    return router.parseUrl('/register');
+    else return router.parseUrl('/register');
 };
 
 /**
