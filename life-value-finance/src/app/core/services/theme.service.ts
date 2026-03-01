@@ -43,8 +43,21 @@ export class ThemeService {
         const t = this.theme();
         if(t !== 'system') {
             localStorage.setItem(this.THEME_KEY, t);
+            try {
+              // set a cookie so server-side rendering can read preferred theme
+              // expires in 1 year
+              document.cookie = `theme=${encodeURIComponent(t)}; Path=/; Max-Age=${60*60*24*365}; SameSite=Lax`;
+            } catch (e) {
+              // ignore cookie failures
+            }
         } else {
             localStorage.removeItem(this.THEME_KEY);
+            try {
+              // remove cookie
+              document.cookie = 'theme=; Path=/; Max-Age=0; SameSite=Lax';
+            } catch (e) {
+              // ignore
+            }
         }
         this.applyTheme(t);
     });

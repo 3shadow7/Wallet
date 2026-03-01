@@ -44,9 +44,41 @@ app.use(
 app.use('/**', (req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then((response) => {
+      if (!response) return next();
+
+      // If the response body is HTML, inject data-theme from a cookie so
+      // the initial paint matches the user's preference and avoids flash.
+      try {
+        const contentType = response.headers?.get?.('content-type') || '';
+        if (response.body && typeof response.body === 'string' && contentType.includes('text/html')) {
+          const bodyStr = response.body as string;
+          const cookieHeader = req.headers && (req.headers as any).cookie;
+          let theme = null;
+          if (cookieHeader) {
+            const match = cookieHeader.match(/(?:^|; )theme=([^;]+)/);
+            if (match) theme = decodeURIComponent(match[1]);
+          }
+          if (!theme) {
+            // Fallback: try to infer from Accept-CH or default to light
+            theme = 'light';
+          }
+
+          // Ensure we set or replace data-theme attribute on <html>
+          const newBody = bodyStr.replace(/<html(.*?)>/i, (m: string, g1: string) => {
+            if (/data-theme=/.test(g1)) {
+              return `<html${g1.replace(/data-theme=(?:"|')?[^"'\s>]+(?:"|')?/, `data-theme="${theme}"`)}>`;
+            }
+            return `<html${g1} data-theme="${theme}">`;
+          });
+          response = Object.assign({}, response, { body: newBody });
+        }
+      } catch (e) {
+        // ignore any errors during injection and continue
+      }
+
+      return writeResponseToNodeResponse(response, res);
+    })
     .catch(next);
 });
 
