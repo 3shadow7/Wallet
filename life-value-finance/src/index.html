@@ -11,6 +11,57 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
   <link rel="manifest" href="manifest.webmanifest">
+  <!--
+    THEME BOOTSTRAP (DO NOT REMOVE OR MOVE TO ANGULAR WITHOUT UNDERSTANDING)
+
+    Purpose:
+    - This inline script runs immediately while the browser parses HTML, BEFORE
+      Angular bootstraps and BEFORE the first paint. It sets `data-theme` on
+      the <html> element and temporarily disables CSS transitions so users do
+      not see a flash (light -> dark) when refreshing the page.
+
+    Important notes for future scaling:
+    - Do NOT move this logic into an Angular TypeScript file (or rely solely
+      on `APP_INITIALIZER`) unless you guarantee it executes before first
+      paint. Moving it into Angular usually runs too late and causes the flash
+      the script prevents.
+    - If you must satisfy a strict CSP (no inline scripts), extract this
+      function into a small external JS file (e.g. `theme-bootstrap.js`) and
+      include it with a `<script src="/theme-bootstrap.js"></script>` tag
+      before your CSS and Angular scripts. That keeps the early-execution
+      behavior while complying with CSP.
+    - The script reads `localStorage.getItem('theme')` by default. If you use
+      a different key, update the `key` variable inside the script.
+    - Alternatives: server-side rendering (SSR) is ideal for removing any
+      flash, or set the attribute on the server-rendered HTML.
+  -->
+  <script>
+    // Initial theme bootstrap: set data-theme before CSS/app loads to avoid
+    // flashing from default -> actual theme and disable transitions during the switch.
+    (function(){
+      try {
+        var key = 'theme';
+        var theme = null;
+        try { theme = localStorage.getItem(key); } catch(e) { theme = null; }
+        if (!theme) {
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          theme = prefersDark ? 'dark' : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+        // Prevent CSS transitions while theme is applied on first paint
+        document.documentElement.classList.add('no-theme-transitions');
+
+        // Remove the class after initial render to re-enable transitions
+        window.addEventListener('DOMContentLoaded', function() {
+          requestAnimationFrame(function(){
+            document.documentElement.classList.remove('no-theme-transitions');
+          });
+        });
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>
