@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, signal, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { RouterOutlet, Router } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { filter, take } from 'rxjs/operators';
 import { HeaderComponent } from './layout/header/header.component';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 
@@ -103,6 +104,19 @@ export class AppComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       document.addEventListener('touchstart', this.onDocumentTouchStart, { passive: true, capture: true } as EventListenerOptions);
       document.addEventListener('touchend', this.onDocumentTouchEnd, { passive: true, capture: true } as EventListenerOptions);
+    }
+
+    // Remove the initial loading guard after the first successful navigation
+    // so the correct route (login/register vs app routes) is shown without flash.
+    try {
+      this.router.events.pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        take(1)
+      ).subscribe(() => {
+        try { document.documentElement.classList.remove('app-loading'); } catch (e) { /* ignore */ }
+      });
+    } catch (e) {
+      try { document.documentElement.classList.remove('app-loading'); } catch (e) { /* ignore */ }
     }
   }
 

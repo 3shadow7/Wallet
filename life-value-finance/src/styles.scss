@@ -155,3 +155,17 @@ input, select {
     user-select: none;
   }
 }
+
+/* Disable transitions during initial theme set to avoid flash */
+html.no-theme-transitions, html.no-theme-transitions *, html.no-theme-transitions *::before, html.no-theme-transitions *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Hide Angular app until initial navigation/auth check completes to avoid
+   flashing login/register pages before correct state is restored. */
+html.app-loading app-root {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

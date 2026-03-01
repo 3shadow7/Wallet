@@ -50,6 +50,8 @@
         document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
         // Prevent CSS transitions while theme is applied on first paint
         document.documentElement.classList.add('no-theme-transitions');
+        // Hide the Angular app until initial navigation/auth checks complete
+        document.documentElement.classList.add('app-loading');
 
         // Remove the class after initial render to re-enable transitions
         window.addEventListener('DOMContentLoaded', function() {
