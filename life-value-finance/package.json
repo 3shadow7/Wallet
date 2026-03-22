@@ -12,7 +12,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:life-value-finance": "node dist/life-value-finance/server/server.mjs",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "lint:hex": "node scripts/check-hex.js"
   },
   "private": true,
   "dependencies": {

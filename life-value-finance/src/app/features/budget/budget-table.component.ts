@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, Validators, FormGroup } 
 import { AgGridAngular } from 'ag-grid-angular';
 import { ThemeService } from '@core/services/theme.service';
 import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
+import { getThemeTokens } from '../../theme/theme-utils';
 import { 
   ColDef, 
   GridOptions, 
@@ -47,6 +48,10 @@ export class BudgetTableComponent {
   // Options for SingleSelect
   priorityOptions = ['Must Have', 'Want', 'Emergency', 'Gift'];
   typeOptions = ['Burning', 'Responsibility', 'Saving'];
+
+  private get colorTokens() {
+    return getThemeTokens(this.isBrowser ? window : null);
+  }
 
   // Savings Analysis
   savingsStatus = computed(() => {
@@ -261,13 +266,14 @@ export class BudgetTableComponent {
       cellRenderer: (params: ICellRendererParams) => {
         const val = params.value;
         if (!val || val === '--') return '';
+        const tokens = this.colorTokens;
         const colorMap: Record<string, string> = {
-            'Must Have': '#ef4444',     // High (Must Have - Red)
-            'Want': '#10b981',          // Low (Want - Green)
-            'Emergency': '#000000',     // Emergency (Black)
-            'Gift': '#8b5cf6'           // Gift (Purple)
+            'Must Have': tokens.danger,
+            'Want': tokens.success,
+            'Emergency': tokens.textPrimary,
+            'Gift': tokens.primary
         };
-        const color = colorMap[val] || '#6b7280';
+        const color = colorMap[val] || tokens.textSecondary;
         return `<div style="display: flex; align-items: center; gap: 8px;">
                   <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
                   <span>${val}</span>
@@ -288,14 +294,16 @@ export class BudgetTableComponent {
       cellRenderer: (params: ICellRendererParams) => {
         const val = params.value;
         if (!val || val === '--') return '';
-        
+        const tokens = this.colorTokens;
+        const tint = (color: string, transparency: number) => `color-mix(in srgb, ${color}, transparent ${transparency}%)`;
+
         const styleMap: Record<string, {bg: string, color: string, border: string}> = {
-            'Burning': { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' }, // Red (Variable)
-            'Responsibility': { bg: '#fef3c7', color: '#b45309', border: '#fcd34d' },    // Yellow/Orange (Fixed)
-            'Saving': { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' }   // Green (Savings)
+            'Burning': { bg: tint(tokens.danger, 85), color: tokens.danger, border: tint(tokens.danger, 50) },
+            'Responsibility': { bg: tint(tokens.warning, 85), color: tint(tokens.warning, 30), border: tint(tokens.warning, 60) },
+            'Saving': { bg: tint(tokens.success, 85), color: tint(tokens.success, 30), border: tint(tokens.success, 60) }
         };
         
-        let style = styleMap[val] || { bg: '#f3f4f6', color: '#374151', border: '#d1d5db' };
+        let style = styleMap[val] || { bg: tint(tokens.textSecondary, 85), color: tokens.textSecondary, border: tint(tokens.textSecondary, 60) };
         let warningHtml = '';
         let tooltip = '';
 
@@ -303,7 +311,7 @@ export class BudgetTableComponent {
         if (val === 'Saving' && this.savingsStatus().hasDeficit) {
              const percent = Math.floor(this.savingsStatus().percentFunded);
              // Change to warning style (similar to Burning/Danger to indicate risk)
-             style = { bg: '#fee2e2', color: '#991b1b', border: '#ef4444' };
+             style = { bg: tint(tokens.danger, 85), color: tokens.danger, border: tokens.danger };
              warningHtml = `<span>⚠️</span>`;
              tooltip = `Partially Funded (Only ${percent}% available)`;
         }

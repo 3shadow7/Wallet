@@ -16,7 +16,7 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background: #e2e8f0;
+    background: var(--border-subtle);
     border-radius: 0.25rem;
   }
 
@@ -24,7 +24,7 @@
     position: absolute;
     top: 0;
     height: 100%;
-    background: #8b5cf6; 
+    background: var(--primary-color); 
     border-radius: 0.25rem;
     pointer-events: none;
   }
@@ -35,12 +35,12 @@
     transform: translate(-50%, -50%); /* Center the handle on the point */
     width: 1.5rem;
     height: 1.5rem;
-    background: white;
-    border: 0.125rem solid #8b5cf6;
+    background: var(--bg-surface);
+    border: 0.125rem solid var(--primary-color);
     border-radius: 50%;
     cursor: pointer;
     z-index: 10;
-    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-sm);
     transition: transform 0.1s ease, box-shadow 0.1s ease;
     
     // Increase touch target size without changing visual size
@@ -54,22 +54,23 @@
     }
 
     &:hover { transform: translate(-50%, -50%) scale(1.1); }
-    &:active { cursor: grabbing; box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.2); }
+    &:active { cursor: grabbing; box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--primary-color), transparent 70%); }
 
     .tooltip {
       position: absolute;
       bottom: 1.875rem;
       left: 50%;
       transform: translateX(-50%);
-      background: #1e293b;
-      color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
+      background: color-mix(in srgb, var(--bg-elev-2), transparent 10%);
+      color: var(--text-primary);
+      padding: 0.35rem 0.6rem;
+      border-radius: 0.35rem;
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 700;
       white-space: nowrap;
       pointer-events: none;
-      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.2);
+      border: 1px solid color-mix(in srgb, var(--border-color), transparent 30%);
+      box-shadow: var(--shadow-sm);
       
       &::after {
         content: '';
@@ -79,7 +80,7 @@
         margin-left: -0.25rem;
         border-width: 0.25rem;
         border-style: solid;
-        border-color: #1e293b transparent transparent transparent;
+        border-color: color-mix(in srgb, var(--bg-elev-2), transparent 10%) transparent transparent transparent;
       }
     }
   }
@@ -108,7 +109,7 @@
 
       .tick-mark {
           font-size: 0.6rem;
-          color: #cbd5e1; // Slate-300
+          color: var(--text-muted);
           margin-bottom: 0.25rem;
           font-weight: bold;
           transition: color 0.2s;
@@ -116,18 +117,18 @@
       
       .tick-label {
           font-size: 0.75rem;
-          color: #94a3b8;
+          color: var(--text-secondary);
           font-weight: 500;
           transition: color 0.2s, font-weight 0.2s;
           user-select: none;
       }
       
       // Active State (Selected Range)
-      &.active {
-          .tick-mark { color: #8b5cf6; }
+        &.active {
+          .tick-mark { color: var(--primary-color); }
           .tick-label { 
-              color: #7c3aed; 
-              font-weight: 700;
+            color: var(--primary-color); 
+            font-weight: 700;
           }
       }
 

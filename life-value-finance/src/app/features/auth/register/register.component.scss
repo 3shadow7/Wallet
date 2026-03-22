@@ -158,11 +158,11 @@
 
   .error-msg {
     font-size: var(--font-size-sm);
-    color: #ff5252;
-    background: rgba(255, 82, 82, 0.1);
+    color: var(--danger-color);
+    background: color-mix(in srgb, var(--danger-color), transparent 90%);
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-sm);
-    border-left: 3px solid #ff5252;
+    border-left: 3px solid var(--danger-color);
     margin: var(--spacing-sm) 0;
     animation: slideDown 0.3s ease;
   }

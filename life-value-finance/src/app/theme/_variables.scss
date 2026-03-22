@@ -12,12 +12,15 @@
   --text-inverse: #ffffff;
   --text-muted: #9ca3af;
   
-  /* Backgrounds */
-  --bg-app: #f4f6fa;       // Light gray-blue app background
-  --bg-surface: #ffffff;   // White cards
+  /* Backgrounds (4-layer system) */
+  --bg-base: #f4f6fa;            // App/body background
+  --bg-surface: #ffffff;         // Primary card surface
+  --bg-elev-1: #f8f9fc;          // Subpanels / elevated cards
+  --bg-elev-2: #eef1f7;          // Modals / overlays
   --bg-surface-hover: #fcfcfd; 
   --bg-input: #f2f3f7;
-  --bg-secondary: #f4f6fa; // Alias for bg-app
+  --bg-app: var(--bg-base);      // Backward-compatible alias
+  --bg-secondary: var(--bg-base);
 
   /* Borders */
   --border-color: #e2e8f0;
@@ -87,12 +90,15 @@
   --text-inverse: #0f172a; // Dark bg text
   --text-muted: #64748b;
 
-  /* Backgrounds */
-  --bg-app: #0f172a;       // Slate-900
-  --bg-surface: rgba(30, 41, 59, 0.7); // Semi-transparent for glass effect
+  /* Backgrounds (4-layer system) */
+  --bg-base: #0f172a;                       // App/body background
+  --bg-surface: rgba(30, 41, 59, 0.7);      // Primary card surface (glass)
+  --bg-elev-1: rgba(30, 41, 59, 0.82);      // Subpanels / elevated cards
+  --bg-elev-2: #0b1221;                     // Modals / overlays
   --bg-surface-hover: #334155; 
   --bg-input: #334155;     // Slate-700
-  --bg-secondary: #0f172a;
+  --bg-app: var(--bg-base);
+  --bg-secondary: var(--bg-base);
 
   /* Borders */
   --border-color: #334155; // Slate-700
@@ -124,6 +130,10 @@ $accent-color: var(--border-focus); // Using border focus as accent/purple
 $text-primary: var(--text-primary);
 $text-secondary: var(--text-secondary);
 $bg-color: var(--bg-app);
+$bg-base: var(--bg-base);
+$bg-surface: var(--bg-surface);
+$bg-elev-1: var(--bg-elev-1);
+$bg-elev-2: var(--bg-elev-2);
 $bg-input: var(--bg-input);
 $bg-surface-hover: var(--bg-surface-hover);
 $surface-color: var(--bg-surface);

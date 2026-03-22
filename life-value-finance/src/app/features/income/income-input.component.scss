@@ -154,7 +154,7 @@
 .calc-preview {
     font-size: 0.8rem;
     // Approximation of primary color tint if rgba fails
-    background: #f3f0ff; 
+  background: color-mix(in srgb, var(--primary-color), transparent 90%);
     color: var(--primary-color);
     padding: 0.5rem;
     border-radius: var(--radius-sm);

@@ -14,7 +14,7 @@ html, body {
   // Default font size (16px base)
   font-size: 16px; 
   
-  background-color: var(--bg-secondary);
+  background-color: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -72,7 +72,7 @@ button, .btn-primary {
 
 .btn-primary {
   background-color: var(--primary-color);
-  color: #fff;
+  color: var(--text-inverse);
   box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1); 
 
   &:hover:not(:disabled) {
@@ -98,17 +98,17 @@ input, select {
 
 /* --- Glassmorphism Effect --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03); /* Extremely subtle fill */
+  background: color-mix(in srgb, var(--bg-elev-2), transparent 90%); /* Subtle elevated fill */
   backdrop-filter: blur(0.75rem);
   -webkit-backdrop-filter: blur(0.75rem);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
+  border: 0.0625rem solid color-mix(in srgb, var(--border-color), transparent 60%);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Dark Mode Specific Glass override if needed */
 [data-theme="dark"] .glass-panel {
-  background: rgba(0, 0, 0, 0.2); 
-  border: 0.0625rem solid rgba(255, 255, 255, 0.05); /* Lighter border for visibility */
+  background: color-mix(in srgb, var(--bg-elev-2), transparent 75%);
+  border: 0.0625rem solid color-mix(in srgb, var(--border-color), transparent 40%);
 }
 
 

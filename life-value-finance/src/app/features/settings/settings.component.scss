@@ -163,11 +163,11 @@
   }
 
   &.btn-danger {
-    background: #ef4444; // Standard red
-    color: white;
+    background: var(--danger-color); // Tokenized red
+    color: var(--text-inverse);
     
     &:hover {
-        background: #dc2626;
+        background: color-mix(in srgb, var(--danger-color), transparent 15%);
     }
   }
 
@@ -189,7 +189,7 @@
     background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.05);
 
     .danger-title {
-        color: var(--danger-color, #ef4444);
+      color: var(--danger-color);
     }
 
     .action-group.danger {
@@ -226,13 +226,13 @@
 
 .btn-danger {
   background: rgba(var(--danger-color-rgb, 239, 68, 68), 0.1);
-  color: var(--danger-color, #ef4444); 
+  color: var(--danger-color); 
   border: 1px solid rgba(var(--danger-color-rgb, 239, 68, 68), 0.4);
 
   &:not(:disabled):hover {
-    background: var(--danger-color, #ef4444);
+    background: var(--danger-color);
     color: var(--text-inverse, white);
-    border-color: var(--danger-color, #ef4444);
+    border-color: var(--danger-color);
   }
 }
 

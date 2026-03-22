@@ -86,8 +86,8 @@
 
 .history-badge,
 .history-badge-mobile {
-  background: #f59e0b;
-  color: white;
+  background: var(--warning-color);
+  color: var(--text-inverse);
   font-size: 0.7rem;
   font-weight: 800;
   padding: 2px 6px;
@@ -197,14 +197,8 @@
 
     // History Mode Styling
     &.history-header {
-      background: linear-gradient(to right, #fffbeb, #fff7ed); // Amber-50 to Orange-50 (Warm tint)
-      border-bottom-color: #fdd8a8; // Amber-200
-
-      // In dark mode this needs to be handled? Using transparency might be safest if I can't detect dark mode easily in SCSS without a class.
-      // Assuming dark mode applies to :root or body. 
-      // Let's use a subtle rgba overlay instead to support dark mode naturally.
-      background: rgba(245, 158, 11, 0.08); // Warning color with low opacity
-      border-bottom-color: rgba(245, 158, 11, 0.2);
+      background: color-mix(in srgb, var(--warning-color), transparent 90%);
+      border-bottom-color: color-mix(in srgb, var(--warning-color), transparent 70%);
     }
 
     .header-content {
@@ -256,14 +250,14 @@
         }
 
         &.btn-reset {
-          color: #d97706; // Amber-600
+          color: color-mix(in srgb, var(--warning-color), transparent 40%);
           border-color: var(--border-subtle);
-          background: rgba(245, 158, 11, 0.05);
+          background: color-mix(in srgb, var(--warning-color), transparent 90%);
 
           &:hover {
-            background: #f59e0b;
-            color: white;
-            border-color: #f59e0b;
+            background: var(--warning-color);
+            color: var(--text-inverse);
+            border-color: var(--warning-color);
           }
         }
       }
@@ -438,14 +432,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(var(--danger-color), 0.1);
+        background: color-mix(in srgb, var(--danger-color), transparent 90%);
         color: v.$error-color;
-        border: 1px solid rgba(var(--danger-color), 0.2);
+        border: 1px solid color-mix(in srgb, var(--danger-color), transparent 70%);
         border-radius: v.$radius-md;
         cursor: pointer;
 
         &:active {
-          background: rgba(var(--danger-color), 0.2);
+          background: color-mix(in srgb, var(--danger-color), transparent 80%);
         }
       }
 
@@ -454,14 +448,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(245, 158, 11, 0.1); // Amber
-        color: #d97706;
-        border: 1px solid rgba(245, 158, 11, 0.2);
+        background: color-mix(in srgb, var(--warning-color), transparent 90%);
+        color: color-mix(in srgb, var(--warning-color), transparent 40%);
+        border: 1px solid color-mix(in srgb, var(--warning-color), transparent 70%);
         border-radius: v.$radius-md;
         cursor: pointer;
 
         &:active {
-          background: rgba(245, 158, 11, 0.2);
+          background: color-mix(in srgb, var(--warning-color), transparent 80%);
         }
       }
     }
@@ -562,7 +556,7 @@
 
       .card-warning-stripe {
         background-color: var(--warning-color);
-        color: #fff;
+        color: var(--text-inverse);
         font-size: 0.75rem;
         font-weight: 600;
         text-align: center;
@@ -584,7 +578,7 @@
 
       .card-warning-stripe {
         background-color: var(--warning-color);
-        color: #fff;
+        color: var(--text-inverse);
         font-size: 0.75rem;
         font-weight: 600;
         text-align: center;
@@ -633,7 +627,7 @@
           gap: 2px;
           border: 1px dashed transparent;
           transition: border-color 0.2s;
-          background: rgba(var(--primary-color-hue), 0.05);
+            background: color-mix(in srgb, var(--primary-color), transparent 95%);
           /* Slight tint to indicate editable */
           padding: 4px 8px;
           border-radius: var(--radius-md);

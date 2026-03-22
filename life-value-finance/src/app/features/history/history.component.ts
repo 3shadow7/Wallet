@@ -9,6 +9,7 @@ import { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { SavingsService, MonthlyRecord } from '@core/services/savings.service';
 import ApexCharts from 'apexcharts';
 import { ThemeService } from '@core/services/theme.service';
+import { getThemeTokens } from '../../theme/theme-utils';
 
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem } from '@core/domain/models';
@@ -188,7 +189,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     { 
         field: 'manualAdded', 
         headerName: 'Direct Additions',
-        cellStyle: { fontWeight: 'bold', color: '#f59e0b' }, // Amber for manual
+        cellStyle: { fontWeight: 'bold', color: 'var(--warning-color)' }, // Tokenized amber
         valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '--'
     },
     { 
@@ -245,10 +246,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   // State to track if user has manually filtered
   private userHasInteractedWithSlider = false;
 
+    private get tokens() {
+        return getThemeTokens(this.isBrowser ? window : null);
+    }
+
   private updateChartTheme(isDark: boolean) {
       const themeMode = isDark ? 'dark' : 'light';
-      const textColor = isDark ? '#e2e8f0' : '#1e293b'; 
-      const gridColor = isDark ? '#334155' : '#e2e8f0';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const gridColor = tokens.border;
 
       const commonOptions = {
           chart: {
@@ -275,7 +281,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           // Ensure data labels contrast correctly
           dataLabels: {
-              style: { colors: [isDark ? '#e2e8f0' : '#1e293b'] }
+              style: { colors: [textColor] }
           }
       };
 
@@ -373,8 +379,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private initCharts() {
       const data = this.history();
       const isDark = this.themeService.isDark();
-      const textColor = isDark ? '#e2e8f0' : '#1e293b'; 
-      const gridColor = isDark ? '#334155' : '#e2e8f0';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const gridColor = tokens.border;
       const themeMode = isDark ? 'dark' : 'light';
 
       // Common Styling
@@ -405,7 +412,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisTicks: { show: false }
           },
           grid: commonGrid,
-          colors: ['#8b5cf6'],
+          colors: [tokens.primary],
           fill: {
               type: 'gradient',
               gradient: {
@@ -419,7 +426,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               theme: themeMode,
               y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
-          markers: { size: 4, colors: ['#fff'], strokeColors: '#8b5cf6', strokeWidth: 2, hover: { size: 6 } }
+          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } }
       };
       
       this.sChart = new ApexCharts(this.savingsChartEl.nativeElement, savingsOptions);
@@ -465,14 +472,14 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisTicks: { show: false }
           },
           grid: commonGrid,
-          colors: [
-            '#10b981', // Income (Green)
-            '#ef4444', // Expenses (Red)
-            '#f59e0b', // Direct Additions (Amber)
-            function({ value }: { value: number }) {
-                return value < 0 ? '#1e293b' : '#8b5cf6'; // Dark Slate (deficit) vs Purple (saved)
-            }
-          ],
+                    colors: [
+                        tokens.success, // Income
+                        tokens.danger,  // Expenses
+                        tokens.warning, // Direct Additions
+                        function({ value }: { value: number }) {
+                                return value < 0 ? tokens.textPrimary : tokens.primary; // Deficit vs Saved
+                        }
+                    ],
           fill: { opacity: 1 },
           tooltip: {
               theme: themeMode,
@@ -513,23 +520,23 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private getCategoryColor(category: string): string {
-      const isDark = this.themeService.isDark();
+      const tokens = this.tokens;
       const map: Record<string, string> = {
-          'Burning': '#ef4444', // Red
-          'Responsibility': '#f59e0b', // Amber
-          'Saving': '#10b981', // Green
-          
-          'Must Have': '#ef4444',
-          'Want': '#10b981', 
-          'Emergency': isDark ? '#ffffff' : '#000000', // Black/White
-          'Gift': '#8b5cf6' // Purple
+          'Burning': tokens.danger,
+          'Responsibility': tokens.warning,
+          'Saving': tokens.success,
+          'Must Have': tokens.danger,
+          'Want': tokens.success, 
+          'Emergency': tokens.textPrimary,
+          'Gift': tokens.primary
       };
-      return map[category] || '#94a3b8';
+      return map[category] || tokens.textSecondary;
   }
 
   private initBreakdownChart() {
       const isDark = this.themeService.isDark();
-      const textColor = isDark ? '#e2e8f0' : '#1e293b';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
       const themeMode = isDark ? 'dark' : 'light';
 
       const options: any = { // Use any to allow dynamic property updates easily
@@ -555,7 +562,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           // Colors will be set on update
           colors: [], 
-          stroke: { width: 1, colors: ['#fff'] },
+          stroke: { width: 1, colors: ['var(--bg-surface)'] },
           xaxis: {
               categories: [],
               labels: {
@@ -566,11 +573,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
-          grid: {
-            borderColor: isDark ? '#334155' : '#f1f5f9',
-            xaxis: { lines: { show: true } },
-            yaxis: { lines: { show: false } }
-          },
+                    grid: {
+                        borderColor: tokens.border,
+                        xaxis: { lines: { show: true } },
+                        yaxis: { lines: { show: false } }
+                    },
           fill: { opacity: 1 },
           legend: { position: 'top', horizontalAlign: 'right' },
           tooltip: {
@@ -643,7 +650,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private initItemChart() {
       const isDark = this.themeService.isDark();
-      const textColor = isDark ? '#e2e8f0' : '#1e293b';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
       const themeMode = isDark ? 'dark' : 'light';
 
       const options = {
@@ -662,9 +670,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           // Extended palette for distributed colors
           colors: [
-              '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', 
-              '#ef4444', '#6366f1', '#14b8a6', '#f97316', '#84cc16',
-              '#a855f7', '#db2777', '#06b6d4', '#eab308', '#2563eb'
+              tokens.primary, tokens.warning, tokens.success, tokens.danger, tokens.info,
+              tokens.textPrimary, tokens.textSecondary, tokens.bgSurface, tokens.bgElev1, tokens.bgElev2
           ],
           plotOptions: {
               treemap: {
@@ -679,7 +686,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                   fontSize: '12px',
                   fontFamily: 'Inter, sans-serif',
                   fontWeight: 'bold',
-                  colors: ['#fff']
+                  colors: ['var(--text-inverse)']
               },
               formatter: function(text: string, op: any) {
                   return [text, '$' + op.value.toLocaleString()];
@@ -705,9 +712,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private updateItemChart() {
     if (!this.iChart) return;
 
-    const isDark = this.themeService.isDark();
-    const textColor = isDark ? '#e2e8f0' : '#1e293b';
-    const themeMode = isDark ? 'dark' : 'light';
+        const isDark = this.themeService.isDark();
+        const tokens = this.tokens;
+        const textColor = tokens.textPrimary;
+        const themeMode = isDark ? 'dark' : 'light';
 
     // Update title color dynamically on data change (hack since chart.updateOptions might reset)
     this.iChart.updateOptions({
@@ -754,10 +762,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             existing.y += curr.amount; // update sum
         } else {
             // Determine color based on Type (Matches Dashboard Badges)
-            let color = '#94a3b8'; // Default slate
-            if (curr.type === 'Burning') color = '#ef4444'; // Red
-            else if (curr.type === 'Responsibility') color = '#f59e0b'; // Amber
-            else if (curr.type === 'Saving') color = '#10b981'; // Green
+            let color = tokens.textSecondary; // Default slate
+            if (curr.type === 'Burning') color = tokens.danger; // Red
+            else if (curr.type === 'Responsibility') color = tokens.warning; // Amber
+            else if (curr.type === 'Saving') color = tokens.success; // Green
 
             acc.push({ x: key, y: curr.amount, fillColor: color }); 
         }

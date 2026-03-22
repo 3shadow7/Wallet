@@ -62,18 +62,17 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    // color: #334155; 
     font-weight: 500;
 
     &.placeholder {
-        color: #94a3b8;
+        color: var(--text-muted);
         font-weight: 400;
     }
   }
 
   .icon {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     transition: transform 0.2s;
     margin-left: 0.5rem;
   }
