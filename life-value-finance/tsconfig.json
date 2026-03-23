@@ -23,7 +23,11 @@
         "src/app/core/*"
       ],
       "@shared/*": [
-        "src/app/shared/*"
+        "src/app/shared/*",
+        "src/app/components/*"
+      ],
+      "@shared/components/*": [
+        "src/app/components/*"
       ],
       "@features/*": [
         "src/app/features/*"
@@ -32,7 +36,7 @@
         "src/app/layout/*"
       ],
       "@theme/*": [
-        "src/app/theme/*"
+        "src/app/design-system/theme/*"
       ],
       "@env/*": [
         "src/environments/*"

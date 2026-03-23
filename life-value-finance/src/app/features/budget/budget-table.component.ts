@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, Validators, FormGroup } 
 import { AgGridAngular } from 'ag-grid-angular';
 import { ThemeService } from '@core/services/theme.service';
 import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
-import { getThemeTokens } from '../../theme/theme-utils';
+import { getThemeTokens } from '@theme/theme-utils';
 import { 
   ColDef, 
   GridOptions, 

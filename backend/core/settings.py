@@ -44,7 +44,9 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # Internal Apps
-    'authentication',    "core_finance",]
+    'apps.authentication',
+    'apps.core_finance',
+]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', # MUST be at the top

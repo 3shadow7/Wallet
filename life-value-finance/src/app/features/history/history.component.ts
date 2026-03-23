@@ -9,7 +9,7 @@ import { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { SavingsService, MonthlyRecord } from '@core/services/savings.service';
 import ApexCharts from 'apexcharts';
 import { ThemeService } from '@core/services/theme.service';
-import { getThemeTokens } from '../../theme/theme-utils';
+import { getThemeTokens } from '@theme/theme-utils';
 
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem } from '@core/domain/models';

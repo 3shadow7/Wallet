@@ -9,7 +9,9 @@ const srcRoot = path.join(projectRoot, 'src');
 const allowlist = new Set([
   path.join(srcRoot, 'app', 'theme', '_variables.scss'),
   path.join(srcRoot, 'app', 'theme', '_assets-3d.scss'),
-  path.join(srcRoot, 'app', 'theme', 'theme-utils.ts'),
+  path.join(srcRoot, 'app', 'design-system', 'theme', '_variables.scss'),
+  path.join(srcRoot, 'app', 'design-system', 'theme', '_assets-3d.scss'),
+  path.join(srcRoot, 'app', 'design-system', 'theme', 'theme-utils.ts'),
   path.join(srcRoot, 'assets', 'icons', 'icon-512.svg'),
   path.join(srcRoot, 'assets', 'icons', 'icon-192.svg'),
   path.join(srcRoot, 'manifest.webmanifest'),

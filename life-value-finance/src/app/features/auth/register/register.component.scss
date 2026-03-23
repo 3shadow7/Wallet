@@ -1,7 +1,7 @@
 @use "sass:color";
-@use "../../../theme/variables" as v;
-@use "../../../theme/mixins" as m;
-@use "../../../theme/assets-3d" as a3d;
+@use "../../../design-system/theme/variables" as v;
+@use "../../../design-system/theme/mixins" as m;
+@use "../../../design-system/theme/assets-3d" as a3d;
 
 .auth-container {
   height: 100vh;

@@ -1,6 +1,6 @@
 @use 'sass:color';
-@use '../../theme/variables' as v;
-@use '../../theme/mixins' as m;
+@use '../../design-system/theme/variables' as v;
+@use '../../design-system/theme/mixins' as m;
 
 .history-container {
     margin: 0 auto;
