@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+import uuid
 
 class Expense(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="expenses")
@@ -21,4 +22,15 @@ class UserIncome(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="income_profile")
     monthly_income = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class UserBackup(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="backup")
+    data = models.JSONField(default=dict, blank=True)
+    revision = models.CharField(max_length=36, default=uuid.uuid4, editable=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def bump_revision(self):
+        self.revision = str(uuid.uuid4())
+        return self.revision
 

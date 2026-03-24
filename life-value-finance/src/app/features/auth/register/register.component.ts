@@ -57,20 +57,8 @@ export class RegisterComponent {
       
       this.authService.register(this.registerForm.value).subscribe({
         next: () => {
-          // Auto login after registration
-          this.authService.login({
-            username: this.registerForm.value.username,
-            password: this.registerForm.value.password
-          }).subscribe({
-            next: () => {
-              this.isLoading.set(false);
-              this.router.navigate(['/dashboard']);
-            },
-            error: (err) => {
-              this.isLoading.set(false);
-              this.router.navigate(['/login']); // Fallback
-            }
-          });
+          this.isLoading.set(false);
+          this.router.navigate(['/dashboard']);
         },
         error: (err) => {
           this.isLoading.set(false);

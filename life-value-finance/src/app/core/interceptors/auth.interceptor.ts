@@ -1,16 +1,41 @@
 
-import { HttpInterceptorFn } from "@angular/common/http";
+import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
+import { inject } from "@angular/core";
+import { AuthService } from "../services/auth.service";
+import { catchError, switchMap, throwError } from "rxjs";
+
+const shouldSkip = (url: string) =>
+  url.includes("/auth/login/") || url.includes("/auth/register/") || url.includes("/auth/token/refresh/");
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+
   const token = localStorage.getItem("access_token");
-  
-  if (token) {
-    const cloned = req.clone({
-      headers: req.headers.set("Authorization", `Bearer ${token}`)
-    });
-    return next(cloned);
-  }
-  
-  return next(req);
+  const isAuthRequest = shouldSkip(req.url);
+
+  const authReq = token && !isAuthRequest
+    ? req.clone({ headers: req.headers.set("Authorization", `Bearer ${token}`) })
+    : req;
+
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      const refresh = localStorage.getItem("refresh_token");
+      // Only try refresh on 401 for non-auth endpoints if we have a refresh token
+      if (error.status === 401 && refresh && !isAuthRequest) {
+        return authService.refreshAccessToken().pipe(
+          switchMap((newAccess) => {
+            const retryReq = req.clone({
+              headers: req.headers.set("Authorization", `Bearer ${newAccess}`)
+            });
+            return next(retryReq);
+          }),
+          catchError((refreshErr) => {
+            return throwError(() => refreshErr);
+          })
+        );
+      }
+      return throwError(() => error);
+    })
+  );
 };
 
