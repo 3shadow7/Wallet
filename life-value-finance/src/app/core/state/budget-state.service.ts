@@ -234,14 +234,15 @@ export class BudgetStateService {
     const finalExpense = { ...expense, quantity, unitPrice, amount };
 
     if (this.isCurrentMonthView()) {
-        this.currentMonthExpenses.update(current => [...current, finalExpense]);
+        // UX: show newly added items first so users can see/edit immediately.
+        this.currentMonthExpenses.update(current => [finalExpense, ...current]);
     } else {
         // Find and update history entry
         const view = this.viewedMonth();
         this.history.update(history =>
             history.map(entry => {
                 if (entry.month === view) {
-                    const updatedExpenses = [...entry.expenses, finalExpense];
+                    const updatedExpenses = [finalExpense, ...entry.expenses];
                     // Recalculate summary for history entry
                     const updatedSummary = FinancialCalculatorService.calculateBudget(
                         entry.incomeConfig || this.incomeConfig(),
