@@ -5,3 +5,5 @@ dist/
 backend/venv/
 .fake
 .history/
+**/__pycache__/
+**/*.py[cod]
