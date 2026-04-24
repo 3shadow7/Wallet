@@ -35,11 +35,11 @@ export class BudgetStateService {
   // --- Core State ---
   private incomeConfig = signal<UserIncomeConfig>(INITIAL_STATE.incomeConfig);
   // Renamed to clarify it holds strictly the current active month's data
-  private currentMonthExpenses = signal<ExpenseItem[]>(INITIAL_STATE.expenses); 
+  private currentMonthExpenses = signal<ExpenseItem[]>(INITIAL_STATE.expenses);
   private history = signal<BudgetHistory[]>(INITIAL_STATE.history);
   private settings = signal<UserSettings>(INITIAL_STATE.settings);
-  private manualSavingsLog = signal<number>(0); 
-  
+  private manualSavingsLog = signal<number>(0);
+
   // View State (Navigation)
   private viewedMonth = signal<string>(INITIAL_SETTINGS.lastActiveMonth); // 'YYYY-MM'
   readonly loading = signal<boolean>(true);
@@ -108,7 +108,7 @@ export class BudgetStateService {
         history: this.history(),
         settings: this.settings()
       };
-      
+
       this.persistenceService.saveState(currentState);
       if (isPlatformBrowser(this.platformId) && typeof localStorage !== 'undefined') {
         localStorage.setItem('manualSavingsLog', this.manualSavingsLog().toString());
@@ -162,7 +162,7 @@ export class BudgetStateService {
   viewNextMonth() {
       const currentView = this.viewedMonth();
       const currentActive = this.settings().lastActiveMonth;
-      
+
       // Don't go beyond current active month (future)
       if (currentView >= currentActive) return;
 
@@ -176,10 +176,10 @@ export class BudgetStateService {
   private checkMonthRollover() {
     const settings = this.settings();
     const timezone = settings.timezone || 'Africa/Tripoli';
-    
+
     // Get current YYYY-MM in timezone
     const currentMonth = new Date().toLocaleDateString('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit' }).slice(0, 7);
-    
+
     if (currentMonth > settings.lastActiveMonth) {
         this.archiveCurrentMonth(settings.lastActiveMonth);
         this.settings.update(s => ({ ...s, lastActiveMonth: currentMonth }));
@@ -195,9 +195,9 @@ export class BudgetStateService {
         expenses: this.currentMonthExpenses(),
         summary: this.budgetSummary()
     };
-    
+
     this.history.update(h => [...h, historyEntry]);
-    
+
     // For now we keep expenses as template for next month
   }
 
@@ -238,7 +238,7 @@ export class BudgetStateService {
     } else {
         // Find and update history entry
         const view = this.viewedMonth();
-        this.history.update(history => 
+        this.history.update(history =>
             history.map(entry => {
                 if (entry.month === view) {
                     const updatedExpenses = [...entry.expenses, finalExpense];
@@ -252,11 +252,11 @@ export class BudgetStateService {
                 return entry;
             })
         );
-        
+
         // Also update SavingsService snapshot if it exists for this month
         const summary = this.budgetSummary();
         const transferToSavings = summary.remainingIncome > 0 ? summary.remainingIncome : 0;
-        
+
         // This is a manual correction to the snapshot
         // We'll need to add a specialized method to SavingsService later if we want full consistency,
         // but updating history signal in BudgetState should handle UI refresh for now.
@@ -264,7 +264,7 @@ export class BudgetStateService {
   }
 
   updateExpense(id: string, updates: Partial<ExpenseItem>): void {
-    const updateFn = (current: ExpenseItem[]) => 
+    const updateFn = (current: ExpenseItem[]) =>
       current.map(item => {
         if (item.id !== id) return item;
 
@@ -279,7 +279,7 @@ export class BudgetStateService {
         } else if (updates.unitPrice !== undefined && updates.amount === undefined) {
              newItem.amount = newItem.unitPrice * (newItem.quantity || 1);
         }
-        
+
         if (newItem.quantity > 0 && Math.abs(newItem.amount - (newItem.unitPrice * newItem.quantity)) > 0.01) {
              if (updates.amount !== undefined) {
                  newItem.unitPrice = newItem.amount / newItem.quantity;
@@ -294,7 +294,7 @@ export class BudgetStateService {
         this.currentMonthExpenses.update(updateFn);
     } else {
         const view = this.viewedMonth();
-        this.history.update(history => 
+        this.history.update(history =>
             history.map(entry => {
                 if (entry.month === view) {
                     const updatedExpenses = updateFn(entry.expenses);
@@ -315,7 +315,7 @@ export class BudgetStateService {
         this.currentMonthExpenses.update(current => current.filter(item => item.id !== id));
     } else {
         const view = this.viewedMonth();
-        this.history.update(history => 
+        this.history.update(history =>
             history.map(entry => {
                 if (entry.month === view) {
                     const updatedExpenses = entry.expenses.filter(item => item.id !== id);
@@ -385,9 +385,9 @@ export class BudgetStateService {
         expenses: expenses,
         summary: summary
     };
-    
+
     // 0. Update Savings Module with this month's snapshot
-    // Logic: 
+    // Logic:
     // - "Saving" Items are treated as allocated funds, so they are added back to "transferred" calculation.
     // - If Remaining Income is negative (overspending), we must DEDUCT that deficit from savings storage.
     const savingsExpensesTotal = expenses
@@ -397,7 +397,7 @@ export class BudgetStateService {
     // Calculate true net result: Income - (Real Expenses + Savings Contribution)
     // Note: summary.remainingIncome is clamped to 0 in FinancialCalculator, so we recalculate raw
     const rawRemaining = summary.totalIncome - summary.totalExpenses;
-    
+
     // Transferred Amount Logic:
     // This value represents the net change to your Total Savings Storage.
     // If positive: Your savings grow.
@@ -409,7 +409,7 @@ export class BudgetStateService {
     // If you have $500 planned savings and $200 surplus, Free Money is $200.
     // Transferred to Savings is $700.
     // If you have NO planned savings, then Free Money = Transferred = $200. This is correct but visually redundant.
-    
+
     this.savingsService.addMonthlySnapshot({
         month: currentState.month,
         income: summary.totalIncome,
@@ -424,34 +424,33 @@ export class BudgetStateService {
     // Reset Manual Log for next month
     this.manualSavingsLog.set(0);
 
-    // 1. Archive current state
-    // Filter out ignored items from history so they don't pollute the record
-    const historyState = { 
-        ...currentState, 
-        expenses: currentState.expenses.filter(e => !e.isIgnored) 
+    // 1. Archive the full current state so ignored items remain part of the monthly record.
+    // Budget calculations already exclude ignored items, so the archive can keep the complete list.
+    const historyState = {
+        ...currentState,
+        expenses: currentState.expenses.map(item => ({ ...item }))
     };
     this.history.update(current => [...current, historyState]);
-    
-    // 2. Clear Burning Expenses, Keep Responsibility AND Saving
-    // Note: We keep ignored items for next month (resetting them to active)
-    this.currentMonthExpenses.update(current => 
+
+    // 2. Carry every item into the next month so hidden items are not deleted on rollover.
+    // Reset ignore status so the new month starts with a clean active state.
+    this.currentMonthExpenses.update(current =>
         current
-            .filter(item => item.type === 'Responsibility' || item.type === 'Saving')
-            .map(item => ({ ...item, isIgnored: false })) // Reset ignore status for new month
+            .map(item => ({ ...item, isIgnored: false }))
     );
-    
+
     // 3. Advance Date to Next Month
     const currentActive = this.settings().lastActiveMonth;
     const date = new Date(currentActive + '-01');
     date.setMonth(date.getMonth() + 1);
     const nextMonth = date.toISOString().slice(0, 7);
-    
+
     this.settings.update(s => ({ ...s, lastActiveMonth: nextMonth }));
     this.viewedMonth.set(nextMonth);
   }
 
   // --- REVERT / UNDO LOGIC ---
-  
+
   /**
    * Attempts to undo the last "Start New Month" action.
    * Logic based on user requirement:
@@ -459,13 +458,13 @@ export class BudgetStateService {
    * 2. If currently in real month, just reset/clear current items (don't go back to past).
    */
   // --- REVERT / UNDO LOGIC ---
-  
+
   canRevertMonth(): boolean {
       const currentActive = this.settings().lastActiveMonth;
       const now = new Date();
       const realMonthStr = now.toISOString().slice(0, 7);
       const history = this.history();
-      
+
       // Can only revert if:
       // 1. We have history to go back to.
       // 2. The *current active month* is in the future relative to real time.
@@ -491,23 +490,23 @@ export class BudgetStateService {
       // 2. Restore State
       this.currentMonthExpenses.set(lastArchived.expenses);
       this.incomeConfig.set(lastArchived.incomeConfig);
-      
+
       this.settings.update(s => ({ ...s, lastActiveMonth: lastArchived.month }));
       this.viewedMonth.set(lastArchived.month);
 
       // 3. Remove from History
       this.history.update(h => h.slice(0, -1));
   }
-  
+
   resetCurrentMonthItems() {
-       this.currentMonthExpenses.update(items => 
+       this.currentMonthExpenses.update(items =>
           items.map(item => {
               // Reset values but keep structure
-              return { 
-                  ...item, 
-                  amount: 0, 
-                  quantity: 1, 
-                  unitPrice: 0 
+              return {
+                  ...item,
+                  amount: 0,
+                  quantity: 1,
+                  unitPrice: 0
               };
           })
        );
