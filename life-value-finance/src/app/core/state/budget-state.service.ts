@@ -4,6 +4,8 @@ import { ExpenseItem, BudgetSummary, UserIncomeConfig, BudgetHistory, UserSettin
 import { FinancialCalculatorService } from '@core/domain/financial-calculator.service';
 import { PersistenceService, AppStateData } from '@core/services/persistence.service';
 import { SavingsService } from '@core/services/savings.service';
+import { AuthService } from '@core/services/auth.service';
+import { Expense as FinanceExpense, FinanceService, UserIncome } from '@core/services/finance.service';
 
 const INITIAL_SETTINGS: UserSettings = {
   timezone: 'Africa/Tripoli',
@@ -31,6 +33,11 @@ export class BudgetStateService {
   private platformId = inject(PLATFORM_ID);
   private persistenceService = inject(PersistenceService);
   private savingsService = inject(SavingsService);
+    private authService = inject(AuthService);
+    private financeService = inject(FinanceService);
+    private lastPulledRemoteMonth: string | null = null;
+    private hasPulledRemoteIncome = false;
+    private seededCarryoverMonths = new Set<string>();
 
   // --- Core State ---
   private incomeConfig = signal<UserIncomeConfig>(INITIAL_STATE.incomeConfig);
@@ -114,6 +121,24 @@ export class BudgetStateService {
         localStorage.setItem('manualSavingsLog', this.manualSavingsLog().toString());
       }
     });
+
+        // When auth/session month context changes, pull the latest current-month expenses once.
+        effect(() => {
+            const isAuthenticated = this.authService.isAuthenticated();
+            const month = this.settings().lastActiveMonth;
+            const viewingCurrentMonth = this.viewedMonth() === month;
+            if (!isAuthenticated) {
+                this.lastPulledRemoteMonth = null;
+                this.hasPulledRemoteIncome = false;
+                this.seededCarryoverMonths.clear();
+                return;
+            }
+
+            this.pullIncomeFromBackend();
+            if (isAuthenticated && viewingCurrentMonth) {
+                this.pullCurrentMonthExpensesFromBackend(month);
+            }
+        });
   }
 
   private async loadInitialState() {
@@ -142,8 +167,154 @@ export class BudgetStateService {
     } finally {
       this.loading.set(false);
       this.checkMonthRollover();
+
+            const month = this.settings().lastActiveMonth;
+            if (this.authService.isAuthenticated()) {
+                this.pullIncomeFromBackend();
+                this.pullCurrentMonthExpensesFromBackend(month);
+            }
     }
   }
+
+    private pullIncomeFromBackend(): void {
+        if (!isPlatformBrowser(this.platformId) || !this.authService.isAuthenticated()) return;
+        if (this.hasPulledRemoteIncome) return;
+
+        this.financeService.getIncome().subscribe({
+            next: (remoteIncome) => {
+                this.incomeConfig.update(current => ({
+                    ...current,
+                    monthlyIncome: Number(remoteIncome.monthly_income ?? 0),
+                    workHoursPerMonth: Number(remoteIncome.work_hours_per_month ?? current.workHoursPerMonth ?? 160),
+                    hourlyRate: Number(remoteIncome.hourly_rate ?? current.hourlyRate ?? 0),
+                    isHourlyManual: !!remoteIncome.is_hourly_manual,
+                    calculationMethod: (remoteIncome.calculation_method ?? current.calculationMethod ?? 'weekly') as 'weekly' | 'manual',
+                    weeklyHoursDetails: {
+                        hoursPerDay: Number(remoteIncome.hours_per_day ?? current.weeklyHoursDetails?.hoursPerDay ?? 8),
+                        daysPerWeek: Number(remoteIncome.days_per_week ?? current.weeklyHoursDetails?.daysPerWeek ?? 5),
+                    }
+                }));
+                this.hasPulledRemoteIncome = true;
+            },
+            error: (error) => {
+                console.warn('Unable to pull income from backend. Keeping local state.', error);
+            }
+        });
+    }
+
+    private toFinanceIncome(config: UserIncomeConfig): Partial<UserIncome> {
+        return {
+            monthly_income: Number(config.monthlyIncome ?? 0),
+            work_hours_per_month: Number(config.workHoursPerMonth ?? 160),
+            hourly_rate: Number(config.hourlyRate ?? 0),
+            is_hourly_manual: !!config.isHourlyManual,
+            calculation_method: config.calculationMethod ?? 'weekly',
+            hours_per_day: Number(config.weeklyHoursDetails?.hoursPerDay ?? 8),
+            days_per_week: Number(config.weeklyHoursDetails?.daysPerWeek ?? 5),
+        };
+    }
+
+    private shouldSyncCurrentMonthWithBackend(): boolean {
+        return isPlatformBrowser(this.platformId) && this.authService.isAuthenticated() && this.isCurrentMonthView();
+    }
+
+    private pullCurrentMonthExpensesFromBackend(month: string): void {
+        if (!this.shouldSyncCurrentMonthWithBackend()) return;
+        if (this.lastPulledRemoteMonth === month) return;
+
+        this.financeService.getExpenses(month).subscribe({
+            next: (remoteExpenses) => {
+                // When a new month starts, local carryover items are created first.
+                // If backend is still empty for that month, do not wipe local items.
+                // Keep local state visible and seed backend in the background.
+                const localCarryover = this.currentMonthExpenses();
+                if (remoteExpenses.length === 0 && localCarryover.length > 0) {
+                    this.lastPulledRemoteMonth = month;
+                    this.seedCurrentMonthCarryoverToBackend(month);
+                    return;
+                }
+                const mapped = remoteExpenses.map(expense => this.fromFinanceExpense(expense));
+                this.currentMonthExpenses.set(mapped);
+                this.lastPulledRemoteMonth = month;
+            },
+            error: (error) => {
+                console.warn('Unable to pull expenses from backend. Keeping local state.', error);
+            }
+        });
+    }
+
+    private seedCurrentMonthCarryoverToBackend(month: string): void {
+        if (!isPlatformBrowser(this.platformId) || !this.authService.isAuthenticated()) return;
+        if (this.seededCarryoverMonths.has(month)) return;
+
+        const carryover = this.currentMonthExpenses();
+        if (carryover.length === 0) return;
+
+        this.seededCarryoverMonths.add(month);
+        for (const item of carryover) {
+            this.financeService.addExpense(this.toFinanceExpense(item, month)).subscribe({
+                next: (savedExpense) => {
+                    const synced = this.fromFinanceExpense(savedExpense);
+                    this.replaceExpenseById(item.id, synced);
+                },
+                error: (error) => {
+                    console.warn('Failed to seed month carryover item to backend. Keeping local state.', error);
+                }
+            });
+        }
+    }
+
+    private fromFinanceExpense(expense: FinanceExpense): ExpenseItem {
+        return {
+            id: String(expense.id ?? crypto.randomUUID()),
+            name: expense.name,
+            category: expense.category ?? undefined,
+            amount: Number(expense.amount),
+            unitPrice: Number(expense.unit_price),
+            quantity: Number(expense.quantity),
+            isIgnored: !!expense.is_ignored,
+            type: this.normalizeExpenseType(expense.type),
+            priority: expense.priority as ExpenseItem['priority']
+        };
+    }
+
+    private toFinanceExpense(expense: ExpenseItem, month: string): FinanceExpense {
+        return {
+            name: expense.name,
+            category: expense.category,
+            amount: expense.amount,
+            unit_price: expense.unitPrice,
+            quantity: expense.quantity,
+            is_ignored: !!expense.isIgnored,
+            type: this.normalizeExpenseType(expense.type),
+            priority: expense.priority,
+            month
+        };
+    }
+
+    private normalizeExpenseType(type: string | undefined): ExpenseItem['type'] {
+        const normalized = (type ?? '').trim().toLowerCase();
+        if (normalized === 'saving') return 'Saving';
+        if (normalized === 'responsibility' || normalized === 'responsibilty') return 'Responsibility';
+        return 'Burning';
+    }
+
+    private buildRecurringCarryover(expenses: ExpenseItem[]): ExpenseItem[] {
+        return expenses
+            .map(item => ({ ...item, type: this.normalizeExpenseType(item.type) }))
+            .filter(item => item.type === 'Responsibility' || item.type === 'Saving');
+    }
+
+    private getBackendExpenseId(id: string): number | null {
+        const parsed = Number(id);
+        return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+    }
+
+    private replaceExpenseById(previousId: string, replacement: ExpenseItem): void {
+        this.currentMonthExpenses.update(current =>
+            current.map(item => (item.id === previousId ? replacement : item))
+        );
+    }
 
   // --- View Navigation ---
   setViewMonth(month: string) {
@@ -182,8 +353,12 @@ export class BudgetStateService {
 
     if (currentMonth > settings.lastActiveMonth) {
         this.archiveCurrentMonth(settings.lastActiveMonth);
+        // Keep only recurring intent items when crossing into a new month automatically.
+        this.currentMonthExpenses.set(this.buildRecurringCarryover(this.currentMonthExpenses()));
         this.settings.update(s => ({ ...s, lastActiveMonth: currentMonth }));
         this.viewedMonth.set(currentMonth); // Switch view to new month
+        // Ensure the newly active month pulls/seeds after carryover filtering.
+        this.lastPulledRemoteMonth = null;
     }
   }
 
@@ -197,8 +372,6 @@ export class BudgetStateService {
     };
 
     this.history.update(h => [...h, historyEntry]);
-
-    // For now we keep expenses as template for next month
   }
 
   updateSettings(settings: Partial<UserSettings>) {
@@ -209,7 +382,16 @@ export class BudgetStateService {
 
   // Income Config
   updateIncomeConfig(config: Partial<UserIncomeConfig>): void {
-    this.incomeConfig.update(current => ({ ...current, ...config }));
+    const nextConfig = { ...this.incomeConfig(), ...config };
+    this.incomeConfig.set(nextConfig);
+
+        if (!this.shouldSyncCurrentMonthWithBackend()) return;
+
+        this.financeService.updateIncome(this.toFinanceIncome(nextConfig)).subscribe({
+            error: (error) => {
+                console.warn('Failed to sync income update to backend. Keeping local state.', error);
+            }
+        });
   }
 
   // Expenses
@@ -233,6 +415,24 @@ export class BudgetStateService {
     amount = unitPrice * quantity;
     const finalExpense = { ...expense, quantity, unitPrice, amount };
 
+        const viewMonth = this.viewedMonth();
+
+        if (this.shouldSyncCurrentMonthWithBackend()) {
+            // Local-first write so UX remains instant even during slow network calls.
+            this.currentMonthExpenses.update(current => [finalExpense, ...current]);
+
+            this.financeService.addExpense(this.toFinanceExpense(finalExpense, viewMonth)).subscribe({
+                next: (savedExpense) => {
+                    const synced = this.fromFinanceExpense(savedExpense);
+                    this.replaceExpenseById(finalExpense.id, synced);
+                },
+                error: (error) => {
+                    console.warn('Failed to sync added expense to backend. Keeping local copy.', error);
+                }
+            });
+            return;
+        }
+
     if (this.isCurrentMonthView()) {
         // UX: show newly added items first so users can see/edit immediately.
         this.currentMonthExpenses.update(current => [finalExpense, ...current]);
@@ -254,10 +454,6 @@ export class BudgetStateService {
             })
         );
 
-        // Also update SavingsService snapshot if it exists for this month
-        const summary = this.budgetSummary();
-        const transferToSavings = summary.remainingIncome > 0 ? summary.remainingIncome : 0;
-
         // This is a manual correction to the snapshot
         // We'll need to add a specialized method to SavingsService later if we want full consistency,
         // but updating history signal in BudgetState should handle UI refresh for now.
@@ -269,7 +465,7 @@ export class BudgetStateService {
       current.map(item => {
         if (item.id !== id) return item;
 
-        let newItem = { ...item, ...updates };
+        const newItem = { ...item, ...updates };
 
         if (updates.quantity !== undefined && updates.unitPrice === undefined && updates.amount === undefined) {
              newItem.amount = newItem.unitPrice * newItem.quantity;
@@ -309,6 +505,20 @@ export class BudgetStateService {
             })
         );
     }
+
+        if (!this.shouldSyncCurrentMonthWithBackend()) return;
+
+        const backendId = this.getBackendExpenseId(id);
+        if (backendId === null) return;
+
+        const currentExpense = this.currentMonthExpenses().find(item => item.id === id);
+        if (!currentExpense) return;
+
+        this.financeService.updateExpense(backendId, this.toFinanceExpense(currentExpense, this.viewedMonth())).subscribe({
+            error: (error) => {
+                console.warn('Failed to sync updated expense to backend. Keeping local state.', error);
+            }
+        });
   }
 
   removeExpense(id: string): void {
@@ -330,6 +540,17 @@ export class BudgetStateService {
             })
         );
     }
+
+        if (!this.shouldSyncCurrentMonthWithBackend()) return;
+
+        const backendId = this.getBackendExpenseId(id);
+        if (backendId === null) return;
+
+        this.financeService.deleteExpense(backendId).subscribe({
+            error: (error) => {
+                console.warn('Failed to sync removed expense to backend. Expense remains deleted locally.', error);
+            }
+        });
   }
 
   // --- Backup & Restore ---
@@ -433,12 +654,10 @@ export class BudgetStateService {
     };
     this.history.update(current => [...current, historyState]);
 
-    // 2. Carry every item into the next month so hidden items are not deleted on rollover.
-    // Reset ignore status so the new month starts with a clean active state.
-    this.currentMonthExpenses.update(current =>
-        current
-            .map(item => ({ ...item, isIgnored: false }))
-    );
+    // 2. Carry only recurring intent items into next month.
+    // Business rule: Burning items are one-month spend and should not auto-carry.
+    // Responsibility and Saving items carry forward whether ignored or active.
+    this.currentMonthExpenses.update(current => this.buildRecurringCarryover(current));
 
     // 3. Advance Date to Next Month
     const currentActive = this.settings().lastActiveMonth;
@@ -448,6 +667,8 @@ export class BudgetStateService {
 
     this.settings.update(s => ({ ...s, lastActiveMonth: nextMonth }));
     this.viewedMonth.set(nextMonth);
+        // Force a fresh backend pull for the new active month after rollover.
+        this.lastPulledRemoteMonth = null;
   }
 
   // --- REVERT / UNDO LOGIC ---
@@ -486,7 +707,9 @@ export class BudgetStateService {
       const lastArchived = history[history.length - 1];
 
       // 1. Reverse Savings Impact
-      this.savingsService.removeLastSnapshot();
+      const removedSnapshot = this.savingsService.removeLastSnapshot();
+      // Restore direct/manual savings log so redo keeps the same history analysis values.
+      this.manualSavingsLog.set(removedSnapshot?.manualAdded || 0);
 
       // 2. Restore State
       this.currentMonthExpenses.set(lastArchived.expenses);

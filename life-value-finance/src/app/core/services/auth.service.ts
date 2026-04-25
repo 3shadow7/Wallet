@@ -2,7 +2,9 @@ import { Injectable, signal, inject, PLATFORM_ID } from "@angular/core";
 import { isPlatformBrowser } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
-import { Observable, ReplaySubject, catchError, switchMap, tap, throwError } from "rxjs";
+import { Observable, ReplaySubject, catchError, map, of, switchMap, tap, throwError } from "rxjs";
+import { environment } from "../../../environments/environment";
+import { BackupService } from "./backup.service";
 
 export interface User {
   id: number;
@@ -23,11 +25,15 @@ export class AuthService {
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
   private router = inject(Router);
+  private backupService = inject(BackupService);
 
   private refreshInProgress = false;
   private refreshSubject = new ReplaySubject<string>(1);
 
-  private apiUrl = "http://localhost:8000/api/auth";
+  private apiUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly storageKeyAppData = "life_value_finance_data";
+  private readonly storageKeySavings = "savingsStorage";
+  private readonly storageKeyMonthlyHistory = "monthlyHistory";
 
   currentUser = signal<User | null>(null);
   isAuthenticated = signal<boolean>(false);
@@ -76,7 +82,10 @@ export class AuthService {
           this.isAuthenticated.set(true);
           this.isGuest.set(false);
         }
-      })
+      }),
+      switchMap((response: AuthResponse) =>
+        this.restoreCloudBackupIfLocalMissing().pipe(map(() => response))
+      )
     );
   }
 
@@ -157,6 +166,34 @@ export class AuthService {
         this.refreshSubject = new ReplaySubject<string>(1);
         this.logout();
         return throwError(() => err);
+      })
+    );
+  }
+
+  private shouldRestoreCloudBackup(): boolean {
+    if (!isPlatformBrowser(this.platformId) || typeof localStorage === "undefined") {
+      return false;
+    }
+
+    const hasMainState = !!localStorage.getItem(this.storageKeyAppData);
+    const hasSavingsState =
+      localStorage.getItem(this.storageKeySavings) !== null ||
+      localStorage.getItem(this.storageKeyMonthlyHistory) !== null;
+
+    return !(hasMainState || hasSavingsState);
+  }
+
+  private restoreCloudBackupIfLocalMissing(): Observable<void> {
+    if (!this.shouldRestoreCloudBackup()) {
+      return of(void 0);
+    }
+
+    return this.backupService.restoreFromBackend().pipe(
+      map(() => void 0),
+      catchError((err) => {
+        // Do not block login if there is no cloud snapshot or restore fails.
+        console.warn("Cloud auto-restore after login failed; continuing with current local state.", err);
+        return of(void 0);
       })
     );
   }

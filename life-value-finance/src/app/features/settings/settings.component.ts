@@ -19,7 +19,8 @@ export class SettingsComponent {
   public authService = inject(AuthService);
 
   importStatus: 'idle' | 'success' | 'error' = 'idle';
-  syncStatus = signal<'idle' | 'syncing' | 'success' | 'error'>('idle');        
+  syncStatus = signal<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  restoreStatus = signal<'idle' | 'restoring' | 'success' | 'error'>('idle');
   errorMessage = '';
 
   exportData() {
@@ -54,6 +55,7 @@ export class SettingsComponent {
   }
 
   syncWithCloud() {
+    this.errorMessage = '';
     this.syncStatus.set('syncing');
     this.backupService.syncWithBackend().subscribe({
       next: () => {
@@ -62,7 +64,29 @@ export class SettingsComponent {
       },
       error: (err) => {
         this.syncStatus.set('error');
-        this.errorMessage = 'Cloud sync failed. Use manual backup.';
+        this.errorMessage = err?.error?.detail || err?.error?.data || 'Cloud sync failed. Use manual backup.';
+      }
+    });
+  }
+
+  restoreFromCloud() {
+    const confirmed = window.confirm('This will overwrite your current local data with your cloud backup. Continue?');
+    if (!confirmed) {
+      return;
+    }
+
+    this.errorMessage = '';
+    this.restoreStatus.set('restoring');
+
+    this.backupService.restoreFromBackend().subscribe({
+      next: () => {
+        this.restoreStatus.set('success');
+        // Reload ensures all in-memory signals are rebuilt from restored local data.
+        window.location.reload();
+      },
+      error: (err) => {
+        this.restoreStatus.set('error');
+        this.errorMessage = err?.error?.detail || err?.message || 'Cloud restore failed.';
       }
     });
   }

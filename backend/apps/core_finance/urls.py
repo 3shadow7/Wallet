@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ExpenseViewSet, UserIncomeViewSet
+from .views import ExpenseViewSet, UserBackupView, UserIncomeViewSet
 
 router = DefaultRouter()
 router.register(r"expenses", ExpenseViewSet, basename="expenses")
@@ -8,4 +8,5 @@ router.register(r"expenses", ExpenseViewSet, basename="expenses")
 urlpatterns = [
     path("", include(router.urls)),
     path("income/", UserIncomeViewSet.as_view({"get": "list", "put": "update", "patch": "update"}), name="income"),
+    path("backup/", UserBackupView.as_view(), name="backup"),
 ]

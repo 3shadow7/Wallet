@@ -21,6 +21,12 @@ class Expense(models.Model):
 class UserIncome(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="income_profile")
     monthly_income = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    work_hours_per_month = models.IntegerField(default=160)
+    hourly_rate = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    is_hourly_manual = models.BooleanField(default=False)
+    calculation_method = models.CharField(max_length=20, default="weekly")
+    hours_per_day = models.DecimalField(max_digits=5, decimal_places=2, default=8.00)
+    days_per_week = models.DecimalField(max_digits=5, decimal_places=2, default=5.00)
     updated_at = models.DateTimeField(auto_now=True)
 
 

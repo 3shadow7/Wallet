@@ -1,6 +1,7 @@
 import { Injectable, inject } from "@angular/core";
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Observable } from "rxjs";
+import { environment } from "../../../environments/environment";
 
 export interface Expense {
     id?: number;
@@ -17,6 +18,12 @@ export interface Expense {
 
 export interface UserIncome {
     monthly_income: number;
+    work_hours_per_month: number;
+    hourly_rate: number;
+    is_hourly_manual: boolean;
+    calculation_method: 'weekly' | 'manual';
+    hours_per_day: number;
+    days_per_week: number;
 }
 
 @Injectable({
@@ -24,7 +31,7 @@ export interface UserIncome {
 })
 export class FinanceService {
     private http = inject(HttpClient);
-    private apiUrl = "http://localhost:8000/api/finance";
+    private apiUrl = `${environment.apiBaseUrl}/finance`;
 
     getExpenses(month?: string): Observable<Expense[]> {
         let params = new HttpParams();
@@ -50,7 +57,7 @@ export class FinanceService {
         return this.http.get<UserIncome>(this.apiUrl + "/income/");
     }
 
-    updateIncome(amount: number): Observable<UserIncome> {
-        return this.http.put<UserIncome>(this.apiUrl + "/income/", { monthly_income: amount });
+    updateIncome(payload: Partial<UserIncome>): Observable<UserIncome> {
+        return this.http.put<UserIncome>(this.apiUrl + "/income/", payload);
     }
 }

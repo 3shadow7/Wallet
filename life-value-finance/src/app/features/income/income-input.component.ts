@@ -19,8 +19,9 @@ export class IncomeInputComponent {
 
   incomeConfig = this.budgetState.incomeConfigSignal;
   hourlyRate = this.budgetState.hourlyRate;
-  
+
   isEditing = signal(false);
+  private autoOpenedEditor = signal(false);
   calcMethod = signal<'weekly' | 'manual'>('weekly');
 
   form = this.fb.group({
@@ -43,7 +44,7 @@ export class IncomeInputComponent {
             hoursPerDay: config.weeklyHoursDetails?.hoursPerDay || 8,
             daysPerWeek: config.weeklyHoursDetails?.daysPerWeek || 5,
           }, { emitEvent: false });
-          
+
           if (config.calculationMethod) {
               this.calcMethod.set(config.calculationMethod);
           }
@@ -51,8 +52,19 @@ export class IncomeInputComponent {
     });
 
     effect(() => {
-        if (this.incomeConfig().monthlyIncome === 0 && !this.isEditing()) {
-            this.isEditing.set(true);
+      const monthlyIncome = this.incomeConfig().monthlyIncome;
+
+      if (monthlyIncome === 0 && !this.isEditing()) {
+        this.autoOpenedEditor.set(true);
+        this.isEditing.set(true);
+        return;
+      }
+
+      // If backend data arrives after initial empty state, close the auto-opened editor
+      // so the summary view reflects fresh values without requiring route navigation.
+      if (monthlyIncome > 0 && this.isEditing() && this.autoOpenedEditor()) {
+        this.isEditing.set(false);
+        this.autoOpenedEditor.set(false);
         }
     });
   }
@@ -66,10 +78,11 @@ export class IncomeInputComponent {
       const h = hoursPerDay || 0;
       const d = daysPerWeek || 0;
       // Using 4 weeks per month standard for simplicity/mental model alignment
-      return Math.round((h * d) * 4); 
+      return Math.round((h * d) * 4);
   }
 
   toggleEdit() {
+    this.autoOpenedEditor.set(false);
     const config = this.incomeConfig();
     this.form.patchValue({
         monthlyIncome: config.monthlyIncome,
@@ -107,6 +120,7 @@ export class IncomeInputComponent {
             daysPerWeek
         }
       });
+      this.autoOpenedEditor.set(false);
       this.isEditing.set(false);
     }
   }
