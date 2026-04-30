@@ -5,6 +5,25 @@ date: 2026-04-24
 status: in-progress
 ---
 
+## Progress Update (2026-05-01)
+- Completed: Step 7 core manual QA flows (auth, expenses, income, guest/offline, cloud sync/restore baseline).
+- Remaining: extended edge-case coverage for cloud sync/restore scenarios.
+
+## Frontend-Backend Gap Check
+- Current status: the main frontend-backend gap is mostly closed.
+- Residual gap: cloud sync and restore edge cases still need coverage, especially conflicts, partial payloads, interrupted restores, and retry behavior.
+- Rule for this plan: after every new user message about this work, append a short dated gap status note here so the next request starts from the latest confirmed state.
+- If no new gap is found, record that the current gap is unchanged rather than leaving the plan stale.
+
+## Gap Closure Checklist
+- Verify cloud sync conflict handling when local and backend changes diverge.
+- Verify cloud restore behavior with partial, invalid, or missing backup payloads.
+- Verify interrupted restore behavior and confirm the app recovers without losing local state.
+- Verify retry behavior after temporary backend failures or auth expiration.
+- Verify repeated cloud push and restore requests stay idempotent or fail safely.
+- Keep local-first behavior intact while these cases are checked.
+- When a case is confirmed, add a dated note here so the remaining gap always stays visible.
+
 ## Progress Update (2026-04-24)
 - Completed: Step 1 (Admin Visibility Layer).
 - Completed: Step 4 first sync slice (cloud push and cloud restore in Settings).
@@ -12,7 +31,7 @@ status: in-progress
 - Completed: Step 2 hardening pass baseline (backend input validation and ordering).
 - Completed: Step 5 baseline (expense + income authenticated sync for current month with local-first fallback).
 - Completed: Step 6 data strategy decision (hybrid local-first + authenticated cloud sync).
-- In progress: Step 7 final QA sweep (automated checks complete; manual verification pending).
+- In progress: Step 7 final QA sweep (automated checks complete; core manual verification passed; extended edge-case verification pending).
 
 ## Strategy Decision (Step 6)
 - Adopt a hybrid model:
@@ -26,11 +45,13 @@ status: in-progress
 - Django `manage.py check` passes.
 - Angular production build (`npm run build`) passes after each integration slice.
 - Backend API smoke test passes (register/login + expense CRUD + income update + backup put/get).
-- Remaining manual checks to close Step 7:
+- Completed manual checks:
 - Login/register, then create/edit/delete expenses and confirm admin/API persistence.
 - Update income and confirm value is reloaded from backend on next session.
-- Cloud sync + cloud restore end-to-end in Settings.
+- Cloud sync + cloud restore end-to-end in Settings (baseline scenarios).
 - Guest/offline behavior still works without forced backend dependency.
+- Remaining manual checks to close Step 7:
+- Cloud sync/restore extended edge cases (conflicts, partial/invalid payloads, interrupted restore, repeated retries).
 
 ## TL;DR
 Build the project in a controlled order: first make the Django admin a clear inspection console, then formalize backend contracts, then connect the Angular app to those contracts one flow at a time while keeping the existing local-first behavior working until each sync path is proven.
@@ -95,3 +116,4 @@ Build the project in a controlled order: first make the Django admin a clear ins
 - Keep comments short but purposeful, focused on why the code exists.
 - Do not remove local storage support until backend sync is fully proven.
 - Prefer small, testable slices over broad refactors.
+- Before starting new frontend/backend work, check the latest entry in the gap log above so the next request continues from the current confirmed state.
