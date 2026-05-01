@@ -24,6 +24,7 @@ export interface UserIncome {
     calculation_method: 'weekly' | 'manual';
     hours_per_day: number;
     days_per_week: number;
+    updated_at?: string;
 }
 
 @Injectable({
@@ -57,7 +58,7 @@ export class FinanceService {
         return this.http.get<UserIncome>(this.apiUrl + "/income/");
     }
 
-    updateIncome(payload: Partial<UserIncome>): Observable<UserIncome> {
+    updateIncome(payload: Partial<UserIncome> & { expected_updated_at?: string; force?: boolean }): Observable<UserIncome> {
         return this.http.put<UserIncome>(this.apiUrl + "/income/", payload);
     }
 }

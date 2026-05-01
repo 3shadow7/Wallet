@@ -6,6 +6,19 @@ import { PersistenceService, AppStateData } from '@core/services/persistence.ser
 import { SavingsService } from '@core/services/savings.service';
 import { AuthService } from '@core/services/auth.service';
 import { Expense as FinanceExpense, FinanceService, UserIncome } from '@core/services/finance.service';
+import { OfflineSyncService, SyncOp as OfflineSyncOp } from '@core/services/offline-sync.service';
+
+type IncomeSyncPayload = Partial<UserIncome> & {
+    expected_updated_at?: string;
+    force?: boolean;
+};
+
+type IncomeConflictResponse = {
+    detail?: string;
+    server_income?: UserIncome;
+    server_updated_at?: string;
+    updated_at?: string;
+} & Record<string, unknown>;
 
 const INITIAL_SETTINGS: UserSettings = {
   timezone: 'Africa/Tripoli',
@@ -26,6 +39,8 @@ const INITIAL_STATE = {
   settings: INITIAL_SETTINGS
 };
 
+const INCOME_UPDATED_AT_KEY = 'income_server_updated_at';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -38,6 +53,8 @@ export class BudgetStateService {
     private lastPulledRemoteMonth: string | null = null;
     private hasPulledRemoteIncome = false;
     private seededCarryoverMonths = new Set<string>();
+    private offlineSync = inject(OfflineSyncService);
+    private incomeServerUpdatedAt: string | null = null;
 
   // --- Core State ---
   private incomeConfig = signal<UserIncomeConfig>(INITIAL_STATE.incomeConfig);
@@ -105,6 +122,7 @@ export class BudgetStateService {
   readonly hourlyRate = computed(() => this.budgetSummary().hourlyRate);
 
   constructor() {
+        this.incomeServerUpdatedAt = this.loadIncomeUpdatedAtFromLocal();
     this.loadInitialState();
 
     // Persistence Hook
@@ -182,19 +200,7 @@ export class BudgetStateService {
 
         this.financeService.getIncome().subscribe({
             next: (remoteIncome) => {
-                this.incomeConfig.update(current => ({
-                    ...current,
-                    monthlyIncome: Number(remoteIncome.monthly_income ?? 0),
-                    workHoursPerMonth: Number(remoteIncome.work_hours_per_month ?? current.workHoursPerMonth ?? 160),
-                    hourlyRate: Number(remoteIncome.hourly_rate ?? current.hourlyRate ?? 0),
-                    isHourlyManual: !!remoteIncome.is_hourly_manual,
-                    calculationMethod: (remoteIncome.calculation_method ?? current.calculationMethod ?? 'weekly') as 'weekly' | 'manual',
-                    weeklyHoursDetails: {
-                        hoursPerDay: Number(remoteIncome.hours_per_day ?? current.weeklyHoursDetails?.hoursPerDay ?? 8),
-                        daysPerWeek: Number(remoteIncome.days_per_week ?? current.weeklyHoursDetails?.daysPerWeek ?? 5),
-                    }
-                }));
-                this.hasPulledRemoteIncome = true;
+                this.applyServerIncome(remoteIncome);
             },
             error: (error) => {
                 console.warn('Unable to pull income from backend. Keeping local state.', error);
@@ -212,6 +218,61 @@ export class BudgetStateService {
             hours_per_day: Number(config.weeklyHoursDetails?.hoursPerDay ?? 8),
             days_per_week: Number(config.weeklyHoursDetails?.daysPerWeek ?? 5),
         };
+    }
+
+    private loadIncomeUpdatedAtFromLocal(): string | null {
+        if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return null;
+        return localStorage.getItem(INCOME_UPDATED_AT_KEY);
+    }
+
+    private setIncomeServerUpdatedAt(updatedAt: string | null | undefined): void {
+        this.incomeServerUpdatedAt = updatedAt || null;
+        if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
+        if (this.incomeServerUpdatedAt) {
+            localStorage.setItem(INCOME_UPDATED_AT_KEY, this.incomeServerUpdatedAt);
+        } else {
+            localStorage.removeItem(INCOME_UPDATED_AT_KEY);
+        }
+    }
+
+    private buildIncomeSyncPayload(config: UserIncomeConfig, expectedOverride?: string | null, force?: boolean): IncomeSyncPayload {
+        const payload: IncomeSyncPayload = this.toFinanceIncome(config);
+        const expected = expectedOverride ?? this.incomeServerUpdatedAt;
+        if (expected) payload.expected_updated_at = expected;
+        if (force) payload.force = true;
+        return payload;
+    }
+
+    private recordIncomeConflict(clientPayload: IncomeSyncPayload, serverPayload: IncomeConflictResponse) {
+        const resolvedServerPayload: Record<string, unknown> = serverPayload.server_income
+            ? { ...serverPayload.server_income }
+            : serverPayload['income']
+                ? { ...(serverPayload['income'] as Record<string, unknown>) }
+                : { ...serverPayload };
+
+        const conflict = {
+            opId: `income-${crypto.randomUUID()}`,
+            resource: 'income',
+            type: 'update',
+            reason: 'stale_income_update',
+            clientPayload,
+            serverPayload: resolvedServerPayload,
+            serverUpdatedAt: serverPayload?.server_updated_at || serverPayload?.updated_at,
+            expectedUpdatedAt: clientPayload?.expected_updated_at,
+            createdAt: new Date().toISOString()
+        };
+        this.offlineSync.recordConflicts([conflict]);
+    }
+
+    private queueExpenseCreateOrUpdate(expense: ExpenseItem, month: string): void {
+        const payload = { ...this.toFinanceExpense(expense, month) } as OfflineSyncOp['payload'];
+        this.offlineSync.upsert({
+            id: `expense-${expense.id}`,
+            type: 'create',
+            payload,
+            resource: 'expense',
+            clientId: expense.id,
+        });
     }
 
     private shouldSyncCurrentMonthWithBackend(): boolean {
@@ -276,6 +337,41 @@ export class BudgetStateService {
             type: this.normalizeExpenseType(expense.type),
             priority: expense.priority as ExpenseItem['priority']
         };
+    }
+
+    // Public helper used by OfflineSyncService to apply server-created expense mappings
+    applyServerExpenseMapping(previousClientId: string, serverExpense: FinanceExpense) {
+        try {
+            const mapped = this.fromFinanceExpense(serverExpense);
+            this.replaceExpenseById(previousClientId, mapped);
+        } catch (e) {
+            console.warn('applyServerExpenseMapping failed', e);
+        }
+    }
+
+    // Apply server-provided income snapshot to local state.
+    applyServerIncome(serializedIncome: UserIncome) {
+        try {
+            const incomeConfig = this.incomeConfig();
+            const updated: UserIncomeConfig = {
+                monthlyIncome: Number(serializedIncome.monthly_income ?? incomeConfig.monthlyIncome ?? 0),
+                workHoursPerMonth: Number(serializedIncome.work_hours_per_month ?? incomeConfig.workHoursPerMonth ?? 160),
+                hourlyRate: Number(serializedIncome.hourly_rate ?? incomeConfig.hourlyRate ?? 0),
+                isHourlyManual: !!serializedIncome.is_hourly_manual,
+                calculationMethod: (serializedIncome.calculation_method ?? incomeConfig.calculationMethod) as 'weekly' | 'manual',
+                weeklyHoursDetails: {
+                    hoursPerDay: Number(serializedIncome.hours_per_day ?? incomeConfig.weeklyHoursDetails?.hoursPerDay ?? 8),
+                    daysPerWeek: Number(serializedIncome.days_per_week ?? incomeConfig.weeklyHoursDetails?.daysPerWeek ?? 5)
+                }
+            };
+            this.incomeConfig.set(updated);
+            this.hasPulledRemoteIncome = true;
+            if (serializedIncome.updated_at) {
+                this.setIncomeServerUpdatedAt(serializedIncome.updated_at);
+            }
+        } catch (e) {
+            console.warn('applyServerIncome failed', e);
+        }
     }
 
     private toFinanceExpense(expense: ExpenseItem, month: string): FinanceExpense {
@@ -378,6 +474,48 @@ export class BudgetStateService {
       this.settings.update(s => ({ ...s, ...settings }));
   }
 
+    getIncomeSyncPayload(expectedOverride?: string | null, force?: boolean): IncomeSyncPayload {
+      return this.buildIncomeSyncPayload(this.incomeConfig(), expectedOverride, force);
+  }
+
+  applySyncFlushResults(queueSnapshot: OfflineSyncOp[], flushMapping: Record<string, unknown>): void {
+      const queueById = new Map(queueSnapshot.map((item) => [item.id, item]));
+
+      for (const [opId, result] of Object.entries(flushMapping || {})) {
+          const queued = queueById.get(opId);
+          if (!queued || !result) {
+              continue;
+          }
+
+          if (queued.resource === 'expense' && queued.clientId) {
+              this.applyServerExpenseMapping(queued.clientId, result as FinanceExpense);
+              continue;
+          }
+
+          if (queued.resource === 'income') {
+              const incomePayload = this.extractIncomeSyncResult(result);
+              if (incomePayload) {
+                  this.applyServerIncome(incomePayload);
+              }
+          }
+      }
+  }
+
+  private extractIncomeSyncResult(result: unknown): UserIncome | null {
+      if (!result || typeof result !== 'object') {
+          return null;
+      }
+
+      if ('income' in result) {
+          const payload = (result as { income?: unknown }).income;
+          if (payload && typeof payload === 'object') {
+              return payload as UserIncome;
+          }
+      }
+
+      return null;
+  }
+
   // --- Actions ---
 
   // Income Config
@@ -387,9 +525,19 @@ export class BudgetStateService {
 
         if (!this.shouldSyncCurrentMonthWithBackend()) return;
 
-        this.financeService.updateIncome(this.toFinanceIncome(nextConfig)).subscribe({
+        const payload = this.buildIncomeSyncPayload(nextConfig);
+        this.financeService.updateIncome(payload).subscribe({
+            next: (remoteIncome) => {
+                this.applyServerIncome(remoteIncome);
+            },
             error: (error) => {
-                console.warn('Failed to sync income update to backend. Keeping local state.', error);
+                if (error?.status === 409 && error?.error) {
+                    this.recordIncomeConflict(payload, error.error);
+                    return;
+                }
+                console.warn('Failed to sync income update to backend. Queuing for later.', error);
+                const opId = crypto.randomUUID();
+                this.offlineSync.enqueue({ id: opId, type: 'update', payload, resource: 'income' });
             }
         });
   }
@@ -413,7 +561,7 @@ export class BudgetStateService {
 
     // Now recalculate definitive amount (Unit * Qty) to ensure consistency
     amount = unitPrice * quantity;
-    const finalExpense = { ...expense, quantity, unitPrice, amount };
+    const finalExpense = { ...expense, quantity, unitPrice, amount, id: expense.id ?? crypto.randomUUID() };
 
         const viewMonth = this.viewedMonth();
 
@@ -427,7 +575,9 @@ export class BudgetStateService {
                     this.replaceExpenseById(finalExpense.id, synced);
                 },
                 error: (error) => {
-                    console.warn('Failed to sync added expense to backend. Keeping local copy.', error);
+                    console.warn('Failed to sync added expense to backend. Queuing for later sync.', error);
+                    // Keep a single pending create per local expense so repeated edits do not duplicate rows later.
+                    this.queueExpenseCreateOrUpdate(finalExpense, viewMonth);
                 }
             });
             return;
@@ -508,15 +658,21 @@ export class BudgetStateService {
 
         if (!this.shouldSyncCurrentMonthWithBackend()) return;
 
-        const backendId = this.getBackendExpenseId(id);
-        if (backendId === null) return;
-
         const currentExpense = this.currentMonthExpenses().find(item => item.id === id);
         if (!currentExpense) return;
 
+        const backendId = this.getBackendExpenseId(id);
+        if (backendId === null) {
+            // Item not yet created on server — update the pending create instead of queuing another op.
+            this.queueExpenseCreateOrUpdate(currentExpense, this.viewedMonth());
+            return;
+        }
+
         this.financeService.updateExpense(backendId, this.toFinanceExpense(currentExpense, this.viewedMonth())).subscribe({
             error: (error) => {
-                console.warn('Failed to sync updated expense to backend. Keeping local state.', error);
+                console.warn('Failed to sync updated expense to backend. Queuing update for later.', error);
+                const opId = crypto.randomUUID();
+                this.offlineSync.enqueue({ id: opId, type: 'update', payload: { id: backendId, ...this.toFinanceExpense(currentExpense, this.viewedMonth()) }, resource: 'expense' });
             }
         });
   }
@@ -544,11 +700,21 @@ export class BudgetStateService {
         if (!this.shouldSyncCurrentMonthWithBackend()) return;
 
         const backendId = this.getBackendExpenseId(id);
-        if (backendId === null) return;
+        if (backendId === null) {
+            // Item never existed on server — remove any queued create ops for this client id
+            try {
+                this.offlineSync.removeByClientId(id);
+            } catch (e) {
+                console.warn('Failed to prune queued create ops for deleted local item', id, e);
+            }
+            return;
+        }
 
         this.financeService.deleteExpense(backendId).subscribe({
             error: (error) => {
-                console.warn('Failed to sync removed expense to backend. Expense remains deleted locally.', error);
+                console.warn('Failed to sync removed expense to backend. Queuing delete for later.', error);
+                const opId = crypto.randomUUID();
+                this.offlineSync.enqueue({ id: opId, type: 'delete', payload: { id: backendId }, resource: 'expense' });
             }
         });
   }

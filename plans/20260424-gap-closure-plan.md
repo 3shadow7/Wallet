@@ -12,6 +12,14 @@ status: in-progress
 ## Frontend-Backend Gap Check
 - Current status: the main frontend-backend gap is mostly closed.
 - Residual gap: cloud sync and restore edge cases still need coverage, especially conflicts, partial payloads, interrupted restores, and retry behavior.
+- 2026-05-01 update: implemented backend conflict guard for backup writes (`expected_revision` -> 409 on stale push), added backend tests for revision bump + stale rejection, and began frontend UX shift to auto-sync (manual Sync button removed, status card added, background auto-sync service wired).
+- 2026-05-01 update: added income conflict detection (`expected_updated_at`) and UI conflict resolution actions; remaining gap: confirm conflict UX in edge-case QA and document expense conflict policy.
+- 2026-05-01 update: refined the Cloud Sync & Cloud Security card for desktop/mobile with one primary cloud action and collapsed advanced details; no new backend gap was introduced.
+- 2026-05-01 update: fixed offline queue dedupe for unsynced expense edits and removed invalid DI from queue flush reconciliation; frontend build passes again after the sync fix.
+- 2026-05-01 update: added per-device sync state on the backend and automatic queue retry with device identity headers on the frontend; backend finance tests and Angular build pass after the change.
+- 2026-05-01 update: allowed the sync client’s custom CORS headers (`X-Device-ID`, `Idempotency-Key`) and both localhost origins so the backup request can reach Django without browser preflight failure.
+- 2026-05-01 update: removed the client-only `expected_revision` field from backup serializer input so matching cloud writes are accepted instead of failing validation; backend finance tests still pass.
+- 2026-05-01 update: core sync flow is now functionally complete and validated by build/tests; only edge-case QA remains, so the project can move on to the next feature while keeping a small sync follow-up backlog.
 - Rule for this plan: after every new user message about this work, append a short dated gap status note here so the next request starts from the latest confirmed state.
 - If no new gap is found, record that the current gap is unchanged rather than leaving the plan stale.
 

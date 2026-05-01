@@ -4,6 +4,11 @@ import { HttpClient } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+interface CloudBackupMetadata {
+  revision: string;
+  updated_at: string;
+}
+
 export interface CloudBackupResponse {
   data: Record<string, string>;
   revision: string;
@@ -18,6 +23,9 @@ export class BackupService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiBaseUrl}/finance/backup`;
   private incomeApiUrl = `${environment.apiBaseUrl}/finance/income/`;
+  private readonly cloudRevisionKey = 'cloud_backup_revision';
+  private readonly cloudLastSyncedAtKey = 'cloud_backup_last_synced_at';
+  private readonly cloudPayloadHashKey = 'cloud_backup_last_payload_hash';
 
   exportData(): void {
     if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
@@ -91,18 +99,47 @@ export class BackupService {
   }
 
   // Pushes the current local non-auth data to the authenticated cloud backup endpoint.
-  syncWithBackend(): Observable<CloudBackupResponse | null> {
+  syncWithBackend(force = false): Observable<CloudBackupResponse | null> {
     if (!isPlatformBrowser(this.platformId)) return of(null);
 
     const localData = this.getSyncPayloadFromLocalStorage();
-    return this.http.put<CloudBackupResponse>(`${this.apiUrl}/`, { data: localData }).pipe(
+    const payloadHash = this.computePayloadHash(localData);
+    const previousHash = this.getLocalStorageValue(this.cloudPayloadHashKey);
+    if (!force && previousHash === payloadHash) {
+      return of(null);
+    }
+
+    const expectedRevision = this.getLocalStorageValue(this.cloudRevisionKey);
+    return this.http.put<CloudBackupResponse>(`${this.apiUrl}/`, {
+      data: localData,
+      expected_revision: expectedRevision || undefined,
+    }).pipe(
       tap((payload) => {
-        // Persist revision locally so future conflict handling can compare versions.
-        if (payload?.revision) {
-          localStorage.setItem('cloud_backup_revision', payload.revision);
-        }
+        this.persistCloudMetadata(payload, payloadHash);
       })
     );
+  }
+
+  fetchCloudMetadata(): Observable<CloudBackupMetadata | null> {
+    if (!isPlatformBrowser(this.platformId)) return of(null);
+
+    return this.http.get<CloudBackupResponse>(`${this.apiUrl}/`).pipe(
+      map((payload) => {
+        const revision = payload?.revision;
+        const updatedAt = payload?.updated_at;
+        if (!revision || !updatedAt) {
+          return null;
+        }
+
+        localStorage.setItem(this.cloudRevisionKey, revision);
+        localStorage.setItem(this.cloudLastSyncedAtKey, updatedAt);
+        return { revision, updated_at: updatedAt };
+      })
+    );
+  }
+
+  getLastSyncedAtFromLocal(): string | null {
+    return this.getLocalStorageValue(this.cloudLastSyncedAtKey);
   }
 
   // Pulls backup from cloud and hydrates local browser storage for this session.
@@ -131,7 +168,8 @@ export class BackupService {
         if (accessToken) localStorage.setItem('access_token', accessToken);
         if (refreshToken) localStorage.setItem('refresh_token', refreshToken);
         if (user) localStorage.setItem('user', user);
-        if (payload.revision) localStorage.setItem('cloud_backup_revision', payload.revision);
+        if (payload.revision) localStorage.setItem(this.cloudRevisionKey, payload.revision);
+        if (payload.updated_at) localStorage.setItem(this.cloudLastSyncedAtKey, payload.updated_at);
 
         return this.syncRestoredIncomeToBackend(cloudData).pipe(map(() => true));
       })
@@ -175,7 +213,14 @@ export class BackupService {
 
   // Collect only app data; never send auth/session artifacts to backup storage.
   private getSyncPayloadFromLocalStorage(): Record<string, string> {
-    const excludedKeys = new Set(['access_token', 'refresh_token', 'user', 'cloud_backup_revision']);
+    const excludedKeys = new Set([
+      'access_token',
+      'refresh_token',
+      'user',
+      this.cloudRevisionKey,
+      this.cloudLastSyncedAtKey,
+      this.cloudPayloadHashKey,
+    ]);
     const localData: Record<string, string> = {};
 
     for (let index = 0; index < localStorage.length; index++) {
@@ -187,5 +232,36 @@ export class BackupService {
     }
 
     return localData;
+  }
+
+  private computePayloadHash(localData: Record<string, string>): string {
+    const ordered: Record<string, string> = {};
+    Object.keys(localData)
+      .sort()
+      .forEach((key) => {
+        ordered[key] = localData[key];
+      });
+    return JSON.stringify(ordered);
+  }
+
+  private persistCloudMetadata(payload: CloudBackupResponse | null, payloadHash: string): void {
+    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined' || !payload) {
+      return;
+    }
+
+    if (payload.revision) {
+      localStorage.setItem(this.cloudRevisionKey, payload.revision);
+    }
+    if (payload.updated_at) {
+      localStorage.setItem(this.cloudLastSyncedAtKey, payload.updated_at);
+    }
+    localStorage.setItem(this.cloudPayloadHashKey, payloadHash);
+  }
+
+  private getLocalStorageValue(key: string): string | null {
+    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') {
+      return null;
+    }
+    return localStorage.getItem(key);
   }
 }

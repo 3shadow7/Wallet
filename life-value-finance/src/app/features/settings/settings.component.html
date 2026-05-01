@@ -4,53 +4,157 @@
     <p class="subtitle">Manage your data and application settings.</p>
   </header>
 
-  <div class="settings-card">
+  <div class="settings-card cloud-card">
     <h2>Cloud Sync & Cloud Security</h2>
     <p class="description">
       @if (authService.isAuthenticated()) {
-        Connected as <strong>{{ authService.currentUser()?.username }}</strong>. Your data can be synchronized with the cloud.
+        Connected as <strong>{{ authService.currentUser()?.username }}</strong>. Your data is backed up automatically so you can move between devices without thinking about it.
       } @else {
-        Sign in to synchronize your data automatically across devices.
+        Sign in once to keep your budget safe and available on every device.
       }
     </p>
 
-    <div class="actions">
-      @if (authService.isAuthenticated()) {
-        <div class="action-group">
-          <h3>Cloud Sync</h3>
-          <p>Push your current local data to your secure cloud account.</p>
-          <button class="btn btn-primary" [disabled]="syncStatus() === 'syncing'" (click)="syncWithCloud()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c.707 0 1.346-.287 1.812-.75.465-.463.75-1.1.75-1.808a2.556 2.556 0 0 0-2.5 0 2.556 2.556 0 0 0-2.5 2.5c0 .707.287 1.346.75 1.812.463.465 1.1.75 1.808.75z"/><path d="M12 13v5"/><path d="M12 18l-3-3"/><path d="M12 18l3-3"/><path d="M20 17.58A5 5 0 0 0 18 8a7 7 0 1 0-13.3 3.6"/></svg>
-            {{ syncStatus() === 'syncing' ? 'Syncing...' : 'Sync Now' }}
-          </button>
+    @if (authService.isAuthenticated()) {
+      <div class="cloud-hero">
+        <div class="sync-status-card">
+          <div class="status-header">
+            <div>
+              <p class="status-label">Automatic sync</p>
+              <h3>Runs quietly in the background</h3>
+            </div>
 
-          @if (syncStatus() === 'success') {
-            <p class="hint success">Cloud sync complete!</p>
-          } @else if (syncStatus() === 'error') {
-            <p class="hint error">{{ errorMessage }}</p>
-          }
-
-          <button class="btn btn-secondary" [disabled]="restoreStatus() === 'restoring'" (click)="restoreFromCloud()">
-            {{ restoreStatus() === 'restoring' ? 'Restoring...' : 'Restore From Cloud' }}
-          </button>
-
-          @if (restoreStatus() === 'success') {
-            <p class="hint success">Cloud restore complete. Reloading...</p>
-          } @else if (restoreStatus() === 'error') {
-            <p class="hint error">{{ errorMessage }}</p>
-          }
-        </div>
-      } @else {
-        <div class="action-group">
-          <h3>Link Account</h3>
-          <p>Login or Register to enable cloud features.</p>
-          <div class="auth-options">
-            <a routerLink="/login" class="btn btn-primary">Login</a>
-            <a routerLink="/register" class="btn btn-secondary">Register</a>
+            <span
+              class="status-pill sync-pill"
+              [class.is-success]="autoSyncService.status() === 'success'"
+              [class.is-syncing]="autoSyncService.status() === 'syncing'"
+              [class.is-error]="autoSyncService.status() === 'error'"
+            >
+              {{ syncStatusLabel() }}
+            </span>
           </div>
+
+          <div class="status-metrics">
+            <div class="metric">
+              <span class="metric-label">Last synced</span>
+              <span class="metric-value">
+                @if (autoSyncService.lastSyncedAt()) {
+                  {{ autoSyncService.lastSyncedAt() | date:'medium' }}
+                } @else {
+                  Not synced yet
+                }
+              </span>
+            </div>
+
+            <div class="metric">
+              <span class="metric-label">Cloud state</span>
+              <span class="metric-value">{{ syncStateMessage() }}</span>
+            </div>
+          </div>
+
+          <div class="device-info">
+            <small class="device-label">This device</small>
+            <div class="device-id">{{ getDeviceIdShort() }}</div>
+          </div>
+
+          @if (autoSyncService.status() === 'error') {
+            <p class="hint error">{{ getAutoSyncErrorMessage() }}</p>
+          }
+
+          @if (statusMessage()) {
+            <p class="hint" [class.success]="statusMessage()?.type === 'success'" [class.error]="statusMessage()?.type === 'error'">{{ statusMessage()?.text }}</p>
+          }
         </div>
+
+        <div class="sync-actions">
+          <button class="btn btn-primary" [disabled]="restoreStatus() === 'restoring'" (click)="restoreFromCloud()">
+            {{ restoreStatus() === 'restoring' ? 'Restoring...' : 'Restore from cloud' }}
+          </button>
+
+          <p class="action-note">
+            Use this only if you want to replace this device with the cloud copy.
+          </p>
+        </div>
+      </div>
+
+      <details class="sync-details" (toggle)="onSyncDetailsToggle($event)">
+        <summary>
+          <span>Advanced sync details</span>
+          <span class="summary-note">For troubleshooting and conflict review</span>
+        </summary>
+
+        <div class="sync-details-grid">
+          <section class="detail-panel">
+            <div class="detail-panel-header">
+              <h3>Waiting to upload</h3>
+              <span class="count-chip">{{ pendingOps.length }}</span>
+            </div>
+
+            <p class="detail-copy">These are background changes that will go up when the device is online.</p>
+
+            @if (pendingOps.length === 0) {
+              <p class="queue-empty">Nothing is waiting right now.</p>
+            } @else {
+              <ul class="sync-list">
+                @for (op of pendingOps; track op.id) {
+                  <li>
+                  <span>{{ op.type | titlecase }}</span>
+                  <span>{{ op.resource || 'expense' }}</span>
+                  </li>
+                }
+              </ul>
+
+              <button class="btn btn-secondary btn-compact" (click)="flushQueue()">Try sync now</button>
+            }
+          </section>
+
+          <section class="detail-panel">
+            <div class="detail-panel-header">
+              <h3>Conflicts</h3>
+              <span class="count-chip">{{ conflicts.length }}</span>
+            </div>
+
+            <p class="detail-copy">If something changed on another device, you can choose which version should win.</p>
+
+            @if (conflicts.length === 0) {
+              <p class="queue-empty">No conflicts right now.</p>
+            } @else {
+              @for (conflict of conflicts; track conflict.opId) {
+                <div class="conflict-card">
+                  <p class="conflict-title">{{ conflict.resource | titlecase }} conflict</p>
+                  @if (conflict.resource === 'income') {
+                    <p class="conflict-meta">Cloud updated: {{ conflict.serverUpdatedAt || 'unknown' }}</p>
+                    <p class="conflict-meta">Cloud monthly income: {{ conflict.serverPayload['monthly_income'] }}</p>
+                  }
+
+                  <div class="conflict-actions">
+                    <button class="btn btn-secondary btn-compact" (click)="resolveConflictUseCloud(conflict)">Use cloud</button>
+                    <button class="btn btn-primary btn-compact" (click)="resolveConflictOverwriteCloud(conflict)">Keep mine</button>
+                  </div>
+                </div>
+              }
+            }
+          </section>
+        </div>
+      </details>
+
+      @if (restoreStatus() === 'success') {
+        <p class="hint success">Cloud restore complete. Reloading...</p>
+      } @else if (restoreStatus() === 'error') {
+        <p class="hint error">{{ errorMessage }}</p>
       }
-    </div>
+    } @else {
+      <div class="auth-cta">
+        <div>
+          <h3>Sign in to keep your data safe</h3>
+          <p>One account lets the app back up your data automatically and restore it later if needed.</p>
+        </div>
+
+        <div class="auth-actions">
+          <a [routerLink]="['/login']" class="btn btn-primary">Sign in</a>
+          <a [routerLink]="['/register']" class="text-link">Create account</a>
+        </div>
+      </div>
+    }
   </div>
 
   <div class="settings-card">

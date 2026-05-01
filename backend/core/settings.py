@@ -145,6 +145,7 @@ REST_FRAMEWORK = {
 
 # Simple JWT Configuration
 from datetime import timedelta
+from corsheaders.defaults import default_headers
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -154,4 +155,10 @@ SIMPLE_JWT = {
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
+    "http://127.0.0.1:4200",
+]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-device-id",
+    "idempotency-key",
 ]

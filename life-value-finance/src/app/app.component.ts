@@ -3,6 +3,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
 import { HeaderComponent } from './layout/header/header.component';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { AutoSyncService } from './core/services/auto-sync.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'life-value-finance';
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
+  private autoSyncService = inject(AutoSyncService);
 
   private touchStartX = 0;
   private touchEndX = 0;
@@ -160,7 +162,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  
+
   scrollToTop() {
     setTimeout(() => {
       const body = document.querySelector('.header');

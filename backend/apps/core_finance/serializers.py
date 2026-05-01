@@ -43,7 +43,9 @@ class UserIncomeSerializer(serializers.ModelSerializer):
             "calculation_method",
             "hours_per_day",
             "days_per_week",
+            "updated_at",
         ]
+        read_only_fields = ["updated_at"]
 
     def validate_monthly_income(self, value):
         if value < 0:
