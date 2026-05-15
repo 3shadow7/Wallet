@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "MyWallet Frontend Storage Vision",
-    "version": "0.1.0",
-    "description": "Swagger-style contract for the data currently persisted in browser localStorage. Values are stored as strings in localStorage; JSON objects here represent the deserialized shapes for backend alignment."
+    "version": "0.2.0",
+    "description": "Swagger-style contract for the planned localStorage structure. Storage is grouped into main stores for income, history/analysis, and items, using versioned envelopes for scalability."
   },
   "servers": [
     {
@@ -18,6 +18,18 @@
         "type": "object",
         "description": "Deserialized view of localStorage keys used by the frontend.",
         "properties": {
+          "lvf_income_store": {
+            "$ref": "#/components/schemas/IncomeStore",
+            "description": "Income config and income calculations."
+          },
+          "lvf_history_store": {
+            "$ref": "#/components/schemas/HistoryStore",
+            "description": "All historical data and analysis."
+          },
+          "lvf_items_store": {
+            "$ref": "#/components/schemas/ItemsStore",
+            "description": "Items for current month and per-month archives."
+          },
           "access_token": {
             "type": "string",
             "description": "JWT access token stored as raw string under localStorage key access_token."
@@ -38,29 +50,6 @@
             "type": "boolean",
             "description": "Guest mode flag stored as string 'true' under localStorage key is_guest."
           },
-          "life_value_finance_data": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AppStateData"
-              }
-            ],
-            "description": "Main app state stored as JSON string under localStorage key life_value_finance_data."
-          },
-          "savingsStorage": {
-            "type": "number",
-            "description": "Total savings stored as string under localStorage key savingsStorage."
-          },
-          "monthlyHistory": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MonthlyRecord"
-            },
-            "description": "Savings history stored as JSON string under localStorage key monthlyHistory."
-          },
-          "manualSavingsLog": {
-            "type": "number",
-            "description": "Manual savings additions stored as string under localStorage key manualSavingsLog."
-          },
           "offline_sync_queue_v1": {
             "$ref": "#/components/schemas/SyncQueue",
             "description": "Offline sync queue stored as JSON string under localStorage key offline_sync_queue_v1."
@@ -71,6 +60,161 @@
           }
         }
       },
+      "IncomeStore": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "integer" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "data": { "$ref": "#/components/schemas/IncomeData" }
+        },
+        "required": ["version", "updatedAt", "data"]
+      },
+      "HistoryStore": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "integer" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "data": { "$ref": "#/components/schemas/HistoryData" }
+        },
+        "required": ["version", "updatedAt", "data"]
+      },
+      "ItemsStore": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "integer" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "data": { "$ref": "#/components/schemas/ItemsData" }
+        },
+        "required": ["version", "updatedAt", "data"]
+      },
+      "IncomeData": {
+        "type": "object",
+        "properties": {
+          "incomeConfig": { "$ref": "#/components/schemas/UserIncomeConfig" },
+          "sources": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MonthlyIncome" }
+          },
+          "taxProfile": { "$ref": "#/components/schemas/TaxProfile" },
+          "savingsGoal": { "$ref": "#/components/schemas/SavingsGoal" },
+          "calculation": { "$ref": "#/components/schemas/IncomeCalculation" }
+        },
+        "required": ["incomeConfig"]
+      },
+      "HistoryData": {
+        "type": "object",
+        "properties": {
+          "budgetHistory": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BudgetHistory" }
+          },
+          "savingsHistory": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MonthlyRecord" }
+          },
+          "savingsSummary": { "$ref": "#/components/schemas/SavingsSummary" },
+          "analysis": { "$ref": "#/components/schemas/HistoryAnalysis" }
+        }
+      },
+      "ItemsData": {
+        "type": "object",
+        "properties": {
+          "currentMonth": { "$ref": "#/components/schemas/MonthlyItems" },
+          "months": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/components/schemas/MonthlyItems" }
+          }
+        },
+        "required": ["currentMonth", "months"]
+      },
+      "MonthlyItems": {
+        "type": "object",
+        "properties": {
+          "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ExpenseItem" }
+          },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["month", "items", "updatedAt"]
+      },
+      "TaxProfile": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["fixed", "percentage", "progressive"]
+          },
+          "percentage": { "type": "number" },
+          "fixedAmount": { "type": "number" },
+          "brackets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TaxBracket" }
+          }
+        },
+        "required": ["mode"]
+      },
+      "TaxBracket": {
+        "type": "object",
+        "properties": {
+          "upTo": { "type": "number" },
+          "rate": { "type": "number" }
+        },
+        "required": ["upTo", "rate"]
+      },
+      "SavingsGoal": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "type": { "type": "string", "enum": ["fixed", "percent_of_income"] },
+          "target": { "type": "number" }
+        },
+        "required": ["enabled", "type", "target"]
+      },
+      "IncomeCalculation": {
+        "type": "object",
+        "properties": {
+          "grossMonthlyIncome": { "type": "number" },
+          "estimatedTaxes": { "type": "number" },
+          "netMonthlyIncome": { "type": "number" },
+          "effectiveHourlyRate": { "type": "number" },
+          "lastCalculatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SavingsSummary": {
+        "type": "object",
+        "properties": {
+          "totalSavings": { "type": "number" },
+          "manualSavingsLog": { "type": "number" },
+          "lastUpdated": { "type": "string", "format": "date-time" }
+        }
+      },
+      "HistoryAnalysis": {
+        "type": "object",
+        "properties": {
+          "monthsCount": { "type": "integer" },
+          "totalIncome": { "type": "number" },
+          "totalExpenses": { "type": "number" },
+          "totalSavings": { "type": "number" },
+          "averageSavingsRate": { "type": "number" },
+          "lastUpdated": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MonthlyIncome": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "source": { "type": "string" },
+          "amount": { "type": "number" },
+          "isRecurring": { "type": "boolean" },
+          "frequency": {
+            "type": "string",
+            "enum": ["daily", "weekly", "bi-weekly", "monthly", "yearly"]
+          }
+        },
+        "required": ["id", "source", "amount", "isRecurring", "frequency"]
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -79,35 +223,6 @@
           "email": { "type": "string", "format": "email" }
         },
         "required": ["id", "username", "email"]
-      },
-      "AppStateData": {
-        "type": "object",
-        "properties": {
-          "version": { "type": "integer" },
-          "incomes": {
-            "type": "array",
-            "items": { "type": "object" },
-            "description": "Currently stored but unused; typically an empty array."
-          },
-          "expenses": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/ExpenseItem" },
-            "description": "Current month only."
-          },
-          "incomeConfig": {
-            "$ref": "#/components/schemas/UserIncomeConfig",
-            "nullable": true
-          },
-          "history": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/BudgetHistory" }
-          },
-          "settings": {
-            "$ref": "#/components/schemas/UserSettings",
-            "nullable": true
-          }
-        },
-        "required": ["version", "incomes", "expenses", "incomeConfig", "history", "settings"]
       },
       "UserIncomeConfig": {
         "type": "object",
@@ -176,14 +291,6 @@
           "savingsRate": { "type": "number" }
         },
         "required": ["totalIncome", "totalExpenses", "remainingIncome", "hourlyRate", "savingsRate"]
-      },
-      "UserSettings": {
-        "type": "object",
-        "properties": {
-          "timezone": { "type": "string" },
-          "lastActiveMonth": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" }
-        },
-        "required": ["timezone", "lastActiveMonth"]
       },
       "MonthlyRecord": {
         "type": "object",
