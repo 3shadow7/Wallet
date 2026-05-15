@@ -92,10 +92,10 @@ The project uses standard Angular environment files (`src/environments`).
 - `environment.prod.ts`: Production settings (production mode enabled, logs disabled)
 
 ## Persistence Strategy
-Data is stored entirely on the client-side using a custom `PersistenceService`.
+Data is stored entirely on the client-side using versioned local stores.
 - **Primary Storage**: `localStorage` (for simplicity and speed in this version)
-- **Structure**: JSON object stores for `budget-state`
-- **Safety**: Includes error handling for quota limits and data corruption.
+- **Structure**: Versioned store envelopes for income, history/analysis, and items
+- **Safety**: Centralized storage engine with JSON parsing and quota handling
 
 ## Performance Notes
 - **Lazy Loading**: Route-level code splitting is implemented for the Dashboard.

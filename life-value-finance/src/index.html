@@ -30,8 +30,8 @@
       include it with a `<script src="/theme-bootstrap.js"></script>` tag
       before your CSS and Angular scripts. That keeps the early-execution
       behavior while complying with CSP.
-    - The script reads `localStorage.getItem('theme')` by default. If you use
-      a different key, update the `key` variable inside the script.
+    - The script reads `localStorage.getItem('app-theme-preference')` by default.
+      If you use a different key, update the `key` variable inside the script.
     - Alternatives: server-side rendering (SSR) is ideal for removing any
       flash, or set the attribute on the server-rendered HTML.
   -->
@@ -40,7 +40,7 @@
     // flashing from default -> actual theme and disable transitions during the switch.
     (function(){
       try {
-        var key = 'theme';
+        var key = 'app-theme-preference';
         var theme = null;
         try { theme = localStorage.getItem(key); } catch(e) { theme = null; }
         if (!theme) {

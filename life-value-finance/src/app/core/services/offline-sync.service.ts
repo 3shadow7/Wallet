@@ -1,40 +1,39 @@
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, inject } from '@angular/core';
 import { RemoteSyncService, SyncOp as RemoteSyncOp } from './remote-sync.service';
 import { inject as injectFunc } from '@angular/core';
-
-const SYNC_QUEUE_KEY = 'offline_sync_queue_v1';
+import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
+import { STORAGE_KEYS } from '@core/storage/engine/storage-keys';
 
 export interface SyncOp {
   id: string;
   type: string;
-  payload: any;
+  payload: Record<string, unknown>;
   createdAt: string;
+}
+
+interface SyncFailure {
+  id?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+interface SyncBatchResult {
+  success?: string[];
+  failed?: SyncFailure[];
 }
 
 @Injectable({ providedIn: 'root' })
 export class OfflineSyncService {
-  private platformId = inject(PLATFORM_ID);
   private remoteSync = injectFunc(RemoteSyncService);
+  private storage = inject(StorageEngineService);
 
   private loadQueue(): SyncOp[] {
-    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return [];
-    try {
-      const raw = localStorage.getItem(SYNC_QUEUE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      console.error('Failed to load sync queue', e);
-      return [];
-    }
+    const queue = this.storage.readJson<SyncOp[]>(STORAGE_KEYS.syncQueue);
+    return Array.isArray(queue) ? queue : [];
   }
 
   private saveQueue(queue: SyncOp[]) {
-    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
-    try {
-      localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
-    } catch (e) {
-      console.error('Failed to persist sync queue', e);
-    }
+    this.storage.writeJson(STORAGE_KEYS.syncQueue, queue);
   }
 
   enqueue(op: Omit<SyncOp, 'createdAt'>) {
@@ -63,22 +62,19 @@ export class OfflineSyncService {
   }
 
   clear() {
-    if (!isPlatformBrowser(this.platformId) || typeof localStorage === 'undefined') return;
-    localStorage.removeItem(SYNC_QUEUE_KEY);
+    this.storage.removeItem(STORAGE_KEYS.syncQueue);
   }
 
   /**
    * Flush queued operations to server in small batches.
    * - baseUrl and token are optional when RemoteSyncService is configured for environment
    */
-  async flush(batchSize = 10, token?: string): Promise<{ processed: string[]; failed: any[] }> {
-    if (!isPlatformBrowser(this.platformId)) return { processed: [], failed: [] };
-
+  async flush(batchSize = 10, token?: string): Promise<{ processed: string[]; failed: SyncFailure[] }> {
     const queue = this.loadQueue();
     if (queue.length === 0) return { processed: [], failed: [] };
 
     const processed: string[] = [];
-    const failed: any[] = [];
+    const failed: SyncFailure[] = [];
 
     // Send in batches
     for (let i = 0; i < queue.length; i += batchSize) {
@@ -87,10 +83,10 @@ export class OfflineSyncService {
       try {
         // adapt shape to RemoteSyncService.SyncOp
         const ops = batch.map(b => ({ id: b.id, type: b.type, payload: b.payload, timestamp: b.createdAt } as RemoteSyncOp));
-        const res = await this.remoteSync.postBatch(ops, token);
+        const res: SyncBatchResult = await this.remoteSync.postBatch(ops, token);
         // mark processed
         (res.success || []).forEach((id: string) => processed.push(id));
-        (res.failed || []).forEach((f: any) => failed.push(f));
+        (res.failed || []).forEach((f: SyncFailure) => failed.push(f));
       } catch (e) {
         // network or server error — stop processing further and return
         console.error('Flush batch failed', e);

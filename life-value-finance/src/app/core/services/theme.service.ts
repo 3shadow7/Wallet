@@ -1,17 +1,18 @@
-import { Injectable, signal, effect, Inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, signal, effect, Inject, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { ThemeStorageService, ThemePreference } from '@core/storage/stores/theme-storage.service';
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = ThemePreference;
 
 @Injectable({
   providedIn: 'root'
 })
 export class ThemeService {
-  private readonly THEME_KEY = 'app-theme-preference';
-  
+  private themeStorage = inject(ThemeStorageService);
+
   // Signal to hold the current theme
   theme = signal<Theme>('system');
-  
+
   // Computed or simple boolean for "is currently dark"
   isDark = signal<boolean>(false);
 
@@ -22,7 +23,7 @@ export class ThemeService {
   }
 
   private initializeTheme() {
-    const savedTheme = localStorage.getItem(this.THEME_KEY) as Theme;
+    const savedTheme = this.themeStorage.getPreference();
     if (savedTheme) {
       this.theme.set(savedTheme);
     } else {
@@ -41,23 +42,18 @@ export class ThemeService {
     // Effect to persist changes
     effect(() => {
         const t = this.theme();
-        if(t !== 'system') {
-            localStorage.setItem(this.THEME_KEY, t);
-            try {
-              // set a cookie so server-side rendering can read preferred theme
-              // expires in 1 year
-              document.cookie = `theme=${encodeURIComponent(t)}; Path=/; Max-Age=${60*60*24*365}; SameSite=Lax`;
-            } catch (e) {
-              // ignore cookie failures
-            }
-        } else {
-            localStorage.removeItem(this.THEME_KEY);
-            try {
-              // remove cookie
-              document.cookie = 'theme=; Path=/; Max-Age=0; SameSite=Lax';
-            } catch (e) {
-              // ignore
-            }
+        this.themeStorage.setPreference(t);
+        try {
+          if (t !== 'system') {
+            // set a cookie so server-side rendering can read preferred theme
+            // expires in 1 year
+            document.cookie = `theme=${encodeURIComponent(t)}; Path=/; Max-Age=${60*60*24*365}; SameSite=Lax`;
+          } else {
+            // remove cookie
+            document.cookie = 'theme=; Path=/; Max-Age=0; SameSite=Lax';
+          }
+        } catch (e) {
+          // ignore cookie failures
         }
         this.applyTheme(t);
     });

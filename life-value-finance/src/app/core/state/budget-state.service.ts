@@ -1,8 +1,8 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { ExpenseItem, BudgetSummary, UserIncomeConfig, BudgetHistory, UserSettings } from '@core/domain/models';
 import { FinancialCalculatorService } from '@core/domain/financial-calculator.service';
-import { PersistenceService } from '@core/services/persistence.service';
 import { SavingsService } from '@core/services/savings.service';
+import { BackupService } from '@core/services/backup.service';
 import { IncomeStoreService } from '@core/storage/stores/income-store.service';
 import { HistoryStoreService } from '@core/storage/stores/history-store.service';
 import { ItemsStoreService } from '@core/storage/stores/items-store.service';
@@ -32,8 +32,8 @@ const INITIAL_STATE = {
   providedIn: 'root'
 })
 export class BudgetStateService {
-    private persistenceService = inject(PersistenceService);
   private savingsService = inject(SavingsService);
+    private backupService = inject(BackupService);
     private incomeStore = inject(IncomeStoreService);
     private historyStore = inject(HistoryStoreService);
     private itemsStore = inject(ItemsStoreService);
@@ -244,10 +244,6 @@ export class BudgetStateService {
             })
         );
 
-        // Also update SavingsService snapshot if it exists for this month
-        const summary = this.budgetSummary();
-        const transferToSavings = summary.remainingIncome > 0 ? summary.remainingIncome : 0;
-
         // This is a manual correction to the snapshot
         // We'll need to add a specialized method to SavingsService later if we want full consistency,
         // but updating history signal in BudgetState should handle UI refresh for now.
@@ -259,7 +255,7 @@ export class BudgetStateService {
       current.map(item => {
         if (item.id !== id) return item;
 
-        let newItem = { ...item, ...updates };
+        const newItem = { ...item, ...updates };
 
         if (updates.quantity !== undefined && updates.unitPrice === undefined && updates.amount === undefined) {
              newItem.amount = newItem.unitPrice * newItem.quantity;
@@ -324,16 +320,16 @@ export class BudgetStateService {
 
   // --- Backup & Restore ---
   exportBackup() {
-      this.persistenceService.exportState();
+      this.backupService.exportData();
   }
 
   async importBackup(file: File) {
       if (confirm('Importing this backup will OVERWRITE all your current Guest data. Are you sure?')) {
-          const success = await this.persistenceService.importState(file);
+          const success = await this.backupService.importData(file);
           if (success) {
               // Reload state from newly imported local storage
-              await this.loadInitialState();
-              // Force SavingsService to re-read from localStorage
+              this.loadInitialState();
+              // Force SavingsService to re-read from stores
               this.savingsService.refreshState();
               return true; // Success
           }

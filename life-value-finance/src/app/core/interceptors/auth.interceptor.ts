@@ -1,16 +1,18 @@
 
 import { HttpErrorResponse, HttpInterceptorFn } from "@angular/common/http";
 import { inject } from "@angular/core";
-import { AuthService } from "../services/auth.service";
 import { catchError, switchMap, throwError } from "rxjs";
+import { AuthStorageService } from "@core/storage/stores/auth-storage.service";
+import { AuthService } from "../services/auth.service";
 
 const shouldSkip = (url: string) =>
   url.includes("/auth/login/") || url.includes("/auth/register/") || url.includes("/auth/token/refresh/");
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const authStorage = inject(AuthStorageService);
 
-  const token = localStorage.getItem("access_token");
+  const token = authStorage.getAccessToken();
   const isAuthRequest = shouldSkip(req.url);
 
   const authReq = token && !isAuthRequest
@@ -19,7 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      const refresh = localStorage.getItem("refresh_token");
+      const refresh = authStorage.getRefreshToken();
       // Only try refresh on 401 for non-auth endpoints if we have a refresh token
       if (error.status === 401 && refresh && !isAuthRequest) {
         return authService.refreshAccessToken().pipe(
