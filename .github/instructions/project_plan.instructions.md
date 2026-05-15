@@ -20,6 +20,45 @@ Project Context:
 - this is all my idea for the system and i will add more features and requirements as we go along, so please be flexible and adaptable to changes and new requirements as we build the system together, and also please keep in mind that the main goal of the system is to help me manage my money better and make informed financial decisions, so please prioritize features and functionality that will help me achieve that goal, and also please keep the user experience simple and intuitive, so that i can easily use the system without getting overwhelmed or confused by too many features or options.
 and also please keep in mind that the system should be modular, maintainable, and scalable, so that we can easily add new features and functionality in the future without having to rewrite or refactor large parts of the codebase, and also please use best modern practices (clean code, strong typing, linting) to ensure that the code is of high quality and easy to understand and maintain for future developers who may work on the project after us.
 
+Clarified Vision/Spec (basic role, May 15 2026):
+- Role modes: start with basic ("stupid") role; advanced role later adds multiple income types and hourly salary aggregation used in the dashboard "Product Price ($)" field.
+- Currency: default USD with 2 decimals; store money as integer cents.
+- Month boundary: calendar month (1st to end) for basic role; custom month boundary later for advanced role.
+- Income (basic): single income source (usually salary). Advanced role later can have multiple income types.
+- Items: types are burn (normal expense), tax, saving. Importance categories only for sorting priority: want, must, emergency, gift (default want).
+- Auto repeat: only tax and saving items repeat into the next month; ignore state carries over.
+- Ignore behavior: ignored items remain visible but are excluded from totals, history, and charts; user can toggle ignore later.
+- Taxes: fixed amount item; can be ignored if taxes are not monthly.
+- Saving items: shown in the "expense" card to reflect planned outflow, but they are not real expenses in business logic.
+
+Dashboard cards and formulas (exclude ignored items):
+- Total income = sum of income.
+- Planned outflow (current "expense" card) = burn + tax + savingTarget.
+- Free money = income - (burn + tax + savingTarget); can be negative.
+- Real expense = burn + tax.
+- Savings balance = income - (burn + tax); can be negative and should display negative.
+- Actual saved total = max(0, savings balance).
+- Overspend = max(0, real expense - income).
+- Saving shortfall = max(0, savingTarget - actual saved total).
+- If burn + tax exceeds income, saving items do not save anything for that month.
+
+Saving allocation rules:
+- If actual saved total is less than savingTarget, the user selects which saving items reduce.
+- User cannot lock all saving items; at least one item must be reducible.
+- Advanced role later: user can set exact saved amount per saving item.
+
+Saving goals:
+- Each saving item can have an optional long-term target amount (e.g., 14000).
+- Track accumulated saved value for that item across months (ignored months add 0).
+- Show goal hit alert when accumulated saved reaches target.
+- Show ETA hint based on current month saved amount if it stays the same in future months.
+
+History edits:
+- Users can edit or add items in past months; charts and analysis must recompute for impacted months.
+
+Planned future features (not now):
+- Credits/debits (gifts, emergency, debts) with their own card and logic.
+
 General Instructions:
 - Before writing code, ask clarifying questions if the requirements are unclear.
 - After finishing a code block, always include:
