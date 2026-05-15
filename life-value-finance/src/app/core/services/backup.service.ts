@@ -9,7 +9,6 @@ import { HistoryStoreService } from '@core/storage/stores/history-store.service'
 import { ItemsStoreService } from '@core/storage/stores/items-store.service';
 import { AuthStorageService } from '@core/storage/stores/auth-storage.service';
 import { ThemeStorageService } from '@core/storage/stores/theme-storage.service';
-import { StorageMigrationService } from '@core/storage/migration/storage-migration.service';
 import type { IncomeStore, HistoryStore, ItemsStore } from '@core/domain/storage.models';
 
 @Injectable({
@@ -25,7 +24,6 @@ export class BackupService {
   private itemsStore = inject(ItemsStoreService);
   private authStorage = inject(AuthStorageService);
   private themeStorage = inject(ThemeStorageService);
-  private migration = inject(StorageMigrationService);
 
   private readonly backupVersion = 1;
 
@@ -74,11 +72,11 @@ export class BackupService {
 
           this.clearDataStores();
 
-          if (this.isNewBackupFormat(parsed)) {
-            this.restoreNewFormat(parsed as BackupPayload);
-          } else {
-            this.restoreLegacyFormat(parsed as Record<string, string>);
+          if (!this.isNewBackupFormat(parsed)) {
+            throw new Error('Unsupported backup format');
           }
+
+          this.restoreNewFormat(parsed as BackupPayload);
 
           if (preserved.accessToken) this.authStorage.setAccessToken(preserved.accessToken);
           if (preserved.refreshToken) this.authStorage.setRefreshToken(preserved.refreshToken);
@@ -135,17 +133,6 @@ export class BackupService {
     this.writeStoreOrDefault(STORAGE_KEYS.income, stores[STORAGE_KEYS.income], this.defaultIncomeStore());
     this.writeStoreOrDefault(STORAGE_KEYS.history, stores[STORAGE_KEYS.history], this.defaultHistoryStore());
     this.writeStoreOrDefault(STORAGE_KEYS.items, stores[STORAGE_KEYS.items], this.defaultItemsStore());
-  }
-
-  private restoreLegacyFormat(map: Record<string, string>): void {
-    const legacyKeys = ['life_value_finance_data', 'savingsStorage', 'monthlyHistory', 'manualSavingsLog'];
-    legacyKeys.forEach(key => {
-      if (key in map) {
-        this.storageEngine.setItem(key, map[key]);
-      }
-    });
-
-    this.migration.migrateIfNeeded();
   }
 
   private clearDataStores(): void {

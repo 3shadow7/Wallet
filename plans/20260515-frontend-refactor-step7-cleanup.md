@@ -22,6 +22,7 @@ Purpose: remove remaining direct localStorage usage and legacy persistence servi
 - Offline sync queue uses the storage engine and shared key constants.
 - Theme bootstrap key matches app-theme-preference.
 - Docs updated to reflect store-based persistence.
+- Legacy migration removed (dev-only reset; no old data support).
 
 ## Next step
 

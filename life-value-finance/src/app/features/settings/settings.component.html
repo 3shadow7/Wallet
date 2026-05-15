@@ -23,7 +23,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19c.707 0 1.346-.287 1.812-.75.465-.463.75-1.1.75-1.808a2.556 2.556 0 0 0-2.5 0 2.556 2.556 0 0 0-2.5 2.5c0 .707.287 1.346.75 1.812.463.465 1.1.75 1.808.75z"/><path d="M12 13v5"/><path d="M12 18l-3-3"/><path d="M12 18l3-3"/><path d="M20 17.58A5 5 0 0 0 18 8a7 7 0 1 0-13.3 3.6"/></svg>
             {{ syncStatus() === 'syncing' ? 'Syncing...' : 'Sync Now' }}
           </button>
-          
+
           @if (syncStatus() === 'success') {
             <p class="hint success">Cloud sync complete!</p>
           }
@@ -60,6 +60,7 @@
       <div class="action-group">
         <h3>Import Data</h3>
         <p>Restore your budget from a previously saved backup file.</p>
+        <p class="hint">Only the new backup format is supported.</p>
         <label class="btn btn-secondary file-label">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload Backup
@@ -79,7 +80,7 @@
   <div class="settings-card danger-section">
     <h2 class="danger-title">Danger Zone</h2>
     <p class="description">
-      These actions are permanent and cannot be undone. 
+      These actions are permanent and cannot be undone.
     </p>
 
     <div class="actions">

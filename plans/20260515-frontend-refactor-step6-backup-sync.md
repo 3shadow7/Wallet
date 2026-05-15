@@ -30,7 +30,7 @@ Purpose: move backup/import/sync flows to the new store structure and support le
 
 ## Notes
 
-- Legacy backups from the previous implementation are still supported.
+- Legacy backups from the previous implementation are no longer supported (dev-only reset).
 - Tokens are excluded from export by default.
 
 ## Next step
