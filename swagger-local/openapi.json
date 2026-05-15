@@ -1,0 +1,235 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MyWallet Frontend Storage Vision",
+    "version": "0.1.0",
+    "description": "Swagger-style contract for the data currently persisted in browser localStorage. Values are stored as strings in localStorage; JSON objects here represent the deserialized shapes for backend alignment."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local backend (planned)"
+    }
+  ],
+  "paths": {},
+  "components": {
+    "schemas": {
+      "LocalStorageSnapshot": {
+        "type": "object",
+        "description": "Deserialized view of localStorage keys used by the frontend.",
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "description": "JWT access token stored as raw string under localStorage key access_token."
+          },
+          "refresh_token": {
+            "type": "string",
+            "description": "JWT refresh token stored as raw string under localStorage key refresh_token."
+          },
+          "user": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "User profile stored as JSON string under localStorage key user."
+          },
+          "is_guest": {
+            "type": "boolean",
+            "description": "Guest mode flag stored as string 'true' under localStorage key is_guest."
+          },
+          "life_value_finance_data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AppStateData"
+              }
+            ],
+            "description": "Main app state stored as JSON string under localStorage key life_value_finance_data."
+          },
+          "savingsStorage": {
+            "type": "number",
+            "description": "Total savings stored as string under localStorage key savingsStorage."
+          },
+          "monthlyHistory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MonthlyRecord"
+            },
+            "description": "Savings history stored as JSON string under localStorage key monthlyHistory."
+          },
+          "manualSavingsLog": {
+            "type": "number",
+            "description": "Manual savings additions stored as string under localStorage key manualSavingsLog."
+          },
+          "offline_sync_queue_v1": {
+            "$ref": "#/components/schemas/SyncQueue",
+            "description": "Offline sync queue stored as JSON string under localStorage key offline_sync_queue_v1."
+          },
+          "app-theme-preference": {
+            "$ref": "#/components/schemas/ThemePreference",
+            "description": "Theme preference stored as string under localStorage key app-theme-preference (only when not system)."
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "username": { "type": "string" },
+          "email": { "type": "string", "format": "email" }
+        },
+        "required": ["id", "username", "email"]
+      },
+      "AppStateData": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "integer" },
+          "incomes": {
+            "type": "array",
+            "items": { "type": "object" },
+            "description": "Currently stored but unused; typically an empty array."
+          },
+          "expenses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ExpenseItem" },
+            "description": "Current month only."
+          },
+          "incomeConfig": {
+            "$ref": "#/components/schemas/UserIncomeConfig",
+            "nullable": true
+          },
+          "history": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BudgetHistory" }
+          },
+          "settings": {
+            "$ref": "#/components/schemas/UserSettings",
+            "nullable": true
+          }
+        },
+        "required": ["version", "incomes", "expenses", "incomeConfig", "history", "settings"]
+      },
+      "UserIncomeConfig": {
+        "type": "object",
+        "properties": {
+          "monthlyIncome": { "type": "number" },
+          "workHoursPerMonth": { "type": "number" },
+          "hourlyRate": { "type": "number" },
+          "isHourlyManual": { "type": "boolean" },
+          "calculationMethod": {
+            "type": "string",
+            "enum": ["weekly", "manual"]
+          },
+          "weeklyHoursDetails": {
+            "type": "object",
+            "properties": {
+              "hoursPerDay": { "type": "number" },
+              "daysPerWeek": { "type": "number" }
+            },
+            "required": ["hoursPerDay", "daysPerWeek"]
+          }
+        },
+        "required": ["monthlyIncome", "isHourlyManual"]
+      },
+      "ExpenseItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "category": { "type": "string" },
+          "name": { "type": "string" },
+          "amount": { "type": "number" },
+          "unitPrice": { "type": "number" },
+          "quantity": { "type": "number" },
+          "isIgnored": { "type": "boolean" },
+          "type": {
+            "type": "string",
+            "enum": ["Responsibility", "Burning", "Saving"]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["Must Have", "Want", "Emergency", "Gift"]
+          }
+        },
+        "required": ["id", "name", "amount", "unitPrice", "quantity", "type", "priority"]
+      },
+      "BudgetHistory": {
+        "type": "object",
+        "properties": {
+          "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+          "date": { "type": "string", "format": "date-time" },
+          "incomeConfig": { "$ref": "#/components/schemas/UserIncomeConfig" },
+          "expenses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ExpenseItem" }
+          },
+          "summary": { "$ref": "#/components/schemas/BudgetSummary" }
+        },
+        "required": ["month", "date", "incomeConfig", "expenses", "summary"]
+      },
+      "BudgetSummary": {
+        "type": "object",
+        "properties": {
+          "totalIncome": { "type": "number" },
+          "totalExpenses": { "type": "number" },
+          "remainingIncome": { "type": "number" },
+          "hourlyRate": { "type": "number" },
+          "savingsRate": { "type": "number" }
+        },
+        "required": ["totalIncome", "totalExpenses", "remainingIncome", "hourlyRate", "savingsRate"]
+      },
+      "UserSettings": {
+        "type": "object",
+        "properties": {
+          "timezone": { "type": "string" },
+          "lastActiveMonth": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" }
+        },
+        "required": ["timezone", "lastActiveMonth"]
+      },
+      "MonthlyRecord": {
+        "type": "object",
+        "properties": {
+          "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+          "income": { "type": "number" },
+          "expenses": { "type": "number" },
+          "freeMoney": { "type": "number" },
+          "transferredToSavings": { "type": "number" },
+          "plannedSavings": { "type": "number" },
+          "savingsImpact": { "type": "number" },
+          "manualAdded": { "type": "number" },
+          "savingsTotalAfterTransfer": { "type": "number" },
+          "date": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "month",
+          "income",
+          "expenses",
+          "freeMoney",
+          "transferredToSavings",
+          "plannedSavings",
+          "savingsImpact",
+          "savingsTotalAfterTransfer",
+          "date"
+        ]
+      },
+      "SyncOp": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "payload": { "type": "object" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "type", "payload", "createdAt"]
+      },
+      "SyncQueue": {
+        "type": "array",
+        "items": { "$ref": "#/components/schemas/SyncOp" }
+      },
+      "ThemePreference": {
+        "type": "string",
+        "enum": ["light", "dark", "system"],
+        "description": "Only light/dark are persisted; system means no stored key."
+      }
+    }
+  }
+}
