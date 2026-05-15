@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
-import { ExpenseItem, BudgetSummary, UserIncomeConfig, BudgetHistory, UserSettings } from '@core/domain/models';
+import { ExpenseItem, BudgetSummary, UserIncomeConfig, BudgetHistory, UserSettings, PriorityLevel } from '@core/domain/models';
 import { FinancialCalculatorService } from '@core/domain/financial-calculator.service';
 import { SavingsService } from '@core/services/savings.service';
 import { BackupService } from '@core/services/backup.service';
@@ -100,10 +100,17 @@ export class BudgetStateService {
     );
   });
 
-  readonly totalIncome = computed(() => this.budgetSummary().totalIncome);
-  readonly totalExpenses = computed(() => this.budgetSummary().totalExpenses);
-  readonly remainingIncome = computed(() => this.budgetSummary().remainingIncome);
-  readonly hourlyRate = computed(() => this.budgetSummary().hourlyRate);
+    readonly totalIncome = computed(() => this.budgetSummary().totalIncome);
+    readonly totalExpenses = computed(() => this.budgetSummary().plannedOutflow);
+    readonly remainingIncome = computed(() => this.budgetSummary().freeMoney);
+    readonly plannedOutflow = computed(() => this.budgetSummary().plannedOutflow);
+    readonly freeMoney = computed(() => this.budgetSummary().freeMoney);
+    readonly realExpenses = computed(() => this.budgetSummary().realExpenses);
+    readonly savingsBalance = computed(() => this.budgetSummary().savingsBalance);
+    readonly actualSavedTotal = computed(() => this.budgetSummary().actualSavedTotal);
+    readonly overspend = computed(() => this.budgetSummary().overspend);
+    readonly savingShortfall = computed(() => this.budgetSummary().savingShortfall);
+    readonly hourlyRate = computed(() => this.budgetSummary().hourlyRate);
 
   constructor() {
     this.loadInitialState();
@@ -124,8 +131,8 @@ export class BudgetStateService {
         const normalizedSettings = { ...settings, lastActiveMonth: currentMonth };
 
         this.incomeConfig.set(incomeData.incomeConfig ?? INITIAL_STATE.incomeConfig);
-        this.currentMonthExpenses.set(itemsData.currentMonth?.items ?? []);
-        this.history.set(historyData.budgetHistory ?? []);
+        this.currentMonthExpenses.set(this.normalizeItems(itemsData.currentMonth?.items ?? []));
+        this.history.set(this.normalizeHistory(historyData.budgetHistory ?? []));
         this.settings.set(normalizedSettings);
         this.manualSavingsLog.set(historyData.savingsSummary?.manualSavingsLog ?? 0);
 
@@ -177,19 +184,21 @@ export class BudgetStateService {
     }
   }
 
-  private archiveCurrentMonth(month: string) {
-    const historyEntry: BudgetHistory = {
-        month: month,
-        date: new Date().toISOString(),
-        incomeConfig: this.incomeConfig(),
-        expenses: this.currentMonthExpenses(),
-        summary: this.budgetSummary()
-    };
+    private archiveCurrentMonth(month: string) {
+        const historyEntry: BudgetHistory = {
+                month: month,
+                date: new Date().toISOString(),
+                incomeConfig: this.incomeConfig(),
+                expenses: this.currentMonthExpenses(),
+                summary: this.budgetSummary()
+        };
 
-    this.history.update(h => [...h, historyEntry]);
+        this.history.update(h => [...h, historyEntry]);
 
-    // For now we keep expenses as template for next month
-  }
+        // Auto-carry only Tax + Saving items into the new month
+        const carryover = this.buildCarryoverItems(this.currentMonthExpenses());
+        this.currentMonthExpenses.set(carryover);
+    }
 
   updateSettings(settings: Partial<UserSettings>) {
       this.settings.update(s => ({ ...s, ...settings }));
@@ -221,7 +230,7 @@ export class BudgetStateService {
 
     // Now recalculate definitive amount (Unit * Qty) to ensure consistency
     amount = unitPrice * quantity;
-    const finalExpense = { ...expense, quantity, unitPrice, amount };
+    const finalExpense = this.normalizeItem({ ...expense, quantity, unitPrice, amount });
 
     if (this.isCurrentMonthView()) {
         // UX: show newly added items first so users can see/edit immediately.
@@ -243,10 +252,7 @@ export class BudgetStateService {
                 return entry;
             })
         );
-
-        // This is a manual correction to the snapshot
-        // We'll need to add a specialized method to SavingsService later if we want full consistency,
-        // but updating history signal in BudgetState should handle UI refresh for now.
+        this.recalculateHistorySavings();
     }
   }
 
@@ -274,7 +280,7 @@ export class BudgetStateService {
                  newItem.amount = newItem.unitPrice * newItem.quantity;
              }
         }
-        return newItem;
+                return this.normalizeItem(newItem);
       });
 
     if (this.isCurrentMonthView()) {
@@ -294,6 +300,7 @@ export class BudgetStateService {
                 return entry;
             })
         );
+        this.recalculateHistorySavings();
     }
   }
 
@@ -315,6 +322,7 @@ export class BudgetStateService {
                 return entry;
             })
         );
+        this.recalculateHistorySavings();
     }
   }
 
@@ -377,19 +385,11 @@ export class BudgetStateService {
     // Logic:
     // - "Saving" Items are treated as allocated funds, so they are added back to "transferred" calculation.
     // - If Remaining Income is negative (overspending), we must DEDUCT that deficit from savings storage.
-    const savingsExpensesTotal = expenses
-        .filter(item => item.type === 'Saving' && !item.isIgnored) // Only count ACTIVE Savings
-        .reduce((sum, item) => sum + item.amount, 0);
+    const activeExpenses = expenses.filter(item => !item.isIgnored);
+    const plannedSavings = this.sumByType(activeExpenses, 'Saving');
 
-    // Calculate true net result: Income - (Real Expenses + Savings Contribution)
-    // Note: summary.remainingIncome is clamped to 0 in FinancialCalculator, so we recalculate raw
-    const rawRemaining = summary.totalIncome - summary.totalExpenses;
-
-    // Transferred Amount Logic:
-    // This value represents the net change to your Total Savings Storage.
-    // If positive: Your savings grow.
-    // If negative: Your savings shrink (you dipped into storage).
-    const transferredAmount = rawRemaining + savingsExpensesTotal;
+    // Savings balance represents the net change to savings storage (can be negative)
+    const transferredAmount = summary.savingsBalance;
 
     // Free Money Logic:
     // Defined as unallocated surplus. This is what's left after ALL obligations (including planned savings).
@@ -400,10 +400,11 @@ export class BudgetStateService {
     this.savingsService.addMonthlySnapshot({
         month: currentState.month,
         income: summary.totalIncome,
-        expenses: summary.totalExpenses,
-        freeMoney: rawRemaining, // Record actual processed result (can be negative)
-        plannedSavings: savingsExpensesTotal,
-        savingsImpact: rawRemaining < 0 ? rawRemaining : 0, // Records how much deficit ate into savings
+        expenses: summary.plannedOutflow,
+        realExpenses: summary.realExpenses,
+        freeMoney: summary.freeMoney, // Record actual processed result (can be negative)
+        plannedSavings: plannedSavings,
+        savingsImpact: summary.freeMoney < 0 ? summary.freeMoney : 0, // Records how much deficit ate into savings
         transferredToSavings: transferredAmount,
         manualAdded: this.manualSavingsLog()
     });
@@ -421,10 +422,7 @@ export class BudgetStateService {
 
     // 2. Carry every item into the next month so hidden items are not deleted on rollover.
     // Reset ignore status so the new month starts with a clean active state.
-    this.currentMonthExpenses.update(current =>
-        current
-            .map(item => ({ ...item, isIgnored: false }))
-    );
+    this.currentMonthExpenses.set(this.buildCarryoverItems(currentState.expenses));
 
     // 3. Advance Date to Next Month
     const currentActive = this.settings().lastActiveMonth;
@@ -475,7 +473,7 @@ export class BudgetStateService {
       this.savingsService.removeLastSnapshot();
 
       // 2. Restore State
-      this.currentMonthExpenses.set(lastArchived.expenses);
+    this.currentMonthExpenses.set(this.normalizeItems(lastArchived.expenses));
       this.incomeConfig.set(lastArchived.incomeConfig);
 
       this.settings.update(s => ({ ...s, lastActiveMonth: lastArchived.month }));
@@ -497,6 +495,132 @@ export class BudgetStateService {
               };
           })
        );
+  }
+
+  private recalculateHistorySavings(): void {
+      const history = this.history();
+      const historyData = this.historyStore.getData();
+      const existingRecords = historyData.savingsHistory ?? [];
+      const manualLog = historyData.savingsSummary?.manualSavingsLog ?? 0;
+
+      const recordByMonth = new Map(existingRecords.map(record => [record.month, record]));
+
+    const sortedHistory = [...history].sort((a, b) => a.month.localeCompare(b.month));
+    const now = new Date().toISOString();
+    let runningTotal = 0;
+
+      const recalculated = sortedHistory.map(entry => {
+          const normalizedExpenses = this.normalizeItems(entry.expenses ?? []);
+          const activeExpenses = normalizedExpenses.filter(item => !item.isIgnored);
+          const summary = FinancialCalculatorService.calculateBudget(
+              entry.incomeConfig || this.incomeConfig(),
+              activeExpenses
+          );
+
+          const plannedSavings = this.sumByType(activeExpenses, 'Saving');
+          const existing = recordByMonth.get(entry.month);
+          const manualAdded = existing?.manualAdded ?? 0;
+
+          runningTotal += manualAdded + summary.savingsBalance;
+
+          return {
+              month: entry.month,
+              income: summary.totalIncome,
+              expenses: summary.plannedOutflow,
+              realExpenses: summary.realExpenses,
+              freeMoney: summary.freeMoney,
+              transferredToSavings: summary.savingsBalance,
+              plannedSavings: plannedSavings,
+              savingsImpact: summary.freeMoney < 0 ? summary.freeMoney : 0,
+              manualAdded,
+              savingsTotalAfterTransfer: runningTotal,
+              date: existing?.date ?? entry.date ?? now
+          };
+      });
+
+      const currentTotal = historyData.savingsSummary?.totalSavings ?? runningTotal;
+      const sortedExisting = [...existingRecords].sort((a, b) => a.month.localeCompare(b.month));
+      const existingHistoryTotal = sortedExisting.length > 0
+          ? sortedExisting[sortedExisting.length - 1].savingsTotalAfterTransfer
+          : 0;
+      const delta = currentTotal - existingHistoryTotal;
+      const nextTotal = runningTotal + delta;
+
+      this.historyStore.updateData({
+          savingsHistory: recalculated,
+          savingsSummary: {
+              totalSavings: nextTotal,
+              manualSavingsLog: manualLog,
+              lastUpdated: now
+          }
+      });
+
+      this.savingsService.refreshState();
+  }
+
+  private normalizeHistory(history: BudgetHistory[]): BudgetHistory[] {
+      return history.map(entry => ({
+          ...entry,
+          expenses: this.normalizeItems(entry.expenses ?? [])
+      }));
+  }
+
+  private normalizeItems(items: ExpenseItem[]): ExpenseItem[] {
+      return items.map(item => this.normalizeItem(item));
+  }
+
+  private normalizeItem(item: ExpenseItem): ExpenseItem {
+      const normalizedType = this.normalizeType(item.type as string);
+      const normalizedPriority = this.normalizePriority(item.priority as string);
+      const isReducible = item.isReducible ?? true;
+      return {
+          ...item,
+          type: normalizedType,
+          priority: normalizedPriority,
+          isReducible: normalizedType === 'Saving' ? isReducible : item.isReducible
+      };
+  }
+
+  private normalizeType(type: string): ExpenseItem['type'] {
+      switch (type) {
+          case 'Burning':
+          case 'Burn':
+              return 'Burn';
+          case 'Responsibility':
+          case 'Tax':
+              return 'Tax';
+          case 'Saving':
+              return 'Saving';
+          default:
+              return 'Burn';
+      }
+  }
+
+  private normalizePriority(priority: string): PriorityLevel {
+      switch (priority) {
+          case 'Must Have':
+          case 'Must':
+              return 'Must';
+          case 'Emergency':
+              return 'Emergency';
+          case 'Gift':
+              return 'Gift';
+          case 'Want':
+          default:
+              return 'Want';
+      }
+  }
+
+  private sumByType(items: ExpenseItem[], type: ExpenseItem['type']): number {
+      return items
+          .filter(item => item.type === type)
+          .reduce((sum, item) => sum + (item.amount || 0), 0);
+  }
+
+  private buildCarryoverItems(items: ExpenseItem[]): ExpenseItem[] {
+      return items
+          .filter(item => item.type === 'Tax' || item.type === 'Saving')
+          .map(item => ({ ...item }));
   }
 
     private syncStores() {

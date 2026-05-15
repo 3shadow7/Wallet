@@ -1,4 +1,4 @@
-import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { SavingsService } from '@core/services/savings.service';
@@ -23,7 +23,8 @@ export class DashboardComponent {
   totalIncome = this.budgetState.totalIncome;
   totalExpenses = this.budgetState.totalExpenses;
   remainingIncome = this.budgetState.remainingIncome;
-  
+  freeMoneyDisplay = computed(() => Math.max(0, this.remainingIncome()));
+
   // Savings
   totalSavings = this.savingsService.totalSavingsSignal;
   lastSavingsTransfer = this.savingsService.lastMonthTransfer;

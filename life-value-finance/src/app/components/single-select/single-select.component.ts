@@ -46,16 +46,16 @@ export class SingleSelectComponent {
   getColor(option: string): string {
     const map: Record<string, string> = {
       // Priority (mapped to theme vars)
-      'Must Have': 'var(--danger-color)', 
+      'Must': 'var(--danger-color)',
       'Want': 'var(--success-color)',
       'Emergency': 'var(--text-primary)', // Adapts to theme (Black in light, White in dark)
       'Gift': 'var(--border-focus)', // Purple
-      
+
       // Type
-      'Burning': 'var(--danger-color)',
-      'Responsibility': 'var(--warning-color)',
+      'Burn': 'var(--danger-color)',
+      'Tax': 'var(--warning-color)',
       'Saving': 'var(--success-color)',
-      
+
       // Fallback
       'High': 'var(--danger-color)',
       'Medium': 'var(--warning-color)',
@@ -72,7 +72,7 @@ export class SingleSelectComponent {
   getBadgeBg(option: string): string {
     const colorVar = this.getColor(option);
     if (colorVar === 'transparent') return 'var(--bg-input)';
-    
+
     // Use color-mix for automatic light/dark background handling
     // 10% opacity of the color on top of surface
     return `color-mix(in srgb, ${colorVar}, transparent 85%)`;

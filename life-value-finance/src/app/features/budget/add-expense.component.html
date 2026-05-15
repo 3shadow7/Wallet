@@ -2,13 +2,13 @@
     <h3>Add Item to {{ viewedMonth() | date:'MMMM yyyy' }}</h3>
     <div [formGroup]="expenseForm" class="add-form">
       <div class="form-row">
-        
+
         <!-- Name Input -->
         <div class="input-group name-input">
-          <label>Expense Name</label>
+          <label>Item Name</label>
           <input type="text" [formControlName]="'name'" placeholder="e.g. Monthly Rent" autofocus>
         </div>
-        
+
         <!-- Priority Select -->
         <div class="input-group prio-input">
           <label>Importance</label>
@@ -19,7 +19,7 @@
             placeholder="Select Priority">
           </app-single-select>
         </div>
-        
+
         <!-- Type Select -->
         <div class="input-group type-input">
           <label>Type</label>
@@ -40,7 +40,7 @@
 
         <!-- Add Button -->
         <button type="submit" [disabled]="expenseForm.invalid" (click)="submitExpense()">
-          Add Expense
+          Add Item
         </button>
       </div>
     </div>

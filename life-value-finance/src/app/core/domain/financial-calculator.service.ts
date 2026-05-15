@@ -10,9 +10,19 @@ export class FinancialCalculatorService {
    * Calculates the remaining income after all expenses.
    */
   static calculateBudget(config: UserIncomeConfig, expenses: ExpenseItem[]): BudgetSummary {
-    const totalExpenses = this.sumExpenses(expenses);
     const income = config.monthlyIncome || 0;
-    const remaining = Math.max(0, income - totalExpenses);
+    const burnTotal = this.sumByType(expenses, 'Burn');
+    const taxTotal = this.sumByType(expenses, 'Tax');
+    const savingTotal = this.sumByType(expenses, 'Saving');
+
+    const plannedOutflow = burnTotal + taxTotal + savingTotal;
+    const freeMoney = income - plannedOutflow;
+
+    const realExpenses = burnTotal + taxTotal;
+    const savingsBalance = income - realExpenses;
+    const actualSavedTotal = Math.max(0, savingsBalance);
+    const overspend = Math.max(0, realExpenses - income);
+    const savingShortfall = Math.max(0, savingTotal - actualSavedTotal);
 
     let hourlyRate = 0;
     if (config.isHourlyManual && config.hourlyRate) {
@@ -26,20 +36,25 @@ export class FinancialCalculatorService {
 
     return {
       totalIncome: income,
-      totalExpenses: this.round(totalExpenses),
-      remainingIncome: this.round(remaining),
+      plannedOutflow: this.round(plannedOutflow),
+      freeMoney: this.round(freeMoney),
+      realExpenses: this.round(realExpenses),
+      savingsBalance: this.round(savingsBalance),
+      actualSavedTotal: this.round(actualSavedTotal),
+      overspend: this.round(overspend),
+      savingShortfall: this.round(savingShortfall),
       hourlyRate: this.round(hourlyRate),
-      savingsRate: income > 0 ? this.round((remaining / income) * 100) : 0
+      savingsRate: income > 0 ? this.round((actualSavedTotal / income) * 100) : 0
     };
   }
 
   /**
    * Analyzes a potential purchase against the user's budget.
    */
-  static analyzePurchase(price: number | null, remainingIncome: number, hourlyRate: number): ValueAnalysis {
-    
+  static analyzePurchase(price: number | null, freeMoney: number, hourlyRate: number): ValueAnalysis {
+
     if (price === null || price < 0) price = 0;
-    
+
     // Time Cost Calculation
     const effectiveHourly = hourlyRate > 0 ? hourlyRate : 1; // Prevent division by zero
     const hoursDecimal = price / effectiveHourly;
@@ -47,8 +62,8 @@ export class FinancialCalculatorService {
 
     // Impact Calculation
     let impactPercentage = 0;
-    if (remainingIncome > 0) {
-      impactPercentage = (price / remainingIncome) * 100;
+    if (freeMoney > 0) {
+      impactPercentage = (price / freeMoney) * 100;
     } else {
       impactPercentage = 100; // If no money left, it's 100% impact
     }
@@ -77,7 +92,7 @@ export class FinancialCalculatorService {
     if (totalMinutes === 0) return '0 minutes';
 
     const minutesInHour = 60;
-    const hoursInWorkDay = 8; 
+    const hoursInWorkDay = 8;
 
     // Rule 1: < 1 hour
     if (totalMinutes < minutesInHour) {
@@ -93,14 +108,16 @@ export class FinancialCalculatorService {
     }
 
     // Rule 3: >= 24 hours
-    const days = Math.floor(hours / hoursInWorkDay); 
+    const days = Math.floor(hours / hoursInWorkDay);
     const remainingHours = hours % hoursInWorkDay;
-    
+
     return remainingHours > 0 ? `${days} days ${remainingHours} hours` : `${days} days`;
   }
 
-  private static sumExpenses(expenses: ExpenseItem[]): number {
-    return expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
+  private static sumByType(expenses: ExpenseItem[], type: ExpenseItem['type']): number {
+    return expenses
+      .filter(item => item.type === type)
+      .reduce((sum, item) => sum + (item.amount || 0), 0);
   }
 
   private static round(num: number): number {

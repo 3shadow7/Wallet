@@ -1,17 +1,17 @@
 <div class="dashboard-container">
-  
+
   <!-- 1. Top Section: Income & Summary Stats -->
   <div class="top-row">
     <!-- Income Config & Display -->
     <app-income-input class="income-widget"></app-income-input>
 
     <div class="card-summary-container">
-        
+
     <!-- Expenses Summary -->
     <div class="card summary-card expenses">
       <div class="icon-container">💸</div>
       <div class="details">
-        <span class="label">Total Expenses</span>
+        <span class="label">Planned Outflow</span>
         <span class="value">{{ totalExpenses() | currency }}</span>
       </div>
     </div>
@@ -21,10 +21,10 @@
       <div class="icon-container">💰</div>
       <div class="details">
         <span class="label">Free Money</span>
-        <span class="value">{{ remainingIncome() | currency }}</span>
+        <span class="value">{{ freeMoneyDisplay() | currency }}</span>
       </div>
     </div>
-    
+
     <!-- Savings Summary (New) -->
     <div class="card summary-card savings">
       <div class="icon-container">🏦</div>
@@ -42,9 +42,9 @@
          <span *ngIf="lastSavingsTransfer() < 0">{{ lastSavingsTransfer() | currency }} (Dipped into Storage)</span>
       </div>
       </div>
-      
+
     </div>
-    
+
     </div>
   </div>
 
@@ -53,7 +53,7 @@
 
   <!-- 2. Main Workspace -->
   <div class="main-grid">
-    
+
     <!-- Left: Budget Management -->
     <div class="budget-section">
       <app-budget-table></app-budget-table>

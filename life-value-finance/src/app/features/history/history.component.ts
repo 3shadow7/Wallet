@@ -28,7 +28,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   public themeService = inject(ThemeService); // Made public for template if needed
   protected Math = Math; // Expose Math to template
-  
+
   isBrowser = isPlatformBrowser(this.platformId);
   breakdownMode: 'type' | 'priority' = 'type';
 
@@ -37,7 +37,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   history = this.savingsService.historySignal;
   detailedHistory = this.budgetState.historySignal;
   avgSavingsRate = this.savingsService.averageSavingsRate;
-  
+
   bestMonth = () => {
       const h = this.history();
       if (!h.length) return null;
@@ -54,19 +54,19 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private eChart: ApexCharts | null = null;
   private bChart: ApexCharts | null = null;
   private iChart: ApexCharts | null = null;
-  
+
   // Interactive Selection
   selectedMonths = signal<string[]>([]);
 
   // Advance Filters
   selectedYear = signal<string>(new Date().getFullYear().toString());
-  
-  // Multi-select signals
-  filterType = signal<string[]>(['Burning', 'Responsibility', 'Saving']);
-  filterPriority = signal<string[]>(['Must Have', 'Want', 'Emergency', 'Gift']);
 
-  availableTypes = ['Burning', 'Responsibility', 'Saving'];
-  availablePriorities = ['Must Have', 'Want', 'Emergency', 'Gift'];
+  // Multi-select signals
+    filterType = signal<string[]>(['Burn', 'Tax', 'Saving']);
+    filterPriority = signal<string[]>(['Must', 'Want', 'Emergency', 'Gift']);
+
+    availableTypes = ['Burn', 'Tax', 'Saving'];
+    availablePriorities = ['Must', 'Want', 'Emergency', 'Gift'];
 
   // Computed: Years Available
   availableYears = computed(() => {
@@ -86,7 +86,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               else years.add(new Date().getFullYear().toString());
           }
       });
-      return Array.from(years).sort().reverse(); 
+      return Array.from(years).sort().reverse();
   });
 
   // Computed: Months for buttons based on selected year
@@ -96,10 +96,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           // If month string has year, check match
           // Expected "YYYY-MM" -> we check if it starts with YYYY
           if (d.month.startsWith(y + '-')) return true;
-          
+
           // Legacy support (e.g. "January 2024")
           if (d.month.includes(y)) return true;
-          
+
           return false;
       });
   });
@@ -120,25 +120,25 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   colDefs: ColDef[] = [
     { field: 'month', headerName: 'Month', sort: 'desc' },
-    { 
-        field: 'income', 
-        headerName: 'Income', 
+    {
+        field: 'income',
+        headerName: 'Income',
         valueFormatter: p => `$${p.value.toFixed(2)}`
     },
-    { 
-        field: 'expenses', 
-        headerName: 'Expenses',
+    {
+        field: 'expenses',
+        headerName: 'Planned Outflow',
         valueFormatter: p => `$${p.value.toFixed(2)}`
     },
-    { 
-        field: 'plannedSavings', 
+    {
+        field: 'plannedSavings',
         headerName: 'Target Savings',
         headerTooltip: 'Total of all "Saving" items planned for this month',
         cellStyle: { color: 'var(--primary-color)', fontWeight: '500' },
         valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '$0.00'
     },
-    { 
-        field: 'freeMoney', 
+    {
+        field: 'freeMoney',
         headerName: 'Free Money & Savings Impact',
         width: 250,
         minWidth: 250,
@@ -152,18 +152,18 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             const container = document.createElement('div');
             container.style.lineHeight = '1.4';
             container.style.padding = '8px 0';
-            
+
             if (val >= 0) {
                  container.innerHTML = `<span style="color:var(--success-color, green); font-weight:bold;">$${val.toFixed(2)}</span>`;
             } else {
                 // Negative Free Money: This is the impact on savings
                 const deficit = Math.abs(val);
                 const planned = params.data.plannedSavings || 0;
-                
+
                 let html = `<div style="display:flex; flex-direction:column;">`;
                 // Main Value
                 html += `<span style="color:var(--danger-color, red); font-weight:bold; font-size: 1.1em;">-$${deficit.toFixed(2)}</span>`;
-                
+
                 // Context
                 if (planned > 0) {
                     const impactPct = Math.min(100, (deficit / planned) * 100).toFixed(1);
@@ -172,28 +172,28 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                 } else {
                      html += `<span style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">⚠️ Dipped into Savings Storage</span>`;
                 }
-                
+
                 html += `</div>`;
                 container.innerHTML = html;
             }
             return container;
         }
     },
-    { 
-        field: 'transferredToSavings', 
+    {
+        field: 'transferredToSavings',
         headerName: 'From Budget',
         tooltipValueGetter: (p: any) => p.data.plannedSavings ? `Planned: $${p.data.plannedSavings.toFixed(2)}` : '',
         cellStyle: params => params.value < 0 ? { color: 'var(--danger-color)', fontWeight: 'bold' } : { color: 'var(--primary-color)', fontWeight: 'bold' },
         valueFormatter: p => p.value < 0 ? `${p.value.toFixed(2)} (Deficit)` : `$${p.value.toFixed(2)}`
     },
-    { 
-        field: 'manualAdded', 
+    {
+        field: 'manualAdded',
         headerName: 'Direct Additions',
         cellStyle: { fontWeight: 'bold', color: 'var(--warning-color)' }, // Tokenized amber
         valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '--'
     },
-    { 
-        field: 'savingsTotalAfterTransfer', 
+    {
+        field: 'savingsTotalAfterTransfer',
         headerName: 'Total Savings Balance',
         valueFormatter: p => `$${p.value.toFixed(2)}`
     }
@@ -221,20 +221,20 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       effect(() => {
           if (!this.isBrowser) return;
           const isDark = this.themeService.isDark();
-          
+
           this.updateChartTheme(isDark);
       });
 
       // Update Item Treemap when ANY selection changes
       effect(() => {
         if (!this.isBrowser) return;
-        
+
         // Track dependencies
         const selected = this.selectedMonths();
         const type = this.filterType();
         const prio = this.filterPriority();
         const year = this.selectedYear(); // Ensure effect runs on year change too
-        
+
         console.log('Update Effect Triggered:', { selected, type, prio, year });
 
         if (this.iChart) {
@@ -287,7 +287,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
       if (this.sChart) this.sChart.updateOptions(commonOptions);
       if (this.eChart) this.eChart.updateOptions(commonOptions);
-      
+
       if (this.bChart) {
           this.bChart.updateOptions({
             ...commonOptions,
@@ -302,7 +302,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             }
           });
       }
-      
+
       if (this.iChart) {
           // Treemap title needs specific update
           this.iChart.updateOptions({
@@ -343,32 +343,32 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       }
 
       const year = this.selectedYear();
-      
+
       // Calculate start and end months (1-12)
       const startMonth = range.min;
       const endMonth = range.max;
 
       // Find records that match both the selected YEAR and Month Range
-      const availableData = this.monthsForYear(); 
-      
+      const availableData = this.monthsForYear();
+
       const matchedMonths = availableData
           .filter(d => {
               // Parse month from "YYYY-MM" format
               const parts = d.month.split('-');
               let mNum = -1;
-              
+
               if (parts.length >= 2) {
                   // YYYY-MM
                   mNum = parseInt(parts[1], 10);
               } else {
                   // Fallback: "MonthName YYYY" or just "MonthName"
                   const mName = d.month.split(' ')[0];
-                  const idx = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  const idx = ['January', 'February', 'March', 'April', 'May', 'June',
                                'July', 'August', 'September', 'October', 'November', 'December']
                                .indexOf(mName);
                   if (idx !== -1) mNum = idx + 1;
               }
-              
+
               return mNum >= startMonth && mNum <= endMonth;
           })
           .map(d => d.month);
@@ -389,7 +389,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           borderColor: gridColor,
           strokeDashArray: 4,
       };
-      
+
       // 1. Savings Growth Area Chart
       const savingsOptions = {
           series: [{
@@ -428,7 +428,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } }
       };
-      
+
       this.sChart = new ApexCharts(this.savingsChartEl.nativeElement, savingsOptions);
       this.sChart.render();
 
@@ -495,11 +495,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private updateCharts(data: MonthlyRecord[]) {
       if (!this.sChart || !this.eChart) return;
-      
+
       this.sChart.updateSeries([{
           data: data.map(d => d.savingsTotalAfterTransfer)
       }]);
-      
+
       this.sChart.updateOptions({
           xaxis: { categories: data.map(d => d.month) }
       });
@@ -513,7 +513,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       }, {
           data: data.map(d => d.transferredToSavings)
       }]);
-      
+
       this.eChart.updateOptions({
           xaxis: { categories: data.map(d => d.month) }
       });
@@ -522,11 +522,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private getCategoryColor(category: string): string {
       const tokens = this.tokens;
       const map: Record<string, string> = {
-          'Burning': tokens.danger,
-          'Responsibility': tokens.warning,
+          'Burn': tokens.danger,
+          'Tax': tokens.warning,
           'Saving': tokens.success,
-          'Must Have': tokens.danger,
-          'Want': tokens.success, 
+          'Must': tokens.danger,
+          'Want': tokens.success,
           'Emergency': tokens.textPrimary,
           'Gift': tokens.primary
       };
@@ -541,9 +541,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
       const options: any = { // Use any to allow dynamic property updates easily
           series: [],
-          title: { 
+          title: {
             text: 'Monthly Spending Breakdown',
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor } 
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor }
           },
           chart: {
               type: 'bar',
@@ -561,7 +561,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             }
           },
           // Colors will be set on update
-          colors: [], 
+          colors: [],
           stroke: { width: 1, colors: ['var(--bg-surface)'] },
           xaxis: {
               categories: [],
@@ -596,11 +596,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private updateBreakdownChart() {
     if (!this.bChart) return;
-    
+
     // Get detailed history which has the full expense list
     const data = this.detailedHistory();
     const categories = data.length > 0 ? data.map(d => d.month) : this.history().map(d => d.month);
-    
+
     let series: any[] = [];
     let colors: string[] = [];
 
@@ -610,7 +610,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
 
     if (this.breakdownMode === 'type') {
-        const types = ['Burning', 'Responsibility', 'Saving'] as const;
+        const types = ['Burn', 'Tax', 'Saving'] as const;
         colors = types.map(t => this.getCategoryColor(t));
         series = types.map(type => {
             return {
@@ -623,11 +623,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             };
         });
     } else {
-        const priorities = ['Must Have', 'Want', 'Emergency', 'Gift'] as const;
+        const priorities = ['Must', 'Want', 'Emergency', 'Gift'] as const;
         // Fix: Ensure correct color mapping array order for Stacked Chart
         // Map returns colors in same order as priorities array
-        colors = priorities.map(p => this.getCategoryColor(p)); 
-        
+        colors = priorities.map(p => this.getCategoryColor(p));
+
         series = priorities.map(p => {
             return {
                 name: p,
@@ -656,9 +656,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
       const options = {
           series: [],
-          title: { 
+          title: {
             text: 'Item Level Breakdown (Treemap)',
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor } 
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor }
           },
           chart: {
               type: 'treemap',
@@ -746,7 +746,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     } else {
         allExpenses = []; // No types selected
     }
-    
+
     if (priorityFilter.length > 0) {
         allExpenses = allExpenses.filter(e => priorityFilter.includes(e.priority));
     } else {
@@ -763,18 +763,18 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         } else {
             // Determine color based on Type (Matches Dashboard Badges)
             let color = tokens.textSecondary; // Default slate
-            if (curr.type === 'Burning') color = tokens.danger; // Red
-            else if (curr.type === 'Responsibility') color = tokens.warning; // Amber
+            if (curr.type === 'Burn') color = tokens.danger; // Red
+            else if (curr.type === 'Tax') color = tokens.warning; // Amber
             else if (curr.type === 'Saving') color = tokens.success; // Green
 
-            acc.push({ x: key, y: curr.amount, fillColor: color }); 
+            acc.push({ x: key, y: curr.amount, fillColor: color });
         }
         return acc;
     }, [] as { x: string, y: number, fillColor?: string }[]);
-    
+
     // Sort descending by value (Standard Treemap logic)
     combinedItems.sort((a,b) => b.y - a.y);
-    
+
     // Update Chart
     this.iChart.updateSeries([{
         name: 'All Items',
@@ -785,7 +785,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     this.iChart.updateOptions({
         plotOptions: {
             treemap: {
-                distributed: false, 
+                distributed: false,
                 enableShades: false // Disable shades so our specific colors stick
             }
         },

@@ -22,14 +22,14 @@ export class ValueCalculatorComponent {
 
   // Context from State
   monthlyIncome = this.budgetState.incomeConfigSignal; // Not used directly, but state is source
-  remainingIncome = this.budgetState.remainingIncome;
+  freeMoney = this.budgetState.remainingIncome;
   hourlyRate = this.budgetState.hourlyRate; // Calculated in service
 
   // Analysis Result
   analysis = computed<ValueAnalysis>(() => {
     return FinancialCalculatorService.analyzePurchase(
       this.productPrice(),
-      this.remainingIncome(),
+      this.freeMoney(),
       this.hourlyRate()
     );
   });

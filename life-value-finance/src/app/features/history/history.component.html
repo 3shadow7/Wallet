@@ -2,7 +2,7 @@
     <header>
       <h1>📊 Monthly History & Savings Analysis</h1>
     </header>
-    
+
     <!-- Stats Overview -->
     <div class="stats-grid">
       <div class="stat-card">
@@ -47,7 +47,7 @@
       <div class="chart-card full-width">
           <div class="chart-header treemap-header">
               <h3>Detailed Item Composition (Treemap)</h3>
-              
+
               <!-- Filters Row: Year | Type | Priority -->
               <div class="filter-controls">
                   <div class="control-group">
@@ -62,8 +62,8 @@
 
                   <div class="control-group">
                       <label>Type:</label>
-                      <app-multi-select 
-                          [options]="availableTypes" 
+                      <app-multi-select
+                          [options]="availableTypes"
                           [selected]="filterType()"
                           (selectionChange)="filterType.set($event)"
                           placeholder="Select Types"
@@ -73,8 +73,8 @@
 
                   <div class="control-group">
                       <label>Priority:</label>
-                      <app-multi-select 
-                          [options]="availablePriorities" 
+                      <app-multi-select
+                          [options]="availablePriorities"
                           [selected]="filterPriority()"
                           (selectionChange)="filterPriority.set($event)"
                           placeholder="Select Priority">
@@ -134,7 +134,7 @@
                             <span class="val">{{ item.savingsTotalAfterTransfer | currency:'USD':'symbol':'1.0-0' }}</span>
                         </span>
                     </div>
-                    
+
                     <div class="card-grid">
                         <!-- Income & Expense Row -->
                         <div class="stat-group">
@@ -142,7 +142,7 @@
                             <span class="val income">{{ item.income | currency:'USD':'symbol':'1.0-0' }}</span>
                         </div>
                         <div class="stat-group">
-                            <span class="label">Expenses</span>
+                            <span class="label">Planned Outflow</span>
                             <span class="val expense">{{ item.expenses | currency:'USD':'symbol':'1.0-0' }}</span>
                         </div>
 

@@ -1,5 +1,5 @@
 <div class="table-container">
-  
+
 
   <!-- Grid Card (Desktop Only) -->
   <div class="grid-card desktop-view">
@@ -28,7 +28,7 @@
             <button class="btn-archive" (click)="startNewMonth()" title="Archive current month and start new">
               📅 Start New Month
             </button>
-            
+
             <!-- Revert / Reset Logic -->
             @if (canRevertMonth()) {
                 <button class="btn-revert" (click)="revertMonth()" title="Delete this month and revert to previous">
@@ -47,16 +47,16 @@
         <div class="alert-content">
             <h4>Savings Overcommitted</h4>
             <p>
-                You planned <strong>${{ savingsStatus().plannedSavings | number:'1.2-2' }}</strong> in savings, 
+                You planned <strong>${{ savingsStatus().plannedSavings | number:'1.2-2' }}</strong> in savings,
                 but high expenses leave only <strong>${{ savingsStatus().availableForSavings | number:'1.2-2' }}</strong> available.
                 <br/>
-                Your savings are <strong>{{ savingsStatus().percentFunded | number:'1.0-1' }}% funded</strong>. 
+                Your savings are <strong>{{ savingsStatus().percentFunded | number:'1.0-1' }}% funded</strong>.
                 Consider reducing variable expenses or adjusting savings goals.
             </p>
         </div>
     </div>
     }
-    
+
     <div class="grid-container">
       @if (isBrowser) {
       <ag-grid-angular
@@ -67,7 +67,7 @@
         [gridOptions]="gridOptions"
         [theme]="'legacy'"
         (cellValueChanged)="onCellValueChanged($event)"
-        (cellClicked)="onCellClicked($event)" 
+        (cellClicked)="onCellClicked($event)"
       >
       </ag-grid-angular>
       }
@@ -117,7 +117,7 @@
         <div class="alert-content">
             <h4>Savings At Risk</h4>
             <p>
-                Only <strong>${{ savingsStatus().availableForSavings | number:'1.2-2' }}</strong> available for your 
+                Only <strong>${{ savingsStatus().availableForSavings | number:'1.2-2' }}</strong> available for your
                 <strong>${{ savingsStatus().plannedSavings | number:'1.2-2' }}</strong> savings goal.
             </p>
         </div>
@@ -132,7 +132,7 @@
             (valueChange)="filterPriority.set($event)"
             placeholder="All Priority">
         </app-single-select>
-        
+
         <app-single-select
             [options]="typeOptions"
             [value]="filterType() || 'All'"
@@ -152,42 +152,42 @@
         }
 
         @for (item of filteredExpenses(); track item.id) {
-        <div class="budget-card" 
+        <div class="budget-card"
              [class.unfunded-savings]="savingsStatus().hasDeficit && item.type === 'Saving' && !item.isIgnored"
              [class.ignored-card]="item.isIgnored">
-            
+
             <!-- Show Warning on Savings Card -->
             @if (savingsStatus().hasDeficit && item.type === 'Saving' && !item.isIgnored) {
                 <div class="card-warning-stripe">⚠️ Partially Funded ({{ savingsStatus().percentFunded | number:'1.0-0' }}%)</div>
             }
-            
+
             <div class="card-main">
                 <div class="card-top">
-                    <input type="text" 
-                        class="category-name-input" 
-                        [value]="item.name" 
+                    <input type="text"
+                        class="category-name-input"
+                        [value]="item.name"
                         (change)="onMobileNameChange(item, $event)"
                         placeholder="Item Name">
-                    
+
                     <div class="amount-group">
                         <div class="qty-wrapper">
                             <span>x</span>
-                            <input type="number" 
-                                [value]="item.quantity || 1" 
-                                (change)="onMobileQuantityChange(item, $event)" 
+                            <input type="number"
+                                [value]="item.quantity || 1"
+                                (change)="onMobileQuantityChange(item, $event)"
                                 class="qty-input"
                                 min="1"
                                 title="Quantity">
                         </div>
                         <span class="currency-symbol">$</span>
-                        <input type="number" 
-                            [value]="item.amount" 
-                            (change)="onMobileAmountChange(item, $event)" 
+                        <input type="number"
+                            [value]="item.amount"
+                            (change)="onMobileAmountChange(item, $event)"
                             class="amount-input"
                             step="0.01">
                     </div>
                 </div>
-                
+
                 <div class="card-meta">
                     <div class="mobile-select-group">
                         <label>Importance:</label>
@@ -201,7 +201,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="card-footer">
                 <div class="mobile-select-group">
                     <label>Type:</label>
@@ -213,14 +213,14 @@
                         class="inline-single-select">
                     </app-single-select>
                 </div>
-                
+
 
                 <div class="mobile-actions">
-                  @if (item.type === 'Saving' || item.type === 'Responsibility') {
-                    <button class="btn-ignore-mobile" 
+                  @if (item.type === 'Saving' || item.type === 'Tax') {
+                    <button class="btn-ignore-mobile"
                             [class.active]="!item.isIgnored"
                             [class.ignored-btn]="item.isIgnored"
-                            (click)="toggleIgnore(item.id, !!item.isIgnored)" 
+                            (click)="toggleIgnore(item.id, !!item.isIgnored)"
                             [title]="item.isIgnored ? 'Activate (Include)' : 'Ignore (Exclude)'">
                         @if(!item.isIgnored) {
                             <!-- Normal State: Click to Ignore -->

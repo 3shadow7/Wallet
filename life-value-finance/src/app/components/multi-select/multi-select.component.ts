@@ -26,25 +26,25 @@ export class MultiSelectComponent {
      // Check dark mode
      let isDark = false;
      if (typeof document !== 'undefined') {
-         isDark = document.body.classList.contains('dark-theme') || 
+         isDark = document.body.classList.contains('dark-theme') ||
                   document.documentElement.getAttribute('data-theme') === 'dark';
      }
 
      const styleMap: Record<string, any> = {
-         'Burning': { 
-             bg:'color-mix(in srgb, var(--danger-color), transparent 85%)', 
-             color: 'var(--danger-color)', 
-             border: 'var(--danger-color)' 
+       'Burn': {
+             bg:'color-mix(in srgb, var(--danger-color), transparent 85%)',
+             color: 'var(--danger-color)',
+             border: 'var(--danger-color)'
          },
-         'Responsibility': { 
-             bg:'color-mix(in srgb, var(--warning-color), transparent 85%)', 
-             color: 'var(--warning-color)', 
-             border: 'var(--warning-color)' 
+       'Tax': {
+             bg:'color-mix(in srgb, var(--warning-color), transparent 85%)',
+             color: 'var(--warning-color)',
+             border: 'var(--warning-color)'
          },
-         'Saving': { 
-             bg:'color-mix(in srgb, var(--success-color), transparent 85%)', 
-             color: 'var(--success-color)', 
-             border: 'var(--success-color)' 
+         'Saving': {
+             bg:'color-mix(in srgb, var(--success-color), transparent 85%)',
+             color: 'var(--success-color)',
+             border: 'var(--success-color)'
          }
      };
 
@@ -63,7 +63,7 @@ export class MultiSelectComponent {
              'display': 'inline-block'
          };
      }
-     
+
      return {};
   }
 
@@ -94,9 +94,9 @@ export class MultiSelectComponent {
 
   onCheckboxChange(option: string, event: Event) {
     const isChecked = (event.target as HTMLInputElement).checked;
-    
+
     let newSelection = [...this.selected];
-    
+
     if (isChecked) {
       if (!newSelection.includes(option)) {
         newSelection.push(option);
@@ -104,7 +104,7 @@ export class MultiSelectComponent {
     } else {
       newSelection = newSelection.filter(item => item !== option);
     }
-    
+
     // Maintain Order based on original Options list
     newSelection.sort((a,b) => this.options.indexOf(a) - this.options.indexOf(b));
 
@@ -122,16 +122,16 @@ export class MultiSelectComponent {
   getColor(option: string): string {
     const map: Record<string, string> = {
       // Priority (mapped to theme vars)
-      'Must Have': 'var(--danger-color)', 
+      'Must': 'var(--danger-color)',
       'Want': 'var(--success-color)',
       'Emergency': 'var(--text-primary)', // Black in Light, White in Dark
       'Gift': 'var(--border-focus)', // Purple
-      
+
       // Type
-      'Burning': 'var(--danger-color)',
-      'Responsibility': 'var(--warning-color)',
+      'Burn': 'var(--danger-color)',
+      'Tax': 'var(--warning-color)',
       'Saving': 'var(--success-color)',
-      
+
       // Fallback
       'High': 'var(--danger-color)',
       'Medium': 'var(--warning-color)',
