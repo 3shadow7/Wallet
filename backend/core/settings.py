@@ -162,3 +162,17 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-device-id",
     "idempotency-key",
 ]
+
+# DRF Spectacular (OpenAPI/Swagger) settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "MyWallet API",
+    "DESCRIPTION": "OpenAPI schema for the MyWallet backend.",
+    "VERSION": "1.0.0",
+    "SERVERS": [
+        {"url": "http://localhost:8000", "description": "Local development server"},
+    ],
+    # Split request/response components for clearer request schemas
+    "COMPONENT_SPLIT_REQUEST": True,
+    # Serve docs publicly (views themselves enforce permissions)
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+}
