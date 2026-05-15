@@ -9,7 +9,7 @@ export type { MonthlyRecord } from '@core/domain/models';
 })
 export class SavingsService {
   private historyStore = inject(HistoryStoreService);
-  
+
   // State
   private totalSavings = signal<number>(0);
   private history = signal<MonthlyRecord[]>([]);
@@ -49,7 +49,7 @@ export class SavingsService {
     // Manual additions are already applied to currentTotal via addToSavings() during the month.
     // We only need to add the budget transfer amount.
     const newTotal = currentTotal + record.transferredToSavings;
-    
+
     // Default new fields for old records (fallback)
     const fullRecord: MonthlyRecord = {
       ...record,
@@ -69,7 +69,7 @@ export class SavingsService {
       this.totalSavings.set(amount);
       this.saveState();
   }
-  
+
   addToSavings(amount: number) {
       this.totalSavings.update(v => v + amount);
       this.saveState();
@@ -106,16 +106,16 @@ export class SavingsService {
       if (records.length === 0) return null;
 
       const lastRecord = records[records.length - 1];
-      
+
       // Revert the total savings calculation
       // Logic: newTotal = oldTotal + transferredToSavings
       // So: oldTotal = newTotal - transferredToSavings
       const revertedTotal = this.totalSavings() - lastRecord.transferredToSavings;
-      
+
       this.totalSavings.set(revertedTotal);
       this.history.update(h => h.slice(0, -1)); // Remove last
       this.saveState();
-      
+
       return lastRecord;
   }
 }
