@@ -1,34 +1,14 @@
-import { Injectable, signal, computed, effect, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { PersistenceService } from '@core/services/persistence.service';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HistoryStoreService } from '@core/storage/stores/history-store.service';
+import { MonthlyRecord } from '@core/domain/models';
 
-export interface MonthlyRecord {
-  month: string; // YYYY-MM
-  income: number;
-  expenses: number;
-  freeMoney: number;
-  transferredToSavings: number;
-  plannedSavings: number; // The goal (sum of 'Saving' items)
-  savingsImpact: number;  // The deficit (if any) caused by overspending
-  manualAdded?: number; // New field for direct additions
-  savingsTotalAfterTransfer: number;
-  date: string; // ISO date of closing
-}
-
-interface SavingsState {
-  totalSavings: number;
-  history: MonthlyRecord[];
-}
-
-const STORAGE_KEY_SAVINGS = 'savingsStorage';
-const STORAGE_KEY_HISTORY = 'monthlyHistory';
+export type { MonthlyRecord } from '@core/domain/models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SavingsService {
-  private platformId = inject(PLATFORM_ID);
-  private persistenceService = inject(PersistenceService);
+  private historyStore = inject(HistoryStoreService);
   
   // State
   private totalSavings = signal<number>(0);
@@ -57,13 +37,10 @@ export class SavingsService {
   }
 
   public refreshState() {
-    const s = this.persistenceService.getSavings();
-    this.totalSavings.set(s.totalSavings || 0);
-    this.history.set(s.monthlyHistory || []);
-  }
-
-  private loadState() {
-    this.refreshState();
+    const data = this.historyStore.getData();
+    const summary = data.savingsSummary;
+    this.totalSavings.set(summary?.totalSavings ?? 0);
+    this.history.set(data.savingsHistory ?? []);
   }
 
   // Actions
@@ -105,7 +82,22 @@ export class SavingsService {
   }
 
   private saveState() {
-    this.persistenceService.setSavings(this.totalSavings(), this.history());
+    const data = this.historyStore.getData();
+    const now = new Date().toISOString();
+    const summary = data.savingsSummary ?? {
+      totalSavings: 0,
+      manualSavingsLog: 0,
+      lastUpdated: now
+    };
+
+    this.historyStore.updateData({
+      savingsHistory: this.history(),
+      savingsSummary: {
+        ...summary,
+        totalSavings: this.totalSavings(),
+        lastUpdated: now
+      }
+    });
   }
 
   // --- REVERT LOGIC ---

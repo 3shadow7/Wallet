@@ -36,6 +36,15 @@ export class StorageEngineService {
     }
   }
 
+  clearAll(): void {
+    if (!this.isBrowser()) return;
+    try {
+      localStorage.clear();
+    } catch {
+      // ignore storage failures
+    }
+  }
+
   readJson<T>(key: string): T | null {
     const raw = this.getItem(key);
     if (!raw) return null;

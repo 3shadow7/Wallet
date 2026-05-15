@@ -70,13 +70,19 @@ export class StorageMigrationService {
       analysis: this.buildHistoryAnalysis(legacyHistory, totalSavings, now)
     };
 
+    const defaultSettings = this.itemsStore.getData().settings;
     const itemsData: ItemsData = {
       currentMonth: {
         month: currentMonth,
         items: legacyExpenses,
         updatedAt: now
       },
-      months: this.mapHistoryMonths(legacyHistory, now)
+      months: this.mapHistoryMonths(legacyHistory, now),
+      settings: {
+        ...defaultSettings,
+        ...legacySettings,
+        lastActiveMonth: currentMonth
+      }
     };
 
     this.incomeStore.setData(incomeData);

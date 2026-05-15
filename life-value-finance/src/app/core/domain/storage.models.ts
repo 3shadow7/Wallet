@@ -3,7 +3,8 @@ import {
   ExpenseItem,
   MonthlyIncome,
   UserIncomeConfig,
-  MonthlyRecord
+  MonthlyRecord,
+  UserSettings
 } from './models';
 
 export interface StorageEnvelope<T> {
@@ -34,6 +35,7 @@ export interface HistoryData {
 export interface ItemsData {
   currentMonth: MonthlyItems;
   months: Record<string, MonthlyItems>;
+  settings?: UserSettings;
 }
 
 export interface MonthlyItems {

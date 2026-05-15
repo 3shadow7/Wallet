@@ -1,9 +1,13 @@
-import { Injectable, signal, computed, effect, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { ExpenseItem, BudgetSummary, UserIncomeConfig, BudgetHistory, UserSettings } from '@core/domain/models';
 import { FinancialCalculatorService } from '@core/domain/financial-calculator.service';
-import { PersistenceService, AppStateData } from '@core/services/persistence.service';
+import { PersistenceService } from '@core/services/persistence.service';
 import { SavingsService } from '@core/services/savings.service';
+import { IncomeStoreService } from '@core/storage/stores/income-store.service';
+import { HistoryStoreService } from '@core/storage/stores/history-store.service';
+import { ItemsStoreService } from '@core/storage/stores/items-store.service';
+import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
+import { MonthlyItems } from '@core/domain/storage.models';
 
 const INITIAL_SETTINGS: UserSettings = {
   timezone: 'Africa/Tripoli',
@@ -28,9 +32,12 @@ const INITIAL_STATE = {
   providedIn: 'root'
 })
 export class BudgetStateService {
-  private platformId = inject(PLATFORM_ID);
-  private persistenceService = inject(PersistenceService);
+    private persistenceService = inject(PersistenceService);
   private savingsService = inject(SavingsService);
+    private incomeStore = inject(IncomeStoreService);
+    private historyStore = inject(HistoryStoreService);
+    private itemsStore = inject(ItemsStoreService);
+    private storageEngine = inject(StorageEngineService);
 
   // --- Core State ---
   private incomeConfig = signal<UserIncomeConfig>(INITIAL_STATE.incomeConfig);
@@ -39,6 +46,7 @@ export class BudgetStateService {
   private history = signal<BudgetHistory[]>(INITIAL_STATE.history);
   private settings = signal<UserSettings>(INITIAL_STATE.settings);
   private manualSavingsLog = signal<number>(0);
+    private initialized = signal<boolean>(false);
 
   // View State (Navigation)
   private viewedMonth = signal<string>(INITIAL_SETTINGS.lastActiveMonth); // 'YYYY-MM'
@@ -100,50 +108,32 @@ export class BudgetStateService {
   constructor() {
     this.loadInitialState();
 
-    // Persistence Hook
-    effect(() => {
-      const currentState: Partial<AppStateData> = {
-        incomeConfig: this.incomeConfig(),
-        expenses: this.currentMonthExpenses(), // Ensure we save CURRENT month expenses
-        history: this.history(),
-        settings: this.settings()
-      };
-
-      this.persistenceService.saveState(currentState);
-      if (isPlatformBrowser(this.platformId) && typeof localStorage !== 'undefined') {
-        localStorage.setItem('manualSavingsLog', this.manualSavingsLog().toString());
-      }
-    });
+        effect(() => {
+            if (!this.initialized()) return;
+            this.syncStores();
+        });
   }
 
-  private async loadInitialState() {
-    // Load Manual Savings Log
-    if (isPlatformBrowser(this.platformId) && typeof localStorage !== 'undefined') {
-      const savedLog = localStorage.getItem('manualSavingsLog');
-      if (savedLog) {
-         this.manualSavingsLog.set(Number(savedLog));
-      }
-    }
+    private loadInitialState() {
+        const incomeData = this.incomeStore.getData();
+        const itemsData = this.itemsStore.getData();
+        const historyData = this.historyStore.getData();
 
-    try {
-      const savedState = await this.persistenceService.loadState();
-      if (savedState) {
-        if (savedState.incomeConfig) this.incomeConfig.set(savedState.incomeConfig);
-        if (savedState.expenses) this.currentMonthExpenses.set(savedState.expenses);
-        if (savedState.history) this.history.set(savedState.history);
-        if (savedState.settings) {
-            this.settings.set(savedState.settings);
-            // Default view to current active month on load
-            this.viewedMonth.set(savedState.settings.lastActiveMonth);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load state', e);
-    } finally {
-      this.loading.set(false);
-      this.checkMonthRollover();
+        const settings = itemsData.settings ?? INITIAL_SETTINGS;
+        const currentMonth = itemsData.currentMonth?.month ?? settings.lastActiveMonth;
+        const normalizedSettings = { ...settings, lastActiveMonth: currentMonth };
+
+        this.incomeConfig.set(incomeData.incomeConfig ?? INITIAL_STATE.incomeConfig);
+        this.currentMonthExpenses.set(itemsData.currentMonth?.items ?? []);
+        this.history.set(historyData.budgetHistory ?? []);
+        this.settings.set(normalizedSettings);
+        this.manualSavingsLog.set(historyData.savingsSummary?.manualSavingsLog ?? 0);
+
+        this.viewedMonth.set(normalizedSettings.lastActiveMonth);
+        this.loading.set(false);
+        this.initialized.set(true);
+        this.checkMonthRollover();
     }
-  }
 
   // --- View Navigation ---
   setViewMonth(month: string) {
@@ -354,7 +344,7 @@ export class BudgetStateService {
   resetAllData() {
       if (confirm('CRITICAL ACTION: This will permanently delete ALL your local budget history and settings. This cannot be undone. Are you sure?')) {
           if (confirm('Are you ABSOLUTELY sure? Last chance to cancel.')) {
-              localStorage.clear(); // Wipes everything in browser
+              this.storageEngine.clearAll();
               window.location.reload(); // Refresh to clean state
           }
       }
@@ -512,6 +502,55 @@ export class BudgetStateService {
           })
        );
   }
+
+    private syncStores() {
+        const incomeConfig = this.incomeConfig();
+        const history = this.history();
+        const settings = this.settings();
+        const currentExpenses = this.currentMonthExpenses();
+        const manualLog = this.manualSavingsLog();
+        const now = new Date().toISOString();
+
+        this.incomeStore.updateData({ incomeConfig });
+
+        this.itemsStore.setData({
+            currentMonth: {
+                month: settings.lastActiveMonth,
+                items: currentExpenses,
+                updatedAt: now
+            },
+            months: this.buildMonthsMap(history, now),
+            settings: { ...settings }
+        });
+
+        const historyData = this.historyStore.getData();
+        const summary = historyData.savingsSummary ?? {
+            totalSavings: 0,
+            manualSavingsLog: 0,
+            lastUpdated: now
+        };
+
+        this.historyStore.updateData({
+            budgetHistory: history,
+            savingsSummary: {
+                ...summary,
+                manualSavingsLog: manualLog,
+                lastUpdated: now
+            }
+        });
+    }
+
+    private buildMonthsMap(history: BudgetHistory[], fallbackDate: string): Record<string, MonthlyItems> {
+        return history.reduce<Record<string, MonthlyItems>>((acc, entry) => {
+            const updatedAt = entry.date || fallbackDate;
+            acc[entry.month] = {
+                month: entry.month,
+                items: entry.expenses ?? [],
+                updatedAt
+            };
+            return acc;
+        }, {});
+    }
 }
 
 
