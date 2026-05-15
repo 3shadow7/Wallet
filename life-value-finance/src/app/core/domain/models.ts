@@ -16,7 +16,7 @@ export interface UserIncomeConfig {
   workHoursPerMonth?: number;
   hourlyRate?: number; // Optional override, otherwise calculated
   isHourlyManual: boolean;
-  
+
   // Persistence for user preference
   calculationMethod?: 'weekly' | 'manual';
   weeklyHoursDetails?: {
@@ -53,6 +53,19 @@ export interface BudgetSummary {
   remainingIncome: number;
   hourlyRate: number; // The effective hourly rate used
   savingsRate: number;
+}
+
+export interface MonthlyRecord {
+  month: string; // YYYY-MM
+  income: number;
+  expenses: number;
+  freeMoney: number;
+  transferredToSavings: number;
+  plannedSavings: number; // The goal (sum of 'Saving' items)
+  savingsImpact: number;  // The deficit (if any) caused by overspending
+  manualAdded?: number; // New field for direct additions
+  savingsTotalAfterTransfer: number;
+  date: string; // ISO date of closing
 }
 
 export interface ValueAnalysis {
