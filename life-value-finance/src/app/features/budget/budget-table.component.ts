@@ -241,6 +241,10 @@ export class BudgetTableComponent {
           // Ignoring
           this.budgetState.updateExpense(id, { isIgnored: true });
       }
+
+      if (!this.isCurrentMonth()) {
+        this.budgetState.refreshHistoryDerivedState();
+      }
   }
 
   // Grid Config

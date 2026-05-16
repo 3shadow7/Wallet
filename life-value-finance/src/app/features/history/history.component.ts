@@ -617,7 +617,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                 name: type,
                 data: data.map(record => {
                     return (record.expenses || [])
-                        .filter(e => e.type === type)
+                        .filter(e => !e.isIgnored && e.type === type)
                         .reduce((sum, e) => sum + (e.amount || 0), 0);
                 })
             };
@@ -633,7 +633,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                 name: p,
                 data: data.map(record => {
                     return (record.expenses || [])
-                        .filter(e => e.priority === p)
+                        .filter(e => !e.isIgnored && e.priority === p)
                         .reduce((sum, e) => sum + (e.amount || 0), 0);
                 })
             };
@@ -737,7 +737,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     const relevantRecords = data.filter(d => selected.includes(d.month));
     let allExpenses: ExpenseItem[] = [];
     relevantRecords.forEach(r => {
-        if(r.expenses) allExpenses = [...allExpenses, ...r.expenses];
+        if(r.expenses) allExpenses = [...allExpenses, ...r.expenses.filter(e => !e.isIgnored)];
     });
 
     // 2. Global Filters

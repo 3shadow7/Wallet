@@ -497,7 +497,11 @@ export class BudgetStateService {
        );
   }
 
-  private recalculateHistorySavings(): void {
+  refreshHistoryDerivedState(): void {
+      this.recalculateHistorySavings();
+  }
+
+    private recalculateHistorySavings(): void {
       const history = this.history();
       const historyData = this.historyStore.getData();
       const existingRecords = historyData.savingsHistory ?? [];
