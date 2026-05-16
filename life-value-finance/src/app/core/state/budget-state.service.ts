@@ -238,20 +238,38 @@ export class BudgetStateService {
     } else {
         // Find and update history entry
         const view = this.viewedMonth();
-        this.history.update(history =>
-            history.map(entry => {
-                if (entry.month === view) {
-                    const updatedExpenses = [finalExpense, ...entry.expenses];
-                    // Recalculate summary for history entry
-                    const updatedSummary = FinancialCalculatorService.calculateBudget(
-                        entry.incomeConfig || this.incomeConfig(),
-                        updatedExpenses.filter(e => !e.isIgnored)
-                    );
-                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
-                }
-                return entry;
-            })
-        );
+        this.history.update(history => {
+            const existing = history.find(entry => entry.month === view);
+            if (existing) {
+                return history.map(entry => {
+                    if (entry.month === view) {
+                        const updatedExpenses = [finalExpense, ...entry.expenses];
+                        const updatedSummary = FinancialCalculatorService.calculateBudget(
+                            entry.incomeConfig || this.incomeConfig(),
+                            updatedExpenses.filter(e => !e.isIgnored)
+                        );
+                        return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
+                    }
+                    return entry;
+                });
+            }
+
+            const incomeConfig = this.incomeConfig();
+            const updatedSummary = FinancialCalculatorService.calculateBudget(
+                incomeConfig,
+                [finalExpense].filter(e => !e.isIgnored)
+            );
+
+            const newEntry: BudgetHistory = {
+                month: view,
+                date: new Date().toISOString(),
+                incomeConfig: incomeConfig,
+                expenses: [finalExpense],
+                summary: updatedSummary
+            };
+
+            return [...history, newEntry];
+        });
         this.recalculateHistorySavings();
     }
   }
