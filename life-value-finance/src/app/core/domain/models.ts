@@ -47,6 +47,7 @@ export interface BudgetHistory {
   incomeConfig: UserIncomeConfig;
   expenses: ExpenseItem[];
   summary: BudgetSummary;
+  excludedFromTotals?: boolean;
 }
 
 export interface BudgetSummary {
@@ -74,6 +75,7 @@ export interface MonthlyRecord {
   manualAdded?: number; // New field for direct additions
   savingsTotalAfterTransfer: number;
   date: string; // ISO date of closing
+  excludedFromTotals?: boolean;
 }
 
 export interface ValueAnalysis {
