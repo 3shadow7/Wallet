@@ -16,6 +16,21 @@
                 <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z"/></svg>
               </button>
             </div>
+                        @if (canToggleMonthTotals()) {
+                            <button
+                                class="btn-month-totals-toggle"
+                                type="button"
+                                (click)="toggleMonthTotals()"
+                                [class.is-excluded]="isExcludedFromTotals()"
+                                [attr.aria-pressed]="!isExcludedFromTotals()"
+                            >
+                                @if (isExcludedFromTotals()) {
+                                    Count Income
+                                } @else {
+                                    Ignore Income
+                                }
+                            </button>
+                        }
           </div>
           <span class="row-count">{{ expenses().length }} Items</span>
            @if (!isCurrentMonth()) {
@@ -106,7 +121,24 @@
                 </button>
             </div>
         } @else {
-            <div class="history-badge-mobile">HISTORY VIEW</div>
+            <div class="mobile-header-actions">
+                @if (canToggleMonthTotals()) {
+                    <button
+                        class="btn-month-totals-toggle mobile-toggle"
+                        type="button"
+                        (click)="toggleMonthTotals()"
+                        [class.is-excluded]="isExcludedFromTotals()"
+                        [attr.aria-pressed]="!isExcludedFromTotals()"
+                    >
+                        @if (isExcludedFromTotals()) {
+                            Count Income
+                        } @else {
+                            Ignore Income
+                        }
+                    </button>
+                }
+                <div class="history-badge-mobile">HISTORY VIEW</div>
+            </div>
         }
     </div>
 

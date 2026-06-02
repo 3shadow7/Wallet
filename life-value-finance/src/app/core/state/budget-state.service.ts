@@ -185,18 +185,20 @@ export class BudgetStateService {
   }
 
     private archiveCurrentMonth(month: string) {
+        const expenses = this.currentMonthExpenses();
         const historyEntry: BudgetHistory = {
                 month: month,
                 date: new Date().toISOString(),
                 incomeConfig: this.incomeConfig(),
-                expenses: this.currentMonthExpenses(),
-                summary: this.budgetSummary()
+                expenses: expenses,
+                summary: this.budgetSummary(),
+            excludedFromTotals: false
         };
 
         this.history.update(h => [...h, historyEntry]);
 
         // Auto-carry only Tax + Saving items into the new month
-        const carryover = this.buildCarryoverItems(this.currentMonthExpenses());
+        const carryover = this.buildCarryoverItems(expenses);
         this.currentMonthExpenses.set(carryover);
     }
 
@@ -248,7 +250,8 @@ export class BudgetStateService {
                             entry.incomeConfig || this.incomeConfig(),
                             updatedExpenses.filter(e => !e.isIgnored)
                         );
-                        return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
+                        // const shouldExclude = this.isExpensesEffectivelyEmpty(updatedExpenses);
+                        return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: false };
                     }
                     return entry;
                 });
@@ -265,7 +268,8 @@ export class BudgetStateService {
                 date: new Date().toISOString(),
                 incomeConfig: incomeConfig,
                 expenses: [finalExpense],
-                summary: updatedSummary
+                summary: updatedSummary,
+                excludedFromTotals: false
             };
 
             return [...history, newEntry];
@@ -298,7 +302,7 @@ export class BudgetStateService {
                  newItem.amount = newItem.unitPrice * newItem.quantity;
              }
         }
-                return this.normalizeItem(newItem);
+        return this.normalizeItem(newItem);
       });
 
     if (this.isCurrentMonthView()) {
@@ -313,7 +317,8 @@ export class BudgetStateService {
                         entry.incomeConfig || this.incomeConfig(),
                         updatedExpenses.filter(e => !e.isIgnored)
                     );
-                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
+                    // const shouldExclude = this.isExpensesEffectivelyEmpty(updatedExpenses);
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: false };
                 }
                 return entry;
             })
@@ -335,12 +340,13 @@ export class BudgetStateService {
                         entry.incomeConfig || this.incomeConfig(),
                         updatedExpenses.filter(e => !e.isIgnored)
                     );
-                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary };
+                    // const shouldExclude = this.isExpensesEffectivelyEmpty(updatedExpenses);
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: false };
                 }
                 return entry;
             })
         );
-        this.recalculateHistorySavings();
+                this.recalculateHistorySavings();
     }
   }
 
@@ -391,12 +397,14 @@ export class BudgetStateService {
     const incomeConfig = this.incomeConfig();
     const summary = this.budgetSummary(); // This uses current month expenses anyway due to isCurrentMonthView check implicitly
 
+    const shouldExclude = this.isExpensesEffectivelyEmpty(expenses);
     const currentState: BudgetHistory = {
         month: this.settings().lastActiveMonth, // Usually current
         date: new Date().toISOString(),
         incomeConfig: incomeConfig,
         expenses: expenses,
-        summary: summary
+        summary: summary,
+        excludedFromTotals: shouldExclude
     };
 
     // 0. Update Savings Module with this month's snapshot
@@ -424,7 +432,8 @@ export class BudgetStateService {
         plannedSavings: plannedSavings,
         savingsImpact: summary.freeMoney < 0 ? summary.freeMoney : 0, // Records how much deficit ate into savings
         transferredToSavings: transferredAmount,
-        manualAdded: this.manualSavingsLog()
+        manualAdded: this.manualSavingsLog(),
+        excludedFromTotals: shouldExclude
     });
 
     // Reset Manual Log for next month
@@ -519,7 +528,36 @@ export class BudgetStateService {
       this.recalculateHistorySavings();
   }
 
-    private recalculateHistorySavings(): void {
+  setHistoryMonthExcluded(month: string, excluded: boolean): void {
+      this.history.update(history =>
+          history.map(entry => entry.month === month
+              ? { ...entry, excludedFromTotals: excluded }
+              : entry
+          )
+      );
+      this.recalculateHistorySavings();
+  }
+
+  deleteHistoryMonth(month: string): void {
+      const currentView = this.viewedMonth();
+      const activeMonth = this.settings().lastActiveMonth;
+
+      this.history.update(history => history.filter(entry => entry.month !== month));
+
+      if (currentView === month) {
+          this.viewedMonth.set(activeMonth);
+      }
+
+      this.recalculateHistorySavings();
+  }
+
+  isHistoryMonthEmpty(month: string): boolean {
+      const entry = this.history().find(h => h.month === month);
+      if (!entry) return false;
+      return this.isExpensesEffectivelyEmpty(entry.expenses ?? []);
+  }
+
+  private recalculateHistorySavings(): void {
       const history = this.history();
       const historyData = this.historyStore.getData();
       const existingRecords = historyData.savingsHistory ?? [];
@@ -527,9 +565,9 @@ export class BudgetStateService {
 
       const recordByMonth = new Map(existingRecords.map(record => [record.month, record]));
 
-    const sortedHistory = [...history].sort((a, b) => a.month.localeCompare(b.month));
-    const now = new Date().toISOString();
-    let runningTotal = 0;
+      const sortedHistory = [...history].sort((a, b) => a.month.localeCompare(b.month));
+      const now = new Date().toISOString();
+      let runningTotal = 0;
 
       const recalculated = sortedHistory.map(entry => {
           const normalizedExpenses = this.normalizeItems(entry.expenses ?? []);
@@ -542,8 +580,11 @@ export class BudgetStateService {
           const plannedSavings = this.sumByType(activeExpenses, 'Saving');
           const existing = recordByMonth.get(entry.month);
           const manualAdded = existing?.manualAdded ?? 0;
+          const isExcluded = entry.excludedFromTotals ?? this.isExpensesEffectivelyEmpty(normalizedExpenses);
 
-          runningTotal += manualAdded + summary.savingsBalance;
+          if (!isExcluded) {
+              runningTotal += manualAdded + summary.savingsBalance;
+          }
 
           return {
               month: entry.month,
@@ -556,7 +597,8 @@ export class BudgetStateService {
               savingsImpact: summary.freeMoney < 0 ? summary.freeMoney : 0,
               manualAdded,
               savingsTotalAfterTransfer: runningTotal,
-              date: existing?.date ?? entry.date ?? now
+              date: existing?.date ?? entry.date ?? now,
+              excludedFromTotals: isExcluded
           };
       });
 
@@ -581,10 +623,16 @@ export class BudgetStateService {
   }
 
   private normalizeHistory(history: BudgetHistory[]): BudgetHistory[] {
-      return history.map(entry => ({
-          ...entry,
-          expenses: this.normalizeItems(entry.expenses ?? [])
-      }));
+      return history.map(entry => {
+          const normalizedExpenses = this.normalizeItems(entry.expenses ?? []);
+          const isExcluded = entry.excludedFromTotals ?? false;
+
+          return {
+              ...entry,
+              expenses: normalizedExpenses,
+              excludedFromTotals: isExcluded
+          };
+      });
   }
 
   private normalizeItems(items: ExpenseItem[]): ExpenseItem[] {
@@ -637,6 +685,11 @@ export class BudgetStateService {
       return items
           .filter(item => item.type === type)
           .reduce((sum, item) => sum + (item.amount || 0), 0);
+  }
+
+  private isExpensesEffectivelyEmpty(items: ExpenseItem[]): boolean {
+      if (!items || items.length === 0) return true;
+      return items.every(item => item.isIgnored);
   }
 
   private buildCarryoverItems(items: ExpenseItem[]): ExpenseItem[] {

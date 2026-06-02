@@ -40,6 +40,9 @@ export class BudgetTableComponent {
   viewedMonth = this.budgetState.viewedMonthSignal;
   activeMonth = computed(() => this.budgetState.settingsSignal().lastActiveMonth);
   isCurrentMonth = computed(() => this.viewedMonth() === this.activeMonth());
+  historyEntry = computed(() => this.budgetState.historySignal().find(entry => entry.month === this.viewedMonth()));
+  isExcludedFromTotals = computed(() => this.historyEntry()?.excludedFromTotals ?? false);
+  canToggleMonthTotals = computed(() => !this.isCurrentMonth() && this.budgetState.isHistoryMonthEmpty(this.viewedMonth()));
 
   // Mobile Filters
   filterPriority = signal<string>('');
@@ -582,5 +585,10 @@ export class BudgetTableComponent {
 
   nextMonth() {
       this.budgetState.viewNextMonth();
+  }
+
+  toggleMonthTotals() {
+      if (!this.canToggleMonthTotals()) return;
+      this.budgetState.setHistoryMonthExcluded(this.viewedMonth(), !this.isExcludedFromTotals());
   }
 }
