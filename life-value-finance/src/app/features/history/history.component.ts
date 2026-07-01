@@ -49,6 +49,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   @ViewChild('expensesChart') expensesChartEl!: ElementRef;
   @ViewChild('breakdownChart') breakdownChartEl!: ElementRef;
   @ViewChild('itemChart') itemChartEl!: ElementRef;
+    @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
   private sChart: ApexCharts | null = null;
   private eChart: ApexCharts | null = null;
@@ -120,6 +121,31 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   colDefs: ColDef[] = [
     { field: 'month', headerName: 'Month', sort: 'desc' },
+    {
+        field: 'excludedFromTotals',
+        headerName: '',
+        width: 120,
+        sortable: false,
+        resizable: false,
+        cellRenderer: (params: any) => {
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.justifyContent = 'center';
+
+            const excluded = !!params.data?.excludedFromTotals;
+            const btn = document.createElement('button');
+            btn.className = 'history-toggle-pill';
+            btn.textContent = excluded ? 'Count' : 'Ignore';
+            btn.style.cursor = 'pointer';
+            btn.onclick = () => {
+                // Call the component method so we can trigger grid refresh and any other logic
+                (this as any).toggleHistoryMonthExcluded(params.data.month);
+            };
+
+            container.appendChild(btn);
+            return container;
+        }
+    },
     {
         field: 'income',
         headerName: 'Income',
@@ -334,6 +360,21 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   setBreakdownMode(mode: 'type' | 'priority') {
       this.breakdownMode = mode;
       this.updateBreakdownChart();
+  }
+
+  toggleHistoryMonthExcluded(month: string) {
+      const entry = this.detailedHistory().find(d => d.month === month);
+      const current = entry?.excludedFromTotals ?? false;
+      this.budgetState.setHistoryMonthExcluded(month, !current);
+
+      // Ensure ag-Grid reflects the change immediately
+      try {
+          if (this.agGrid && (this.agGrid as any).api) {
+              (this.agGrid as any).api.refreshCells({ force: true });
+          }
+      } catch (e) {
+          // Quietly ignore if grid isn't ready yet
+      }
   }
 
   // Range Slider Integration

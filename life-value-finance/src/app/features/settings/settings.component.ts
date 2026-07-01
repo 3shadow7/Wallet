@@ -2,14 +2,14 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BackupService } from '../../core/services/backup.service';
 import { AuthService } from '../../core/services/auth.service';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { BudgetStateService } from '../../core/state/budget-state.service';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss'
 })
@@ -17,9 +17,10 @@ export class SettingsComponent {
   private budgetState = inject(BudgetStateService);
   private backupService = inject(BackupService);
   public authService = inject(AuthService);
+  private router = inject(Router);
 
   importStatus: 'idle' | 'success' | 'error' = 'idle';
-  syncStatus = signal<'idle' | 'syncing' | 'success' | 'error'>('idle');        
+  syncStatus = signal<'idle' | 'syncing' | 'success' | 'error'>('idle');
   errorMessage = '';
 
   exportData() {
@@ -43,6 +44,24 @@ export class SettingsComponent {
           this.errorMessage = err.message || 'Failed to import data';
         });
     }
+  }
+
+  onRegisterClick() {
+    // Navigate to the register page
+    this.router.navigate(['/register'], {
+      state: {
+        URLSTATE_isActionFromUser: true // 👈 Sent ONLY on button click
+      }
+    });
+  }
+
+  onLoginClick() {
+    // Navigate to the login page
+    this.router.navigate(['/login'], {
+      state: {
+        URLSTATE_isActionFromUser: true // 👈 Sent ONLY on button click
+      }
+    });
   }
 
   factoryReset() {

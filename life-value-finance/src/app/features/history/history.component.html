@@ -129,6 +129,7 @@
                 <div class="history-card">
                     <div class="card-header">
                         <span class="month-label">{{ item.month }}</span>
+                        <button class="history-toggle-pill" (click)="toggleHistoryMonthExcluded(item.month)">{{ item.excludedFromTotals ? 'Count' : 'Ignore' }}</button>
                         <span class="balance-badge">
                             <span class="label">Total Balance:</span>
                             <span class="val">{{ item.savingsTotalAfterTransfer | currency:'USD':'symbol':'1.0-0' }}</span>

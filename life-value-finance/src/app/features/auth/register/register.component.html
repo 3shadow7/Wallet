@@ -3,7 +3,7 @@
     <!-- Left Side: Hero Brand -->
     <div class="auth-content-side">
       <div class="three-d-anchor">
-        <div class="mock-3d-object" 
+        <div class="mock-3d-object"
              [style.transform]="'rotateY(' + mouseX() + 'deg) rotateX(' + -mouseY() + 'deg)'">
           <div class="floating-wallet">
             <div class="wallet-body">
@@ -50,10 +50,10 @@
               <span class="input-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               </span>
-              <input 
-                type="text" 
-                id="username" 
-                formControlName="username" 
+              <input
+                type="text"
+                id="username"
+                formControlName="username"
                 placeholder="Choose a username"
                 autocomplete="username"
               >
@@ -66,32 +66,32 @@
               <span class="input-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
               </span>
-              <input 
-                type="email" 
-                id="email" 
-                formControlName="email" 
+              <input
+                type="email"
+                id="email"
+                formControlName="email"
                 placeholder="you@example.com"
                 autocomplete="email"
               >
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="password">Password</label>
             <div class="input-wrapper" [class.error]="isFieldInvalid('password')">
               <span class="input-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
               </span>
-              <input 
-                type="password" 
-                id="password" 
-                formControlName="password" 
+              <input
+                type="password"
+                id="password"
+                formControlName="password"
                 placeholder="Minimum 6 characters"
                 autocomplete="new-password"
               >
             </div>
           </div>
-          
+
           <button type="submit" class="auth-submit" [disabled]="registerForm.invalid || isLoading()">
             <span class="btn-text">{{ isLoading() ? 'Creating account...' : 'Create Account' }}</span>
             @if (!isLoading()) {
@@ -99,11 +99,11 @@
             }
           </button>
         </form>
-        
+
         <div class="auth-footer">
-          <p>Already have an account? <a routerLink="/login" class="link">Sign in</a></p>
+          <p>Already have an account? <button (click)="onLoginClick()" class="a link">Sign in</button></p>
           <div class="divider"><span>OR</span></div>
-          <a (click)="onContinueAsGuest()" class="guest-link" style="cursor: pointer;">Continue as Guest</a>
+          <button (click)="onContinueAsGuest()" class="a guest-link" style="cursor: pointer;">Continue as Guest</button>
         </div>
       </div>
     </div>

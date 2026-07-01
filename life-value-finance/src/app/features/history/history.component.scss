@@ -199,7 +199,7 @@ header h1 {
                         background: v.$bg-input;
                         padding: v.$spacing-md v.$spacing-lg; // More horizontal padding
                         // border-radius: 0.5rem;
-                        
+
                         @include m.respond-to('max-sm') {
                             flex-direction: column;
                             align-items: flex-start;
@@ -212,7 +212,7 @@ header h1 {
                             color: v.$text-secondary;
                             font-weight: 600;
                             min-width: 3.75rem;
-                            
+
                             @include m.respond-to('max-sm') {
                                 margin-bottom: 1rem; // Add space below label on mobile
                             }
@@ -254,7 +254,7 @@ header h1 {
     width: 12px !important;
     height: 12px !important;
     border-radius: 0 !important;
-    
+
     // Hide default SVG if present (from previous attempts or default rendering)
     svg {
         display: none !important;
@@ -303,9 +303,9 @@ header h1 {
         display: flex;
         flex-direction: column;
         gap: 0.5rem; // Reduced gap between header and list
-        
+
         // Constrain height for scrolling
-        max-height: 78vh; 
+        max-height: 78vh;
         min-height: 25rem;
         overflow: hidden; // Contain the scrolling child
         position: relative; // Context
@@ -314,12 +314,12 @@ header h1 {
     .mobile-header {
         flex-shrink: 0; // Don't shrink the header
         padding: 0 0.5rem;
-        
+
         h3 {
             font-size: 1.35rem;
             font-weight: 800;
             color: v.$text-primary;
-            margin-bottom: 0px; 
+            margin-bottom: 0px;
         }
     }
 
@@ -331,7 +331,7 @@ header h1 {
         gap: 1.25rem;
         // Ample bottom padding to ensure last card visibility
     padding: 0.5rem 0.5rem 1.5rem 0.5rem;
-        
+
         // Scrollbar styling for webkit
         &::-webkit-scrollbar {
             width: 4px;
@@ -396,6 +396,25 @@ header h1 {
             align-items: center;
             border-bottom: 1px solid v.$border-color;
             padding-bottom: 0.75rem;
+            .history-toggle-pill {
+                border: 0.0625rem solid v.$border-color;
+                background: v.$surface-color;
+                color: v.$text-secondary;
+                border-radius: v.$radius-full;
+                padding: 0.25rem 0.6rem;
+                font-size: 0.8rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                white-space: nowrap;
+                box-shadow: v.$shadow-sm;
+
+                &:hover {
+                    background: v.$bg-input;
+                    color: v.$primary-color;
+                    border-color: color-mix(in srgb, v.$primary-color, transparent 60%);
+                }
+            }
 
             .month-label {
                 font-size: 1.2rem;
@@ -427,7 +446,7 @@ header h1 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            
+
             .stat-group {
                 display: flex;
                 flex-direction: column;
@@ -448,7 +467,7 @@ header h1 {
                     &.income { color: v.$success-color; }
                     &.expense { color: var(--danger-color); }
                     &.target { color: v.$text-secondary; }
-                    
+
                     &.saved {
                          color: v.$primary-color;
                          &.deficit { color: var(--danger-color); }
@@ -480,7 +499,7 @@ header h1 {
                     font-weight: 700;
                 }
             }
-            
+
             // Contextual styling for impact
             &.positive {
                 border-left: 3px solid v.$success-color;
@@ -490,7 +509,7 @@ header h1 {
             &.negative {
                 border-left: 3px solid var(--danger-color);
                 background-color: color-mix(in srgb, var(--danger-color), white 5%); // Subtle danger tint for context
-                
+
                 .impact-header .val { color: var(--danger-color); }
             }
 
@@ -500,7 +519,7 @@ header h1 {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
-                
+
                  .warning {
                          color: var(--warning-color);
                     font-weight: 500;
@@ -519,7 +538,7 @@ header h1 {
             padding: 0.5rem;
             border-radius: v.$radius-sm;
             margin-top: 0.25rem;
-            
+
             .icon { font-size: 1rem; }
         }
     }
