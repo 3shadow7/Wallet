@@ -39,7 +39,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   avgSavingsRate = this.savingsService.averageSavingsRate;
 
   bestMonth = () => {
-      const h = this.history();
+      const h = this.history().filter(d => !d.excludedFromTotals);
       if (!h.length) return null;
       return h.reduce((prev, current) => (prev.transferredToSavings > current.transferredToSavings) ? prev : current);
   };
@@ -260,6 +260,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         const type = this.filterType();
         const prio = this.filterPriority();
         const year = this.selectedYear(); // Ensure effect runs on year change too
+        const detailed = this.detailedHistory(); // Ensure effect runs when a month is Ignored/Counted
 
         console.log('Update Effect Triggered:', { selected, type, prio, year });
 
@@ -418,7 +419,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private initCharts() {
-      const data = this.history();
+      const data = this.history().filter(d => !d.excludedFromTotals);
       const isDark = this.themeService.isDark();
       const tokens = this.tokens;
       const textColor = tokens.textPrimary;
@@ -534,8 +535,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       this.eChart.render();
   }
 
-  private updateCharts(data: MonthlyRecord[]) {
+  private updateCharts(rawData: MonthlyRecord[]) {
       if (!this.sChart || !this.eChart) return;
+
+      // Ignored months should not influence any chart
+      const data = rawData.filter(d => !d.excludedFromTotals);
 
       this.sChart.updateSeries([{
           data: data.map(d => d.savingsTotalAfterTransfer)
@@ -638,9 +642,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private updateBreakdownChart() {
     if (!this.bChart) return;
 
-    // Get detailed history which has the full expense list
-    const data = this.detailedHistory();
-    const categories = data.length > 0 ? data.map(d => d.month) : this.history().map(d => d.month);
+    // Get detailed history which has the full expense list, excluding ignored months
+    const data = this.detailedHistory().filter(d => !d.excludedFromTotals);
+    const categories = data.length > 0
+        ? data.map(d => d.month)
+        : this.history().filter(d => !d.excludedFromTotals).map(d => d.month);
 
     let series: any[] = [];
     let colors: string[] = [];
@@ -774,8 +780,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         return;
     }
 
-    // 1. Get expenses from selected months
-    const relevantRecords = data.filter(d => selected.includes(d.month));
+    // 1. Get expenses from selected months, excluding any that are ignored
+    const relevantRecords = data.filter(d => selected.includes(d.month) && !d.excludedFromTotals);
     let allExpenses: ExpenseItem[] = [];
     relevantRecords.forEach(r => {
         if(r.expenses) allExpenses = [...allExpenses, ...r.expenses.filter(e => !e.isIgnored)];
@@ -835,4 +841,3 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
 }
-

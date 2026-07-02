@@ -25,7 +25,8 @@ export class SavingsService {
   });
 
   readonly averageSavingsRate = computed(() => {
-    const records = this.history();
+    // Ignored months must not skew the average savings rate
+    const records = this.history().filter(r => !r.excludedFromTotals);
     if (records.length === 0) return 0;
     const totalTransferred = records.reduce((acc, curr) => acc + curr.transferredToSavings, 0);
     const totalIncome = records.reduce((acc, curr) => acc + curr.income, 0);
@@ -119,4 +120,3 @@ export class SavingsService {
       return lastRecord;
   }
 }
-
