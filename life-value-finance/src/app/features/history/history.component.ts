@@ -12,7 +12,7 @@ import { ThemeService } from '@core/services/theme.service';
 import { getThemeTokens } from '@theme/theme-utils';
 
 import { BudgetStateService } from '@core/state/budget-state.service';
-import { ExpenseItem } from '@core/domain/models';
+import { ExpenseItem, BudgetHistory } from '@core/domain/models';
 
 @Component({
   selector: 'app-history',
@@ -578,6 +578,28 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       return map[category] || tokens.textSecondary;
   }
 
+  // What fraction of this month's planned Saving items was actually honored,
+  // after overspending (negative freeMoney) ate into them. Same logic as the
+  // "Reduced Saving Goal by X%" indicator in the ag-Grid freeMoney column.
+  private getMonthSavingRatio(record: BudgetHistory): number {
+      const activeSavingItems = (record.expenses || []).filter(e => !e.isIgnored && e.type === 'Saving');
+      const plannedSavings = activeSavingItems.reduce((sum, e) => sum + (e.amount || 0), 0);
+      if (plannedSavings <= 0) return 1;
+
+      const freeMoney = record.summary?.freeMoney ?? 0;
+      const deficit = freeMoney < 0 ? Math.abs(freeMoney) : 0;
+      const ratio = 1 - Math.min(deficit, plannedSavings) / plannedSavings;
+      return Math.max(0, Math.min(1, ratio));
+  }
+
+  // Real, post-shortfall amount for a single expense item. Non-Saving items are
+  // unaffected; Saving items are scaled down by the month's saving ratio so
+  // charts reflect what was actually saved, not the static planned amount.
+  private getActualItemAmount(item: ExpenseItem, record: BudgetHistory): number {
+      if (item.type !== 'Saving') return item.amount || 0;
+      return (item.amount || 0) * this.getMonthSavingRatio(record);
+  }
+
   private initBreakdownChart() {
       const isDark = this.themeService.isDark();
       const tokens = this.tokens;
@@ -665,7 +687,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                 data: data.map(record => {
                     return (record.expenses || [])
                         .filter(e => !e.isIgnored && e.type === type)
-                        .reduce((sum, e) => sum + (e.amount || 0), 0);
+                        .reduce((sum, e) => sum + this.getActualItemAmount(e, record), 0);
                 })
             };
         });
@@ -681,7 +703,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                 data: data.map(record => {
                     return (record.expenses || [])
                         .filter(e => !e.isIgnored && e.priority === p)
-                        .reduce((sum, e) => sum + (e.amount || 0), 0);
+                        .reduce((sum, e) => sum + this.getActualItemAmount(e, record), 0);
                 })
             };
         });
@@ -784,7 +806,14 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     const relevantRecords = data.filter(d => selected.includes(d.month) && !d.excludedFromTotals);
     let allExpenses: ExpenseItem[] = [];
     relevantRecords.forEach(r => {
-        if(r.expenses) allExpenses = [...allExpenses, ...r.expenses.filter(e => !e.isIgnored)];
+        if(r.expenses) {
+            // Replace each Saving item's static amount with what was actually
+            // saved this month, after any overspend shortfall is applied.
+            const withActualAmounts = r.expenses
+                .filter(e => !e.isIgnored)
+                .map(e => ({ ...e, amount: this.getActualItemAmount(e, r) }));
+            allExpenses = [...allExpenses, ...withActualAmounts];
+        }
     });
 
     // 2. Global Filters
