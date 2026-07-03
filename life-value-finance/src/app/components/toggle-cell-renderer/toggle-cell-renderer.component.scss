@@ -1,0 +1,117 @@
+@use '../../design-system/theme/mixins' as m;
+
+:host {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-toggle {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-family-body);
+
+  .toggle-switch-wrapper {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    line-height: 0; // kills baseline gap ag-grid cells are prone to
+  }
+
+  .toggle-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .toggle-track {
+    position: relative;
+    display: inline-grid;
+    grid-template-areas: "layer";
+    align-items: center;
+    background-color: var(--bg-input);
+    border-radius: var(--radius-full);
+    border: 0.0625rem solid var(--border-color);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    overflow: clip;
+    height: 1.5rem;       // fixed compact height
+    min-width: 3.5rem;    // enough for shortest label + knob room
+
+    &::before,
+    &::after {
+      grid-area: layer;
+      display: flex;
+      align-items: center;
+      font-size: 0.625rem;       // smaller text
+      font-weight: var(--font-weight-bold);
+      white-space: nowrap;
+      transition: opacity 0.2s ease;
+      z-index: 1;
+      padding: 0 0.4rem;         // tighter padding
+    }
+
+    &::before {
+      content: attr(data-on);
+      color: var(--text-inverse);
+      padding-left: 0.4rem;
+      padding-right: 1.5rem;     // room for smaller knob
+      justify-content: flex-start;
+      opacity: 0;
+    }
+
+    &::after {
+      content: attr(data-off);
+      color: var(--text-muted);
+      padding-left: 1.5rem;
+      padding-right: 0.4rem;
+      justify-content: flex-end;
+      opacity: 1;
+    }
+  }
+
+  .toggle-knob {
+    position: absolute;
+    top: 50%;
+    left: 0.2rem;
+    transform: translateY(-50%) translateX(0%);
+    height: 1.05rem;   // scaled down from 1.5rem
+    width: 1.05rem;
+    background-color: var(--bg-surface);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+  }
+
+  .toggle-switch-wrapper:hover .toggle-track {
+    background-color: var(--bg-surface-hover);
+    border-color: var(--border-focus);
+  }
+
+  .toggle-input:checked + .toggle-track {
+    background: var(--primary-gradient);
+    border-color: transparent;
+
+    &::before { opacity: 1; }
+    &::after { opacity: 0; }
+
+    .toggle-knob {
+      left: calc(100% - 0.2rem);
+      transform: translateY(-50%) translateX(-100%);
+    }
+  }
+
+  .toggle-input:focus-visible + .toggle-track {
+    box-shadow: var(--shadow-focus);
+  }
+
+  .toggle-input:disabled + .toggle-track {
+    filter: grayscale(1);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

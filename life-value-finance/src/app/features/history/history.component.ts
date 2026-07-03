@@ -10,9 +10,9 @@ import { SavingsService, MonthlyRecord } from '@core/services/savings.service';
 import ApexCharts from 'apexcharts';
 import { ThemeService } from '@core/services/theme.service';
 import { getThemeTokens } from '@theme/theme-utils';
-
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem, BudgetHistory } from '@core/domain/models';
+import { ToggleCellRendererComponent } from '@shared/toggle-cell-renderer/toggle-cell-renderer.component';
 
 @Component({
   selector: 'app-history',
@@ -120,33 +120,16 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
   };
 
+  gridContext: any = { componentParent: this };
+
   colDefs: ColDef[] = [
-    { field: 'month', headerName: 'Month', sort: 'desc' },
     {
-        field: 'excludedFromTotals',
-        headerName: '',
-        width: 120,
-        sortable: false,
-        resizable: false,
-        cellRenderer: (params: any) => {
-            const container = document.createElement('div');
-            container.style.display = 'flex';
-            container.style.justifyContent = 'center';
-
-            const excluded = !!params.data?.excludedFromTotals;
-            const btn = document.createElement('button');
-            btn.className = 'history-toggle-pill';
-            btn.textContent = excluded ? 'Count' : 'Ignore';
-            btn.style.cursor = 'pointer';
-            btn.onclick = () => {
-                // Call the component method so we can trigger grid refresh and any other logic
-                (this as any).toggleHistoryMonthExcluded(params.data.month);
-            };
-
-            container.appendChild(btn);
-            return container;
-        }
-    },
+    field: 'excludedFromTotals',
+    headerName: '',
+    sortable: false,
+    cellRenderer: ToggleCellRendererComponent,
+  },
+    { field: 'month', headerName: 'Month', sort: 'desc' },
     {
         field: 'income',
         headerName: 'Income',

@@ -201,12 +201,13 @@
               cursor: pointer;
               font-weight: bold;
               font-size: 1.1rem;
-              line-height: inherit;
+              line-height: 0;
+              transform: scale(1.05);
               transition: all 0.2s;
 
               &:hover {
                   background-color: color-mix(in srgb, var(--primary-color), black 10%);
-                  transform: scale(1.05);
+                  transform: scale(1.10);
               }
 
               &:active {
