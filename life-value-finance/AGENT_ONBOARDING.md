@@ -6,7 +6,7 @@ Purpose
 
 Quick summary of current state
 - App is a PWA: `manifest.webmanifest`, `ngsw-config.json`, and `ngsw-worker.js` are present.
-- Local persistence: `PersistenceService` saves app state to `localStorage`.
+- Local persistence: versioned store envelopes (`lvf_income_store`, `lvf_history_store`, `lvf_items_store`) via the storage engine.
 - Offline queue: `OfflineSyncService` records queued operations in `localStorage` under `offline_sync_queue_v1`.
 - Headless test exists at `scripts/check-sw-control.js` and a manual verification doc is available.
 
@@ -101,8 +101,8 @@ Notes & tips
 
 Files to open first (quick links)
 - `src/app/core/services/offline-sync.service.ts`
-- `src/app/core/services/persistence.service.ts`
-- `src/app/core/services/savings.service.ts`
+- `src/app/core/storage/engine/storage-engine.service.ts`
+- `src/app/core/storage/stores/history-store.service.ts`
 - `src/main.ts` (for wiring online listener)
 
 Contact

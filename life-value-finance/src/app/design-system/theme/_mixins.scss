@@ -1,0 +1,276 @@
+// SCSS Mixins (build-time helpers)
+
+@mixin flex-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@mixin respond-to($breakpoint) {
+    @if $breakpoint =='sm' {
+        @media (min-width: 40rem) {
+            @content;
+        }
+    }
+
+    // New breakpoint for max-width (mobile-only styling)
+    @else if $breakpoint =='max-xs' {
+        @media (max-width: 30rem) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint =='md' {
+        @media (min-width: 48rem) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint =='lg' {
+        @media (min-width: 64rem) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint =='xl' {
+        @media (min-width: 80rem) {
+            @content;
+        }
+    }
+}
+
+@mixin card-style {
+    background-color: var(--bg-surface);
+    backdrop-filter: blur(0.75rem);
+    -webkit-backdrop-filter: blur(0.75rem);
+    border: 0.0625rem solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--spacing-lg);
+    transition: box-shadow 0.2s ease, transform 0.2s ease , border-color 2s ease-in-out;
+    /* Ensure positioned context for children, but avoid aggressive stacking */
+    position: relative;
+    z-index: 1;
+
+    &:hover {
+        /* transform: translateY(-0.125rem); REMOVED to prevent stacking context issues with dropdowns */
+        box-shadow: var(--shadow-md);
+        z-index: 10; /* Raise card on hover so dropdowns might show above others */
+    }
+}
+
+@mixin input-style {
+    background-color: var(--bg-input);
+    border: 0.0625rem solid var(--border-color); // Added border for better visibility
+    // ... rest
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem; // Increased padding slightly
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease , border-color 2s ease-in-out;
+    font-family: var(--font-family-body);
+
+    &:hover {
+        background-color: var(--bg-surface-hover); // Use defined hover
+        border-color: var(--border-focus); // Subtle hint on hover
+    }
+
+    &:focus {
+        outline: none;
+        border-color: var(--border-focus);
+        background-color: var(--bg-surface);
+        box-shadow: var(--shadow-focus);
+    }
+
+    &::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.6;
+    }
+}
+
+@mixin select-style {
+    @include input-style;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+    cursor: pointer;
+
+    &:invalid {
+        color: var(--text-secondary);
+    }
+
+    option {
+        color: var(--text-primary);
+        background: var(--bg-surface);
+        padding: 0.5rem;
+    }
+}
+
+@mixin btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1.5rem;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-md);
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.1s , border-color 2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &:hover {
+        filter: brightness(110%);
+        box-shadow: var(--shadow-md);
+    }
+
+    &:active {
+        transform: translateY(0.0625rem);
+    }
+
+    &:disabled {
+        filter: grayscale(1);
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+}
+
+@mixin toggle-style {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--spacing-sm); /*[cite: 2] */
+  font-family: var(--font-family-body); /*[cite: 2] */
+
+  .toggle-label-above {
+    font-size: var(--font-size-sm); /*[cite: 2] */
+    color: var(--text-secondary); /*[cite: 2] */
+    font-weight: var(--font-weight-medium); /*[cite: 2] */
+  }
+
+  .toggle-switch-wrapper {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+  }
+
+  .toggle-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  /* Dynamic Width Track using CSS Grid */
+  .toggle-track {
+    position: relative;
+    display: inline-grid;
+    grid-template-areas: "layer";
+    align-items: center;
+    background-color: var(--bg-input); /*[cite: 2] */
+    border-radius: var(--radius-full); /*[cite: 2] */
+    border: 0.0625rem solid var(--border-color); /*[cite: 2] */
+    transition: all 0.2s ease; /*[cite: 1] */
+    box-sizing: border-box;
+    overflow: clip;
+
+    /* Both texts are stacked in the exact same grid cell to dictate max width */
+    &::before,
+    &::after {
+      grid-area: layer;
+      display: flex;
+      align-items: center;
+      font-size: var(--font-size-xs); /*[cite: 2] */
+      font-weight: var(--font-weight-bold); /*[cite: 2] */
+      white-space: nowrap; /* Prevents any long text from wrapping */
+      transition: opacity 0.2s ease; /*[cite: 1] */
+      z-index: 1;
+      padding: 0.5rem 0.75rem;
+    }
+
+    /* "True" / "On" Text */
+    &::before {
+      content: attr(data-on);
+      color: var(--text-inverse); /*[cite: 2] */
+      padding-left: 0.75rem;
+      padding-right: 2.25rem; /* Leaves exact room for the knob when active */
+      justify-content: flex-start;
+      opacity: 0;
+    }
+
+    /* "False" / "Off" Text */
+    &::after {
+      content: attr(data-off);
+      color: var(--text-muted); /*[cite: 2] */
+      padding-left: 2.25rem; /* Leaves exact room for the knob when inactive */
+      padding-right: 0.75rem;
+      justify-content: flex-end;
+      opacity: 1;
+    }
+  }
+
+  .toggle-track-inner{
+
+  }
+
+  /* The sliding circular knob */
+  .toggle-knob {
+    position: absolute;
+    top: 50%;
+    left: 0.375rem; /* Initial position when unchecked */
+    transform: translateY(-50%) translateX(0%);
+    height: 1.5rem;
+    width: 1.5rem;
+    background-color: var(--bg-surface); /*[cite: 2] */
+    border-radius: var(--radius-full); /*[cite: 2] */
+    box-shadow: var(--shadow-sm); /*[cite: 2] */
+    /* Animate 'left' instead of 'transform' so it adapts to dynamic widths */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+  }
+
+  /* Hover state */
+  .toggle-switch-wrapper:hover .toggle-track {
+    background-color: var(--bg-surface-hover); /*[cite: 2] */
+    border-color: var(--border-focus); /*[cite: 2] */
+  }
+
+  /* Checked (True) state */
+  .toggle-input:checked + .toggle-track {
+    background: var(--primary-gradient); /*[cite: 2] */
+    border-color: transparent;
+
+    &::before { opacity: 1; }
+    &::after { opacity: 0; }
+
+    .toggle-knob {
+      /* Dynamically calculates the right edge: 100% width - knob size - padding */
+      left: calc(100% - 0.375rem);
+      transform: translateY(-50%) translateX(-100%);
+    }
+  }
+
+  /* Focus & Accessibility */
+  .toggle-input:focus-visible + .toggle-track {
+    box-shadow: var(--shadow-focus); /*[cite: 2] */
+  }
+
+  /* Disabled state mirroring primary button */
+  .toggle-input:disabled + .toggle-track {
+    filter: grayscale(1); /*[cite: 1] */
+    opacity: 0.6; /*[cite: 1] */
+    cursor: not-allowed; /*[cite: 1] */
+  }
+}

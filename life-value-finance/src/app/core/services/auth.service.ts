@@ -1,12 +1,20 @@
 import { Injectable, signal, inject, PLATFORM_ID } from "@angular/core";
 import { isPlatformBrowser } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
-import { Observable, tap } from "rxjs";
+import { Router } from "@angular/router";
+import { Observable, ReplaySubject, catchError, switchMap, tap, throwError } from "rxjs";
+import { AuthStorageService } from "@core/storage/stores/auth-storage.service";
 
 export interface User {
   id: number;
   username: string;
   email: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  access: string;
+  refresh: string;
 }
 
 @Injectable({
@@ -15,6 +23,11 @@ export interface User {
 export class AuthService {
   private http = inject(HttpClient);
   private platformId = inject(PLATFORM_ID);
+  private router = inject(Router);
+  private authStorage = inject(AuthStorageService);
+
+  private refreshInProgress = false;
+  private refreshSubject = new ReplaySubject<string>(1);
 
   private apiUrl = "http://localhost:8000/api/auth";
 
@@ -29,16 +42,15 @@ export class AuthService {
   private checkInitialState() {
     if (isPlatformBrowser(this.platformId)) {
       try {
-        const token = localStorage.getItem("access_token");
-        const savedUser = localStorage.getItem("user");
-        const guestFlag = localStorage.getItem("is_guest");
+        const token = this.authStorage.getAccessToken();
+        const savedUser = this.authStorage.getUser();
+        const guestFlag = this.authStorage.isGuest();
 
         if (token && savedUser) {
-          const userData = JSON.parse(savedUser);
-          this.currentUser.set(userData);
+          this.currentUser.set(savedUser);
           this.isAuthenticated.set(true);
           this.isGuest.set(false);
-        } else if (guestFlag === "true") {
+        } else if (guestFlag) {
           this.isGuest.set(true);
           this.isAuthenticated.set(false);
           this.currentUser.set(null);
@@ -52,20 +64,16 @@ export class AuthService {
     }
   }
 
-  login(credentials: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl + "/login/", credentials).pipe(
-      tap((response: any) => {
+  login(credentials: any): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(this.apiUrl + "/login/", credentials).pipe(
+      tap((response: AuthResponse) => {
         if (isPlatformBrowser(this.platformId)) {
-          localStorage.removeItem("is_guest");
-          localStorage.setItem("access_token", response.access);
-          localStorage.setItem("refresh_token", response.refresh);
-          
-          // SimpleJWT doesn"t return user by default, we build a simple object
-          // unless you customize the ObtainPair view in Django.
-          const userData = { username: credentials.username } as User;
-          localStorage.setItem("user", JSON.stringify(userData));
-          
-          this.currentUser.set(userData);
+          this.authStorage.setGuest(false);
+          this.authStorage.setAccessToken(response.access);
+          this.authStorage.setRefreshToken(response.refresh);
+          this.authStorage.setUser(response.user);
+
+          this.currentUser.set(response.user);
           this.isAuthenticated.set(true);
           this.isGuest.set(false);
         }
@@ -73,37 +81,81 @@ export class AuthService {
     );
   }
 
-  register(userData: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl + "/register/", userData).pipe(
-       tap((response: any) => {
+  register(userData: any): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(this.apiUrl + "/register/", userData).pipe(
+       tap((response: AuthResponse) => {
          if (isPlatformBrowser(this.platformId)) {
-            localStorage.setItem("access_token", response.access);
-            localStorage.setItem("refresh_token", response.refresh);
-            localStorage.setItem("user", JSON.stringify(response.user));
+            this.authStorage.setGuest(false);
+            this.authStorage.setAccessToken(response.access);
+            this.authStorage.setRefreshToken(response.refresh);
+            this.authStorage.setUser(response.user);
             this.currentUser.set(response.user);
             this.isAuthenticated.set(true);
+            this.isGuest.set(false);
          }
        })
     );
   }
 
+  fetchCurrentUser(): Observable<User> {
+    return this.http.get<User>(this.apiUrl + "/me/");
+  }
+
   continueAsGuest() {
     if (isPlatformBrowser(this.platformId)) {
       this.logout();
-      localStorage.setItem("is_guest", "true");
+      this.authStorage.setGuest(true);
       this.isGuest.set(true);
     }
   }
 
   logout() {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("is_guest");
+      this.authStorage.clearAuth();
       this.currentUser.set(null);
       this.isAuthenticated.set(false);
       this.isGuest.set(false);
+      // Route away from protected views so guards re-evaluate
+      this.router.navigate(["/login"]);
     }
+  }
+
+  refreshAccessToken(): Observable<string> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return throwError(() => new Error("Refresh not available on server"));
+    }
+
+    const refresh = this.authStorage.getRefreshToken();
+    if (!refresh) {
+      return throwError(() => new Error("No refresh token"));
+    }
+
+    if (this.refreshInProgress) {
+      return this.refreshSubject.asObservable();
+    }
+
+    this.refreshInProgress = true;
+
+    return this.http.post<{ access: string }>(this.apiUrl + "/token/refresh/", { refresh }).pipe(
+      tap((response) => {
+        this.authStorage.setAccessToken(response.access);
+        this.refreshSubject.next(response.access);
+        this.refreshSubject.complete();
+        this.refreshSubject = new ReplaySubject<string>(1); // reset for next time
+        this.refreshInProgress = false;
+      }),
+      switchMap((response) => {
+        return new Observable<string>((observer) => {
+          observer.next(response.access);
+          observer.complete();
+        });
+      }),
+      catchError((err) => {
+        this.refreshInProgress = false;
+        this.refreshSubject = new ReplaySubject<string>(1);
+        this.logout();
+        return throwError(() => err);
+      })
+    );
   }
 }

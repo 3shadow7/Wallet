@@ -1,5 +1,5 @@
-@use '../../theme/variables' as v;
-@use '../../theme/mixins' as m;
+@use '../../design-system/theme/variables' as v;
+@use '../../design-system/theme/mixins' as m;
 
 .calculator-container {
   display: flex;
@@ -58,7 +58,7 @@ h2 {
       border-color: var(--primary-color);
       box-shadow: var(--shadow-focus);
     }
-    
+
     &::placeholder {
       color: var(--text-muted);
     }
@@ -68,7 +68,7 @@ h2 {
 .results-card {
   @include m.card-style;
   background: var(--bg-surface);
-  transition: all 0.3s ease;    
+  transition: all 0.3s ease;
   padding: var(--spacing-md) var(--spacing-lg);
   border: 0.0625rem solid var(--border-color); // 1px
   position: relative;
@@ -192,17 +192,17 @@ h2 {
       background: var(--bg-secondary);
 
       &.low {
-        border-left: 0.25rem solid var(--success-color);
+        // border-left: 0.25rem solid var(--success-color);
         background: color-mix(in srgb, var(--success-color), transparent 95%);
       }
 
       &.medium {
-        border-left: 0.25rem solid var(--warning-color);
+        // border-left: 0.25rem solid var(--warning-color);
         background: color-mix(in srgb, var(--warning-color), transparent 95%);
       }
 
       &.high {
-        border-left: 0.25rem solid var(--danger-color);
+        // border-left: 0.25rem solid var(--danger-color);
         background: color-mix(in srgb, var(--danger-color), transparent 95%);
       }
 
@@ -304,7 +304,7 @@ h2 {
     // Revert to original background logic (on top of surface)
     // Since parent is red, we need to be opaque or reset
     background: var(--bg-surface);
-    border-left: 0.25rem solid var(--danger-color);
+    // border-left: 0.25rem solid var(--danger-color);
 
     // Reset text colors inherited from parent
     p {

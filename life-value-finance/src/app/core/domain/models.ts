@@ -16,7 +16,7 @@ export interface UserIncomeConfig {
   workHoursPerMonth?: number;
   hourlyRate?: number; // Optional override, otherwise calculated
   isHourlyManual: boolean;
-  
+
   // Persistence for user preference
   calculationMethod?: 'weekly' | 'manual';
   weeklyHoursDetails?: {
@@ -25,7 +25,7 @@ export interface UserIncomeConfig {
   };
 }
 
-export type PriorityLevel = 'Must Have' | 'Want' | 'Emergency' | 'Gift';
+export type PriorityLevel = 'Must' | 'Want' | 'Emergency' | 'Gift';
 
 export interface ExpenseItem {
   id: string;
@@ -35,8 +35,10 @@ export interface ExpenseItem {
   unitPrice: number; // Base cost for one item
   quantity: number; // Default 1
   isIgnored?: boolean; // If true, excluded from calculations for this month
-  type: 'Responsibility' | 'Burning' | 'Saving'; // Updated per user preference
+  type: 'Burn' | 'Tax' | 'Saving';
   priority: PriorityLevel;
+  targetTotal?: number; // Optional long-term saving goal (for Saving items)
+  isReducible?: boolean; // Saving items can be reduced when shortfall occurs
 }
 
 export interface BudgetHistory {
@@ -45,14 +47,35 @@ export interface BudgetHistory {
   incomeConfig: UserIncomeConfig;
   expenses: ExpenseItem[];
   summary: BudgetSummary;
+  excludedFromTotals?: boolean;
 }
 
 export interface BudgetSummary {
   totalIncome: number;
-  totalExpenses: number;
-  remainingIncome: number;
+  plannedOutflow: number; // Burn + Tax + Saving
+  freeMoney: number; // Income - Planned Outflow (can be negative)
+  realExpenses: number; // Burn + Tax
+  savingsBalance: number; // Income - Real Expenses (can be negative)
+  actualSavedTotal: number; // max(0, savingsBalance)
+  overspend: number; // max(0, realExpenses - income)
+  savingShortfall: number; // max(0, plannedSavings - actualSavedTotal)
   hourlyRate: number; // The effective hourly rate used
   savingsRate: number;
+}
+
+export interface MonthlyRecord {
+  month: string; // YYYY-MM
+  income: number;
+  expenses: number; // Planned outflow (Burn + Tax + Saving)
+  realExpenses?: number; // Burn + Tax
+  freeMoney: number; // Income - Planned Outflow
+  transferredToSavings: number;
+  plannedSavings: number; // The goal (sum of 'Saving' items)
+  savingsImpact: number;  // The deficit (if any) caused by overspending
+  manualAdded?: number; // New field for direct additions
+  savingsTotalAfterTransfer: number;
+  date: string; // ISO date of closing
+  excludedFromTotals?: boolean;
 }
 
 export interface ValueAnalysis {

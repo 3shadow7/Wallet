@@ -9,9 +9,10 @@ import { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { SavingsService, MonthlyRecord } from '@core/services/savings.service';
 import ApexCharts from 'apexcharts';
 import { ThemeService } from '@core/services/theme.service';
-
+import { getThemeTokens } from '@theme/theme-utils';
 import { BudgetStateService } from '@core/state/budget-state.service';
-import { ExpenseItem } from '@core/domain/models';
+import { ExpenseItem, BudgetHistory } from '@core/domain/models';
+import { ToggleCellRendererComponent } from '@shared/toggle-cell-renderer/toggle-cell-renderer.component';
 
 @Component({
   selector: 'app-history',
@@ -27,18 +28,19 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   public themeService = inject(ThemeService); // Made public for template if needed
   protected Math = Math; // Expose Math to template
-  
+
   isBrowser = isPlatformBrowser(this.platformId);
   breakdownMode: 'type' | 'priority' = 'type';
 
   // Signals
   totalSavings = this.savingsService.totalSavingsSignal;
   history = this.savingsService.historySignal;
+  reverseHistory = computed(() => [...this.history()].reverse());
   detailedHistory = this.budgetState.historySignal;
   avgSavingsRate = this.savingsService.averageSavingsRate;
-  
+
   bestMonth = () => {
-      const h = this.history();
+      const h = this.history().filter(d => !d.excludedFromTotals);
       if (!h.length) return null;
       return h.reduce((prev, current) => (prev.transferredToSavings > current.transferredToSavings) ? prev : current);
   };
@@ -48,24 +50,25 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   @ViewChild('expensesChart') expensesChartEl!: ElementRef;
   @ViewChild('breakdownChart') breakdownChartEl!: ElementRef;
   @ViewChild('itemChart') itemChartEl!: ElementRef;
+    @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
   private sChart: ApexCharts | null = null;
   private eChart: ApexCharts | null = null;
   private bChart: ApexCharts | null = null;
   private iChart: ApexCharts | null = null;
-  
+
   // Interactive Selection
   selectedMonths = signal<string[]>([]);
 
   // Advance Filters
   selectedYear = signal<string>(new Date().getFullYear().toString());
-  
-  // Multi-select signals
-  filterType = signal<string[]>(['Burning', 'Responsibility', 'Saving']);
-  filterPriority = signal<string[]>(['Must Have', 'Want', 'Emergency', 'Gift']);
 
-  availableTypes = ['Burning', 'Responsibility', 'Saving'];
-  availablePriorities = ['Must Have', 'Want', 'Emergency', 'Gift'];
+  // Multi-select signals
+    filterType = signal<string[]>(['Burn', 'Tax', 'Saving']);
+    filterPriority = signal<string[]>(['Must', 'Want', 'Emergency', 'Gift']);
+
+    availableTypes = ['Burn', 'Tax', 'Saving'];
+    availablePriorities = ['Must', 'Want', 'Emergency', 'Gift'];
 
   // Computed: Years Available
   availableYears = computed(() => {
@@ -85,7 +88,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               else years.add(new Date().getFullYear().toString());
           }
       });
-      return Array.from(years).sort().reverse(); 
+      return Array.from(years).sort().reverse();
   });
 
   // Computed: Months for buttons based on selected year
@@ -95,10 +98,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           // If month string has year, check match
           // Expected "YYYY-MM" -> we check if it starts with YYYY
           if (d.month.startsWith(y + '-')) return true;
-          
+
           // Legacy support (e.g. "January 2024")
           if (d.month.includes(y)) return true;
-          
+
           return false;
       });
   });
@@ -117,27 +120,35 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
   };
 
+  gridContext: any = { componentParent: this };
+
   colDefs: ColDef[] = [
+    {
+    field: 'excludedFromTotals',
+    headerName: '',
+    sortable: false,
+    cellRenderer: ToggleCellRendererComponent,
+  },
     { field: 'month', headerName: 'Month', sort: 'desc' },
-    { 
-        field: 'income', 
-        headerName: 'Income', 
+    {
+        field: 'income',
+        headerName: 'Income',
         valueFormatter: p => `$${p.value.toFixed(2)}`
     },
-    { 
-        field: 'expenses', 
-        headerName: 'Expenses',
+    {
+        field: 'expenses',
+        headerName: 'Planned Outflow',
         valueFormatter: p => `$${p.value.toFixed(2)}`
     },
-    { 
-        field: 'plannedSavings', 
+    {
+        field: 'plannedSavings',
         headerName: 'Target Savings',
         headerTooltip: 'Total of all "Saving" items planned for this month',
         cellStyle: { color: 'var(--primary-color)', fontWeight: '500' },
         valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '$0.00'
     },
-    { 
-        field: 'freeMoney', 
+    {
+        field: 'freeMoney',
         headerName: 'Free Money & Savings Impact',
         width: 250,
         minWidth: 250,
@@ -151,18 +162,18 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             const container = document.createElement('div');
             container.style.lineHeight = '1.4';
             container.style.padding = '8px 0';
-            
+
             if (val >= 0) {
                  container.innerHTML = `<span style="color:var(--success-color, green); font-weight:bold;">$${val.toFixed(2)}</span>`;
             } else {
                 // Negative Free Money: This is the impact on savings
                 const deficit = Math.abs(val);
                 const planned = params.data.plannedSavings || 0;
-                
+
                 let html = `<div style="display:flex; flex-direction:column;">`;
                 // Main Value
                 html += `<span style="color:var(--danger-color, red); font-weight:bold; font-size: 1.1em;">-$${deficit.toFixed(2)}</span>`;
-                
+
                 // Context
                 if (planned > 0) {
                     const impactPct = Math.min(100, (deficit / planned) * 100).toFixed(1);
@@ -171,28 +182,28 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                 } else {
                      html += `<span style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">⚠️ Dipped into Savings Storage</span>`;
                 }
-                
+
                 html += `</div>`;
                 container.innerHTML = html;
             }
             return container;
         }
     },
-    { 
-        field: 'transferredToSavings', 
+    {
+        field: 'transferredToSavings',
         headerName: 'From Budget',
         tooltipValueGetter: (p: any) => p.data.plannedSavings ? `Planned: $${p.data.plannedSavings.toFixed(2)}` : '',
         cellStyle: params => params.value < 0 ? { color: 'var(--danger-color)', fontWeight: 'bold' } : { color: 'var(--primary-color)', fontWeight: 'bold' },
         valueFormatter: p => p.value < 0 ? `${p.value.toFixed(2)} (Deficit)` : `$${p.value.toFixed(2)}`
     },
-    { 
-        field: 'manualAdded', 
+    {
+        field: 'manualAdded',
         headerName: 'Direct Additions',
-        cellStyle: { fontWeight: 'bold', color: '#f59e0b' }, // Amber for manual
+        cellStyle: { fontWeight: 'bold', color: 'var(--warning-color)' }, // Tokenized amber
         valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '--'
     },
-    { 
-        field: 'savingsTotalAfterTransfer', 
+    {
+        field: 'savingsTotalAfterTransfer',
         headerName: 'Total Savings Balance',
         valueFormatter: p => `$${p.value.toFixed(2)}`
     }
@@ -220,21 +231,20 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       effect(() => {
           if (!this.isBrowser) return;
           const isDark = this.themeService.isDark();
-          
+
           this.updateChartTheme(isDark);
       });
 
       // Update Item Treemap when ANY selection changes
       effect(() => {
         if (!this.isBrowser) return;
-        
+
         // Track dependencies
         const selected = this.selectedMonths();
         const type = this.filterType();
         const prio = this.filterPriority();
         const year = this.selectedYear(); // Ensure effect runs on year change too
-        
-        console.log('Update Effect Triggered:', { selected, type, prio, year });
+        const detailed = this.detailedHistory(); // Ensure effect runs when a month is Ignored/Counted
 
         if (this.iChart) {
             this.updateItemChart();
@@ -245,10 +255,56 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   // State to track if user has manually filtered
   private userHasInteractedWithSlider = false;
 
+    // Memoized: getThemeTokens() forces a getComputedStyle() read. Keying this
+    // computed() off themeService.isDark() means the DOM is only touched once
+    // per real theme change instead of once per `this.tokens` access (which
+    // was happening 6-10x per update cycle across the various chart methods).
+    private tokensCache = computed(() => {
+        this.themeService.isDark(); // dependency: recompute only when theme flips
+        return getThemeTokens(this.isBrowser ? window : null);
+    });
+
+    private get tokens() {
+        return this.tokensCache();
+    }
+
+    // Darkens a hex ("#rrggbb") or rgb(a) color string by `amount` (0-1 fraction).
+    // Returns the input unchanged if the format isn't recognized (e.g. named colors).
+    private darkenColor(color: string, amount: number): string {
+        const hexMatch = color.match(/^#([0-9a-fA-F]{6})$/);
+        if (hexMatch) {
+            const num = parseInt(hexMatch[1], 16);
+            const r = Math.max(0, Math.round(((num >> 16) & 0xff) * (1 - amount)));
+            const g = Math.max(0, Math.round(((num >> 8) & 0xff) * (1 - amount)));
+            const b = Math.max(0, Math.round((num & 0xff) * (1 - amount)));
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        const rgbMatch = color.match(/^rgba?\(([^)]+)\)$/);
+        if (rgbMatch) {
+            const parts = rgbMatch[1].split(',').map(p => parseFloat(p.trim()));
+            const [r, g, b, a] = parts;
+            const nr = Math.max(0, Math.round(r * (1 - amount)));
+            const ng = Math.max(0, Math.round(g * (1 - amount)));
+            const nb = Math.max(0, Math.round(b * (1 - amount)));
+            return a !== undefined ? `rgba(${nr}, ${ng}, ${nb}, ${a})` : `rgb(${nr}, ${ng}, ${nb})`;
+        }
+
+        return color;
+    }
+
+    // Chart series colors read from tokens are too bright against a dark
+    // background, so knock them down 20% whenever dark mode is active.
+    // Used everywhere a chart color is computed, including on theme toggle.
+    private getSeriesColor(baseColor: string): string {
+        return this.themeService.isDark() ? this.darkenColor(baseColor, 0.20) : baseColor;
+    }
+
   private updateChartTheme(isDark: boolean) {
       const themeMode = isDark ? 'dark' : 'light';
-      const textColor = isDark ? '#e2e8f0' : '#1e293b'; 
-      const gridColor = isDark ? '#334155' : '#e2e8f0';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const gridColor = tokens.border;
 
       const commonOptions = {
           chart: {
@@ -275,14 +331,42 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           // Ensure data labels contrast correctly
           dataLabels: {
-              style: { colors: [isDark ? '#e2e8f0' : '#1e293b'] }
+              style: { colors: [textColor] }
           }
       };
 
-      if (this.sChart) this.sChart.updateOptions(commonOptions);
-      if (this.eChart) this.eChart.updateOptions(commonOptions);
-      
+      if (this.sChart) {
+          this.sChart.updateOptions({
+              ...commonOptions,
+              yaxis: {labels: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }},
+              colors: [this.getSeriesColor(tokens.primary)]
+          });
+      }
+
+      if (this.eChart) {
+          this.eChart.updateOptions({
+              ...commonOptions,
+              yaxis: {labels: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }},
+              colors: [
+                  this.getSeriesColor(tokens.success), // Income
+                  this.getSeriesColor(tokens.danger),  // Expenses
+                  this.getSeriesColor(tokens.warning), // Direct Additions
+                  ({ value }: { value: number }) => {
+                          return this.getSeriesColor(value < 0 ? tokens.textPrimary : tokens.primary); // Deficit vs Saved
+                  }
+              ]
+          });
+      }
+
       if (this.bChart) {
+          // Bar colors depend on the current breakdown mode (type/priority) and
+          // are computed from CSS tokens. Read them once and fold into a single
+          // updateOptions() call instead of two separate writes (was causing an
+          // extra ApexCharts render cycle right after commonOptions applied).
+          const modeKeys = this.breakdownMode === 'type'
+              ? ['Burn', 'Tax', 'Saving']
+              : ['Must', 'Want', 'Emergency', 'Gift'];
+
           this.bChart.updateOptions({
             ...commonOptions,
             plotOptions: {
@@ -293,10 +377,12 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                   }
                 }
               }
-            }
+            },
+            colors: modeKeys.map(k => this.getCategoryColor(k, tokens)),
+            dataLabels: { style: { colors: this.getBreakdownDataLabelColors(textColor) } }
           });
       }
-      
+
       if (this.iChart) {
           // Treemap title needs specific update
           this.iChart.updateOptions({
@@ -306,6 +392,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               }
               // Treemap dataLabels are usually white on colored blocks, so we don't override them with text color
           });
+          // Per-item tile colors (fillColor) were baked in from tokens at build time,
+          // so rebuild the series against the new theme's tokens.
+          this.updateItemChart();
       }
   }
 
@@ -330,6 +419,21 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       this.updateBreakdownChart();
   }
 
+  toggleHistoryMonthExcluded(month: string) {
+      const entry = this.detailedHistory().find(d => d.month === month);
+      const current = entry?.excludedFromTotals ?? false;
+      this.budgetState.setHistoryMonthExcluded(month, !current);
+
+      // Ensure ag-Grid reflects the change immediately
+      try {
+          if (this.agGrid && (this.agGrid as any).api) {
+              (this.agGrid as any).api.refreshCells({ force: true });
+          }
+      } catch (e) {
+          // Quietly ignore if grid isn't ready yet
+      }
+  }
+
   // Range Slider Integration
   onTimeRangeChange(range: SliderRange) {
       if (!this.userHasInteractedWithSlider) {
@@ -337,32 +441,32 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       }
 
       const year = this.selectedYear();
-      
+
       // Calculate start and end months (1-12)
       const startMonth = range.min;
       const endMonth = range.max;
 
       // Find records that match both the selected YEAR and Month Range
-      const availableData = this.monthsForYear(); 
-      
+      const availableData = this.monthsForYear();
+
       const matchedMonths = availableData
           .filter(d => {
               // Parse month from "YYYY-MM" format
               const parts = d.month.split('-');
               let mNum = -1;
-              
+
               if (parts.length >= 2) {
                   // YYYY-MM
                   mNum = parseInt(parts[1], 10);
               } else {
                   // Fallback: "MonthName YYYY" or just "MonthName"
                   const mName = d.month.split(' ')[0];
-                  const idx = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  const idx = ['January', 'February', 'March', 'April', 'May', 'June',
                                'July', 'August', 'September', 'October', 'November', 'December']
                                .indexOf(mName);
                   if (idx !== -1) mNum = idx + 1;
               }
-              
+
               return mNum >= startMonth && mNum <= endMonth;
           })
           .map(d => d.month);
@@ -371,10 +475,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private initCharts() {
-      const data = this.history();
+      const data = this.history().filter(d => !d.excludedFromTotals);
       const isDark = this.themeService.isDark();
-      const textColor = isDark ? '#e2e8f0' : '#1e293b'; 
-      const gridColor = isDark ? '#334155' : '#e2e8f0';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const gridColor = tokens.border;
       const themeMode = isDark ? 'dark' : 'light';
 
       // Common Styling
@@ -382,7 +487,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           borderColor: gridColor,
           strokeDashArray: 4,
       };
-      
+
       // 1. Savings Growth Area Chart
       const savingsOptions = {
           series: [{
@@ -404,8 +509,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
+
+          // ADD THIS Y-AXIS CONFIGURATION
+          yaxis: {
+              labels: {
+                  formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+          },
           grid: commonGrid,
-          colors: ['#8b5cf6'],
+          colors: [this.getSeriesColor(tokens.primary)],
           fill: {
               type: 'gradient',
               gradient: {
@@ -417,11 +529,20 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           tooltip: {
               theme: themeMode,
-              y: { formatter: (val: number) => '$' + val.toLocaleString() }
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
           },
-          markers: { size: 4, colors: ['#fff'], strokeColors: '#8b5cf6', strokeWidth: 2, hover: { size: 6 } }
+          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: this.getSeriesColor(tokens.primary), strokeWidth: 2, hover: { size: 6 } },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
       };
-      
+
       this.sChart = new ApexCharts(this.savingsChartEl.nativeElement, savingsOptions);
       this.sChart.render();
 
@@ -464,21 +585,35 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
+          yaxis: {
+              labels: {
+                  formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+          },
           grid: commonGrid,
-          colors: [
-            '#10b981', // Income (Green)
-            '#ef4444', // Expenses (Red)
-            '#f59e0b', // Direct Additions (Amber)
-            function({ value }: { value: number }) {
-                return value < 0 ? '#1e293b' : '#8b5cf6'; // Dark Slate (deficit) vs Purple (saved)
-            }
-          ],
+                    colors: [
+                        this.getSeriesColor(tokens.success), // Income
+                        this.getSeriesColor(tokens.danger),  // Expenses
+                        this.getSeriesColor(tokens.warning), // Direct Additions
+                        ({ value }: { value: number }) => {
+                                return this.getSeriesColor(value < 0 ? tokens.textPrimary : tokens.primary); // Deficit vs Saved
+                        }
+                    ],
           fill: { opacity: 1 },
           tooltip: {
               theme: themeMode,
-              y: { formatter: (val: number) => '$' + val.toLocaleString() }
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
           },
-          legend: { position: 'top', horizontalAlign: 'right' }
+          legend: { position: 'top', horizontalAlign: 'right' },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
 
       };
 
@@ -486,57 +621,95 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       this.eChart.render();
   }
 
-  private updateCharts(data: MonthlyRecord[]) {
+  private updateCharts(rawData: MonthlyRecord[]) {
       if (!this.sChart || !this.eChart) return;
-      
-      this.sChart.updateSeries([{
-          data: data.map(d => d.savingsTotalAfterTransfer)
-      }]);
-      
+
+      // Ignored months should not influence any chart
+      const data = rawData.filter(d => !d.excludedFromTotals);
+
+      const categories = data.map(d => d.month);
+
+      // Series + xaxis categories folded into one updateOptions() call each,
+      // instead of updateSeries() immediately followed by updateOptions()
+      // (each call is its own ApexCharts render/layout pass).
       this.sChart.updateOptions({
-          xaxis: { categories: data.map(d => d.month) }
+          series: [{ data: data.map(d => d.savingsTotalAfterTransfer) }],
+          xaxis: { categories }
       });
 
-      this.eChart.updateSeries([{
-          data: data.map(d => d.income)
-      }, {
-          data: data.map(d => d.expenses)
-      }, {
-          data: data.map(d => d.manualAdded || 0)
-      }, {
-          data: data.map(d => d.transferredToSavings)
-      }]);
-      
       this.eChart.updateOptions({
-          xaxis: { categories: data.map(d => d.month) }
+          series: [
+              { data: data.map(d => d.income) },
+              { data: data.map(d => d.expenses) },
+              { data: data.map(d => d.manualAdded || 0) },
+              { data: data.map(d => d.transferredToSavings) }
+          ],
+          xaxis: { categories }
       });
   }
 
-  private getCategoryColor(category: string): string {
-      const isDark = this.themeService.isDark();
+  private getCategoryColor(category: string, tokens: ReturnType<typeof getThemeTokens> = this.tokens): string {
       const map: Record<string, string> = {
-          'Burning': '#ef4444', // Red
-          'Responsibility': '#f59e0b', // Amber
-          'Saving': '#10b981', // Green
-          
-          'Must Have': '#ef4444',
-          'Want': '#10b981', 
-          'Emergency': isDark ? '#ffffff' : '#000000', // Black/White
-          'Gift': '#8b5cf6' // Purple
+          'Burn': tokens.danger,
+          'Tax': tokens.warning,
+          'Saving': tokens.success,
+          'Must': tokens.danger,
+          'Want': tokens.success,
+          'Emergency': tokens.textPrimary,
+          'Gift': tokens.primary
       };
-      return map[category] || '#94a3b8';
+      return this.getSeriesColor(map[category] || tokens.textSecondary);
+  }
+
+  // Data-label text colors for the Breakdown chart, one per series in the
+  // current mode's order. Emergency's bar fill IS tokens.textPrimary, which is
+  // also the default label color everywhere else, so its label would render
+  // invisible (dark-on-dark in light mode, light-on-light in dark mode).
+  // We force it to the opposite of the current theme instead.
+  private getBreakdownDataLabelColors(textColor: string = this.tokens.textPrimary): string[] {
+      const isDark = this.themeService.isDark();
+      const emergencyLabelColor = isDark ? '#111111' : '#ffffff';
+
+      const keys = this.breakdownMode === 'type'
+          ? ['Burn', 'Tax', 'Saving']
+          : ['Must', 'Want', 'Emergency', 'Gift'];
+
+      return keys.map(k => k === 'Emergency' ? emergencyLabelColor : textColor);
+  }
+
+  // What fraction of this month's planned Saving items was actually honored,
+  // after overspending (negative freeMoney) ate into them. Same logic as the
+  // "Reduced Saving Goal by X%" indicator in the ag-Grid freeMoney column.
+  private getMonthSavingRatio(record: BudgetHistory): number {
+      const activeSavingItems = (record.expenses || []).filter(e => !e.isIgnored && e.type === 'Saving');
+      const plannedSavings = activeSavingItems.reduce((sum, e) => sum + (e.amount || 0), 0);
+      if (plannedSavings <= 0) return 1;
+
+      const freeMoney = record.summary?.freeMoney ?? 0;
+      const deficit = freeMoney < 0 ? Math.abs(freeMoney) : 0;
+      const ratio = 1 - Math.min(deficit, plannedSavings) / plannedSavings;
+      return Math.max(0, Math.min(1, ratio));
+  }
+
+  // Real, post-shortfall amount for a single expense item. Non-Saving items are
+  // unaffected; Saving items are scaled down by the month's saving ratio so
+  // charts reflect what was actually saved, not the static planned amount.
+  private getActualItemAmount(item: ExpenseItem, record: BudgetHistory): number {
+      if (item.type !== 'Saving') return item.amount || 0;
+      return (item.amount || 0) * this.getMonthSavingRatio(record);
   }
 
   private initBreakdownChart() {
       const isDark = this.themeService.isDark();
-      const textColor = isDark ? '#e2e8f0' : '#1e293b';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
       const themeMode = isDark ? 'dark' : 'light';
 
       const options: any = { // Use any to allow dynamic property updates easily
           series: [],
-          title: { 
+          title: {
             text: 'Monthly Spending Breakdown',
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor } 
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor }
           },
           chart: {
               type: 'bar',
@@ -554,8 +727,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             }
           },
           // Colors will be set on update
-          colors: [], 
-          stroke: { width: 1, colors: ['#fff'] },
+          colors: [],
+          stroke: { width: 1, colors: ['var(--bg-surface)'] },
           xaxis: {
               categories: [],
               labels: {
@@ -566,16 +739,25 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
-          grid: {
-            borderColor: isDark ? '#334155' : '#f1f5f9',
-            xaxis: { lines: { show: true } },
-            yaxis: { lines: { show: false } }
-          },
+                    grid: {
+                        borderColor: tokens.border,
+                        xaxis: { lines: { show: true } },
+                        yaxis: { lines: { show: false } }
+                    },
           fill: { opacity: 1 },
           legend: { position: 'top', horizontalAlign: 'right' },
           tooltip: {
             theme: themeMode,
             y: { formatter: (val: number) => '$' + val.toLocaleString() }
+          },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
           }
       };
 
@@ -589,11 +771,13 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   private updateBreakdownChart() {
     if (!this.bChart) return;
-    
-    // Get detailed history which has the full expense list
-    const data = this.detailedHistory();
-    const categories = data.length > 0 ? data.map(d => d.month) : this.history().map(d => d.month);
-    
+
+    // Get detailed history which has the full expense list, excluding ignored months
+    const data = this.detailedHistory().filter(d => !d.excludedFromTotals);
+    const categories = data.length > 0
+        ? data.map(d => d.month)
+        : this.history().filter(d => !d.excludedFromTotals).map(d => d.month);
+
     let series: any[] = [];
     let colors: string[] = [];
 
@@ -603,54 +787,55 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
 
     if (this.breakdownMode === 'type') {
-        const types = ['Burning', 'Responsibility', 'Saving'] as const;
+        const types = ['Burn', 'Tax', 'Saving'] as const;
         colors = types.map(t => this.getCategoryColor(t));
         series = types.map(type => {
             return {
                 name: type,
                 data: data.map(record => {
                     return (record.expenses || [])
-                        .filter(e => e.type === type)
-                        .reduce((sum, e) => sum + (e.amount || 0), 0);
+                        .filter(e => !e.isIgnored && e.type === type)
+                        .reduce((sum, e) => sum + this.getActualItemAmount(e, record), 0);
                 })
             };
         });
     } else {
-        const priorities = ['Must Have', 'Want', 'Emergency', 'Gift'] as const;
+        const priorities = ['Must', 'Want', 'Emergency', 'Gift'] as const;
         // Fix: Ensure correct color mapping array order for Stacked Chart
         // Map returns colors in same order as priorities array
-        colors = priorities.map(p => this.getCategoryColor(p)); 
-        
+        colors = priorities.map(p => this.getCategoryColor(p));
+
         series = priorities.map(p => {
             return {
                 name: p,
                 data: data.map(record => {
                     return (record.expenses || [])
-                        .filter(e => e.priority === p)
-                        .reduce((sum, e) => sum + (e.amount || 0), 0);
+                        .filter(e => !e.isIgnored && e.priority === p)
+                        .reduce((sum, e) => sum + this.getActualItemAmount(e, record), 0);
                 })
             };
         });
     }
 
     this.bChart.updateOptions({
+        series,
         xaxis: { categories: categories },
-        colors: colors.length > 0 ? colors : undefined
+        colors: colors.length > 0 ? colors : undefined,
+        dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
     });
-
-    this.bChart.updateSeries(series);
   }
 
   private initItemChart() {
       const isDark = this.themeService.isDark();
-      const textColor = isDark ? '#e2e8f0' : '#1e293b';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
       const themeMode = isDark ? 'dark' : 'light';
 
       const options = {
           series: [],
-          title: { 
+          title: {
             text: 'Item Level Breakdown (Treemap)',
-            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor } 
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor }
           },
           chart: {
               type: 'treemap',
@@ -662,10 +847,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           // Extended palette for distributed colors
           colors: [
-              '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', 
-              '#ef4444', '#6366f1', '#14b8a6', '#f97316', '#84cc16',
-              '#a855f7', '#db2777', '#06b6d4', '#eab308', '#2563eb'
-          ],
+              tokens.primary, tokens.warning, tokens.success, tokens.danger, tokens.info,
+              tokens.textPrimary, tokens.textSecondary, tokens.bgSurface, tokens.bgElev1, tokens.bgElev2
+          ].map(c => this.getSeriesColor(c)),
           plotOptions: {
               treemap: {
                   distributed: true,
@@ -679,7 +863,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                   fontSize: '12px',
                   fontFamily: 'Inter, sans-serif',
                   fontWeight: 'bold',
-                  colors: ['#fff']
+                  colors: ['var(--text-inverse)']
               },
               formatter: function(text: string, op: any) {
                   return [text, '$' + op.value.toLocaleString()];
@@ -689,6 +873,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           tooltip: {
             theme: themeMode,
             y: { formatter: (val: number) => '$' + val.toLocaleString() }
+          },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
           }
       };
 
@@ -705,15 +898,12 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private updateItemChart() {
     if (!this.iChart) return;
 
+    // --- Reads first: theme tokens + filter state, nothing written to the
+    // chart yet, so no read/write/read/write interleaving with ApexCharts ---
     const isDark = this.themeService.isDark();
-    const textColor = isDark ? '#e2e8f0' : '#1e293b';
+    const tokens = this.tokens;
+    const textColor = tokens.textPrimary;
     const themeMode = isDark ? 'dark' : 'light';
-
-    // Update title color dynamically on data change (hack since chart.updateOptions might reset)
-    this.iChart.updateOptions({
-        chart: { foreColor: textColor },
-        tooltip: { theme: themeMode }
-    });
 
     const data = this.detailedHistory();
     const selected = this.selectedMonths();
@@ -721,15 +911,28 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     const priorityFilter = this.filterPriority();
 
     if (selected.length === 0) {
-        this.iChart.updateSeries([{ data: [] }]);
+        // Single write: theme + empty series together instead of a separate
+        // updateOptions() call followed by updateSeries().
+        this.iChart.updateOptions({
+            chart: { foreColor: textColor },
+            tooltip: { theme: themeMode },
+            series: [{ data: [] }]
+        });
         return;
     }
 
-    // 1. Get expenses from selected months
-    const relevantRecords = data.filter(d => selected.includes(d.month));
+    // 1. Get expenses from selected months, excluding any that are ignored
+    const relevantRecords = data.filter(d => selected.includes(d.month) && !d.excludedFromTotals);
     let allExpenses: ExpenseItem[] = [];
     relevantRecords.forEach(r => {
-        if(r.expenses) allExpenses = [...allExpenses, ...r.expenses];
+        if(r.expenses) {
+            // Replace each Saving item's static amount with what was actually
+            // saved this month, after any overspend shortfall is applied.
+            const withActualAmounts = r.expenses
+                .filter(e => !e.isIgnored)
+                .map(e => ({ ...e, amount: this.getActualItemAmount(e, r) }));
+            allExpenses = [...allExpenses, ...withActualAmounts];
+        }
     });
 
     // 2. Global Filters
@@ -738,7 +941,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     } else {
         allExpenses = []; // No types selected
     }
-    
+
     if (priorityFilter.length > 0) {
         allExpenses = allExpenses.filter(e => priorityFilter.includes(e.priority));
     } else {
@@ -754,30 +957,33 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             existing.y += curr.amount; // update sum
         } else {
             // Determine color based on Type (Matches Dashboard Badges)
-            let color = '#94a3b8'; // Default slate
-            if (curr.type === 'Burning') color = '#ef4444'; // Red
-            else if (curr.type === 'Responsibility') color = '#f59e0b'; // Amber
-            else if (curr.type === 'Saving') color = '#10b981'; // Green
+            let color = tokens.textSecondary; // Default slate
+            if (curr.type === 'Burn') color = tokens.danger; // Red
+            else if (curr.type === 'Tax') color = tokens.warning; // Amber
+            else if (curr.type === 'Saving') color = tokens.success; // Green
 
-            acc.push({ x: key, y: curr.amount, fillColor: color }); 
+            acc.push({ x: key, y: curr.amount, fillColor: this.getSeriesColor(color) });
         }
         return acc;
     }, [] as { x: string, y: number, fillColor?: string }[]);
-    
+
     // Sort descending by value (Standard Treemap logic)
     combinedItems.sort((a,b) => b.y - a.y);
-    
-    // Update Chart
-    this.iChart.updateSeries([{
-        name: 'All Items',
-        data: combinedItems
-    }]);
 
-    // Force distributed false so it uses data point colors
+    // Single write: theme (foreColor/tooltip), series, and the
+    // distributed/colors override all folded into one updateOptions() call
+    // instead of three sequential update calls.
     this.iChart.updateOptions({
+        chart: { foreColor: textColor },
+        tooltip: { theme: themeMode },
+        series: [{
+            name: 'All Items',
+            data: combinedItems
+        }],
+        // Force distributed false so it uses data point colors
         plotOptions: {
             treemap: {
-                distributed: false, 
+                distributed: false,
                 enableShades: false // Disable shades so our specific colors stick
             }
         },
@@ -786,4 +992,3 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
 }
-

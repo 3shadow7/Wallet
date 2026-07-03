@@ -41,10 +41,13 @@ INSTALLED_APPS = [
     # Third Party
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'corsheaders',
 
     # Internal Apps
-    'authentication',    "core_finance",]
+    'apps.authentication',
+    'apps.core_finance',
+]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', # MUST be at the top
@@ -137,6 +140,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # Simple JWT Configuration

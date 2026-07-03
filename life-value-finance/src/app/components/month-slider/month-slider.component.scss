@@ -1,0 +1,154 @@
+:host {
+    display: block;
+    width: 100%;
+    padding: 0 1.25rem 1.25rem 1.25rem; 
+    user-select: none;
+  }
+
+  .slider-container {
+    position: relative;
+    height: 0.375rem;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .track-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--border-subtle);
+    border-radius: 0.25rem;
+  }
+
+  .track-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: var(--primary-color); 
+    border-radius: 0.25rem;
+    pointer-events: none;
+  }
+
+  .handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%); /* Center the handle on the point */
+    width: 1.5rem;
+    height: 1.5rem;
+    background: var(--bg-surface);
+    border: 0.125rem solid var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    
+    // Increase touch target size without changing visual size
+    &::after {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+    }
+
+    &:hover { transform: translate(-50%, -50%) scale(1.1); }
+    &:active { cursor: grabbing; box-shadow: 0 0 0 0.25rem color-mix(in srgb, var(--primary-color), transparent 70%); }
+
+    .tooltip {
+      position: absolute;
+      bottom: 1.875rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: color-mix(in srgb, var(--bg-elev-2), transparent 10%);
+      color: var(--text-primary);
+      padding: 0.35rem 0.6rem;
+      border-radius: 0.35rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+      pointer-events: none;
+      border: 1px solid color-mix(in srgb, var(--border-color), transparent 30%);
+      box-shadow: var(--shadow-sm);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -0.25rem;
+        border-width: 0.25rem;
+        border-style: solid;
+        border-color: color-mix(in srgb, var(--bg-elev-2), transparent 10%) transparent transparent transparent;
+      }
+    }
+  }
+
+  .ticks {
+    position: relative;
+    margin-top: 1rem;
+    // We use absolute positioning for ticks now for perfect alignment with slider math
+    width: 100%;
+    height: 2rem;
+    
+    .tick {
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%); // Force center alignment on the value point
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      width: 2rem; // Touch target width
+      z-index: 5;
+      
+      // Ensure hit area covers the mark and label
+      padding-top: 0.5rem; 
+      margin-top: -0.5rem;
+
+      .tick-mark {
+          font-size: 0.6rem;
+          color: var(--text-muted);
+          margin-bottom: 0.25rem;
+          font-weight: bold;
+          transition: color 0.2s;
+      }
+      
+      .tick-label {
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          font-weight: 500;
+          transition: color 0.2s, font-weight 0.2s;
+          user-select: none;
+      }
+      
+      // Active State (Selected Range)
+        &.active {
+          .tick-mark { color: var(--primary-color); }
+          .tick-label { 
+            color: var(--primary-color); 
+            font-weight: 700;
+          }
+      }
+
+      // Responsive adjustments
+      @media (max-width: 640px) {
+          .tick-label { font-size: 0.65rem; }
+          
+          &:nth-child(even) .tick-label {
+              display: none; // Hide label for Feb, Apr... on tiny screens
+          }
+          &:nth-child(even) .tick-mark {
+              height: 4px; // Make mark smaller/subtle
+          }
+      }
+      
+      @media (min-width: 400px) and (max-width: 640px) {
+           &:nth-child(even) .tick-label {
+              display: block; // Restore if space permits
+              font-size: 0.6rem;
+          }
+      }
+    }
+  }

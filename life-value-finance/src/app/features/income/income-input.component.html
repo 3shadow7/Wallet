@@ -11,7 +11,7 @@
       <span class="label">Monthly Income</span>
       <span class="value income-value">{{ incomeConfig().monthlyIncome | currency }}</span>
     </div>
-    
+
     <div class="divider"></div>
 
     <div class="secondary-stats">
@@ -29,9 +29,9 @@
   <form [formGroup]="form" *ngIf="isEditing()" (ngSubmit)="save()" class="edit-form">
     <div class="form-group">
       <label>Monthly Net Income</label>
-      <input type="number" formControlName="monthlyIncome" placeholder="e.g. 5000">
+      <input type="number" formControlName="monthlyIncome" placeholder="e.g. 5000" min="0">
     </div>
-    
+
     <div class="toggle-group">
         <label>Calculation Method:</label>
         <div class="toggles">
@@ -44,11 +44,11 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Hours/Day</label>
-                <input type="number" formControlName="hoursPerDay" placeholder="8">
+                <input type="number" formControlName="hoursPerDay" placeholder="8" min="1" max="24">
             </div>
             <div class="form-group">
                 <label>Days/Week</label>
-                <input type="number" formControlName="daysPerWeek" placeholder="5">
+                <input type="number" formControlName="daysPerWeek" placeholder="5" min="1" max="7">
             </div>
         </div>
         <div class="calc-preview">
@@ -57,7 +57,7 @@
     } @else {
         <div class="form-group">
             <label>Work Hours / Month</label>
-            <input type="number" formControlName="workHoursPerMonth" placeholder="e.g. 160">
+            <input type="number" formControlName="workHoursPerMonth" placeholder="e.g. 160" min="1">
             <small>Standard: 160h</small>
         </div>
     }

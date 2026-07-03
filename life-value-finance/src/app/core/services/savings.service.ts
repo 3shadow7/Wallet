@@ -1,35 +1,15 @@
-import { Injectable, signal, computed, effect, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { PersistenceService } from '@core/services/persistence.service';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { HistoryStoreService } from '@core/storage/stores/history-store.service';
+import { MonthlyRecord } from '@core/domain/models';
 
-export interface MonthlyRecord {
-  month: string; // YYYY-MM
-  income: number;
-  expenses: number;
-  freeMoney: number;
-  transferredToSavings: number;
-  plannedSavings: number; // The goal (sum of 'Saving' items)
-  savingsImpact: number;  // The deficit (if any) caused by overspending
-  manualAdded?: number; // New field for direct additions
-  savingsTotalAfterTransfer: number;
-  date: string; // ISO date of closing
-}
-
-interface SavingsState {
-  totalSavings: number;
-  history: MonthlyRecord[];
-}
-
-const STORAGE_KEY_SAVINGS = 'savingsStorage';
-const STORAGE_KEY_HISTORY = 'monthlyHistory';
+export type { MonthlyRecord } from '@core/domain/models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SavingsService {
-  private platformId = inject(PLATFORM_ID);
-  private persistenceService = inject(PersistenceService);
-  
+  private historyStore = inject(HistoryStoreService);
+
   // State
   private totalSavings = signal<number>(0);
   private history = signal<MonthlyRecord[]>([]);
@@ -45,7 +25,8 @@ export class SavingsService {
   });
 
   readonly averageSavingsRate = computed(() => {
-    const records = this.history();
+    // Ignored months must not skew the average savings rate
+    const records = this.history().filter(r => !r.excludedFromTotals);
     if (records.length === 0) return 0;
     const totalTransferred = records.reduce((acc, curr) => acc + curr.transferredToSavings, 0);
     const totalIncome = records.reduce((acc, curr) => acc + curr.income, 0);
@@ -57,13 +38,10 @@ export class SavingsService {
   }
 
   public refreshState() {
-    const s = this.persistenceService.getSavings();
-    this.totalSavings.set(s.totalSavings || 0);
-    this.history.set(s.monthlyHistory || []);
-  }
-
-  private loadState() {
-    this.refreshState();
+    const data = this.historyStore.getData();
+    const summary = data.savingsSummary;
+    this.totalSavings.set(summary?.totalSavings ?? 0);
+    this.history.set(data.savingsHistory ?? []);
   }
 
   // Actions
@@ -72,7 +50,7 @@ export class SavingsService {
     // Manual additions are already applied to currentTotal via addToSavings() during the month.
     // We only need to add the budget transfer amount.
     const newTotal = currentTotal + record.transferredToSavings;
-    
+
     // Default new fields for old records (fallback)
     const fullRecord: MonthlyRecord = {
       ...record,
@@ -92,7 +70,7 @@ export class SavingsService {
       this.totalSavings.set(amount);
       this.saveState();
   }
-  
+
   addToSavings(amount: number) {
       this.totalSavings.update(v => v + amount);
       this.saveState();
@@ -105,7 +83,22 @@ export class SavingsService {
   }
 
   private saveState() {
-    this.persistenceService.setSavings(this.totalSavings(), this.history());
+    const data = this.historyStore.getData();
+    const now = new Date().toISOString();
+    const summary = data.savingsSummary ?? {
+      totalSavings: 0,
+      manualSavingsLog: 0,
+      lastUpdated: now
+    };
+
+    this.historyStore.updateData({
+      savingsHistory: this.history(),
+      savingsSummary: {
+        ...summary,
+        totalSavings: this.totalSavings(),
+        lastUpdated: now
+      }
+    });
   }
 
   // --- REVERT LOGIC ---
@@ -114,17 +107,16 @@ export class SavingsService {
       if (records.length === 0) return null;
 
       const lastRecord = records[records.length - 1];
-      
+
       // Revert the total savings calculation
       // Logic: newTotal = oldTotal + transferredToSavings
       // So: oldTotal = newTotal - transferredToSavings
       const revertedTotal = this.totalSavings() - lastRecord.transferredToSavings;
-      
+
       this.totalSavings.set(revertedTotal);
       this.history.update(h => h.slice(0, -1)); // Remove last
       this.saveState();
-      
+
       return lastRecord;
   }
 }
-

@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "life-value-finance": {
+    "qeeva": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -39,7 +39,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/life-value-finance",
+            "outputPath": "dist/qeeva",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -73,8 +73,8 @@
             "ssr": {
               "entry": "src/server.ts"
             }
-          
-            
+
+
           },
             "configurations": {
             "production": {
@@ -99,7 +99,7 @@
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.ts" 
+                  "with": "src/environments/environment.ts"
                 }
               ],
               "serviceWorker": "ngsw-config.json"
@@ -122,10 +122,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "life-value-finance:build:production"
+              "buildTarget": "qeeva:build:production"
             },
             "development": {
-              "buildTarget": "life-value-finance:build:development"
+              "buildTarget": "qeeva:build:development"
             }
           },
           "defaultConfiguration": "development"

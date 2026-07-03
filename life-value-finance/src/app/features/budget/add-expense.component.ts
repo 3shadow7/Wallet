@@ -19,8 +19,8 @@ export class AddExpenseComponent {
   private fb = inject(FormBuilder);
   private budgetState = inject(BudgetStateService);
 
-  priorityOptions = ['Must Have', 'Want', 'Emergency', 'Gift'];
-  typeOptions = ['Burning', 'Responsibility', 'Saving'];
+  priorityOptions = ['Must', 'Want', 'Emergency', 'Gift'];
+  typeOptions = ['Burn', 'Tax', 'Saving'];
 
   viewedMonth = this.budgetState.viewedMonthSignal;
 
@@ -29,21 +29,46 @@ export class AddExpenseComponent {
     priority: [null, Validators.required],
     amount: [null, [Validators.required, Validators.min(0.01)]],
     type: [null, Validators.required],
+    // Long-term saving goal; only meaningful when type === 'Saving'.
+    // Matches ExpenseItem.targetTotal in @core/domain/models.
+    targetTotal: [null],
   });
+
+  // Keeps the targetTotal field required only while Type = Saving,
+  // and clears any stale value/error when the user switches away from it.
+  onTypeChange(type: string) {
+    this.expenseForm.patchValue({ type });
+
+    const goalControl = this.expenseForm.get('targetTotal');
+    if (!goalControl) return;
+
+    if (type === 'Saving') {
+      goalControl.setValidators([Validators.required, Validators.min(0.01)]);
+    } else {
+      goalControl.clearValidators();
+      goalControl.setValue(null);
+    }
+    goalControl.updateValueAndValidity();
+  }
 
   submitExpense() {
     if (this.expenseForm.valid) {
       const val = this.expenseForm.value;
       const amount = Number(val.amount);
-      
-      // Validation: Cannot add Savings if it exceeds remaining free money
-      if (val.type === 'Saving') {
+
+        if (val.type === 'Saving') {
           const currentFreeMoney = this.budgetState.remainingIncome();
-          if (amount > currentFreeMoney) {
-              alert(`Cannot add to saving of $${amount} because you only have $${currentFreeMoney.toFixed(2)} free money remaining.`);
+          if (currentFreeMoney - amount < 0) {
+            const deficit = Math.abs(currentFreeMoney - amount);
+            const msg = `⚠️ Savings Overcommitted\n\n` +
+                  `This saving item exceeds your available free money by $${deficit.toFixed(2)}.\n` +
+                  `You have $${currentFreeMoney.toFixed(2)} available right now.\n\n` +
+                  `You can still add it and adjust which saving items are reduced later.`;
+            if (!confirm(msg)) {
               return;
+            }
           }
-      }
+        }
 
       const newExpense: ExpenseItem = {
         id: crypto.randomUUID(),
@@ -53,16 +78,19 @@ export class AddExpenseComponent {
         unitPrice: amount, // Default for single item
         quantity: 1,       // Default for single item
         type: val.type,
-        priority: val.priority
+        priority: val.priority,
+        // Long-term target for Saving-type items; undefined for all other types
+        targetTotal: val.type === 'Saving' ? Number(val.targetTotal) : undefined,
       };
-      
+
       this.budgetState.addExpense(newExpense);
-      
-      this.expenseForm.reset({ 
+
+      this.expenseForm.reset({
         name: '',
         amount: null,
         type: null,
-        priority: null
+        priority: null,
+        targetTotal: null,
       });
     }
   }

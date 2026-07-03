@@ -1,7 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
-@use 'app/theme/variables' as v;
-@use 'app/theme/mixins' as m;
-@use 'app/theme/ag-grid-overrides';
+@use 'app/design-system/theme/variables' as v;
+@use 'app/design-system/theme/mixins' as m;
+@use 'app/design-system/theme/ag-grid-overrides';
 
 // Reset & Base
 html, body {
@@ -10,30 +10,30 @@ html, body {
   font-family: var(--font-family-body, 'Inter', sans-serif);
   overflow-x: hidden; // Prevent horizontal scroll
   scroll-behavior: smooth;
-  
+
   // Default font size (16px base)
-  font-size: 16px; 
-  
-  background-color: var(--bg-secondary);
+  font-size: 16px;
+
+  background-color: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 
   // Staggered Transitions
-  transition: 
+  transition:
     background-color 1.5s ease-in-out,
     color 0.3s ease-in-out,
     border-color 1.2s ease-in-out;
 
   @include m.respond-to('max-xs') {
-      font-size: 12px; 
+      font-size: 12px;
   }
 }
 
 // Global Transition Rule
 // Apply to common container elements to propagate the effect
 *, *::before, *::after {
-  transition: 
+  transition:
     background-color 1s ease-in-out,
     color 0.3s ease-in-out,
     border-color 2s ease-in-out,
@@ -54,7 +54,7 @@ h2 { font-size: var(--font-size-lg, 1.5rem); }
 h3 { font-size: var(--font-size-md, 1.2rem); font-weight: var(--font-weight-medium); }
 
 // Buttons
-button, .btn-primary {
+button:has(:not(.a)), .btn-primary {
   cursor: pointer;
   border: none;
   border-radius: var(--radius-sm);
@@ -63,20 +63,36 @@ button, .btn-primary {
   font-weight: var(--font-weight-medium);
   transition: all 0.2s ease;
   font-size: 0.9rem;
-  
+
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 }
 
-.btn-primary {
-  background-color: var(--primary-color);
-  color: #fff;
-  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1); 
+.a {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-weight: var(--font-weight-medium);
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
 
   &:hover:not(:disabled) {
-    background-color: hsl(var(--color-primary-hue), var(--color-primary-sat), 45%); 
+    color: var(--primary-color-hover);;
+    text-decoration: none;
+  }
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--text-inverse);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1);
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-color-hover);
     transform: translateY(-0.0625rem);
     box-shadow: 0 0.25rem 0.375rem rgba(0,0,0,0.15);
   }
@@ -98,17 +114,17 @@ input, select {
 
 /* --- Glassmorphism Effect --- */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03); /* Extremely subtle fill */
+  background: color-mix(in srgb, var(--bg-elev-2), transparent 90%); /* Subtle elevated fill */
   backdrop-filter: blur(0.75rem);
   -webkit-backdrop-filter: blur(0.75rem);
-  border: 0.0625rem solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
+  border: 0.0625rem solid color-mix(in srgb, var(--border-color), transparent 60%);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Dark Mode Specific Glass override if needed */
 [data-theme="dark"] .glass-panel {
-  background: rgba(0, 0, 0, 0.2); 
-  border: 0.0625rem solid rgba(255, 255, 255, 0.05); /* Lighter border for visibility */
+  background: color-mix(in srgb, var(--bg-elev-2), transparent 75%);
+  border: 0.0625rem solid color-mix(in srgb, var(--border-color), transparent 40%);
 }
 
 
@@ -118,17 +134,17 @@ input, select {
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   /* The trick: use a pseudo-element behind the card */
-  z-index: 1; 
+  z-index: 1;
 
   &::before {
     content: "";
     position: absolute;
     inset: -0.125rem; /* Border thickness */
-    border-radius: calc(var(--radius-lg) + 0.125rem); 
+    border-radius: calc(var(--radius-lg) + 0.125rem);
     background: linear-gradient(
-      135deg, 
+      135deg,
       rgba(255, 255, 255, 0.1),
-      var(--primary-color), 
+      var(--primary-color),
       rgba(255, 255, 255, 0.1)
     );
     z-index: -1;
@@ -143,7 +159,7 @@ input, select {
 
 /* Mobile: Disable user selection for interactive elements */
 @include m.respond-to('max-xs') {
-  *:not(span,p,h1,h2,h3,h4,h5,h6) {  
+  *:not(span,p,h1,h2,h3,h4,h5,h6) {
     text-decoration: none;
     outline: none;
     -webkit-tap-highlight-color: transparent;

@@ -14,7 +14,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
   encapsulation: ViewEncapsulation.None
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'life-value-finance';
+  title = 'Qeeva';
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
 
@@ -160,7 +160,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  
+
   scrollToTop() {
     setTimeout(() => {
       const body = document.querySelector('.header');

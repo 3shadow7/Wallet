@@ -1,6 +1,6 @@
 @use 'sass:color';
-@use '../../theme/variables' as v;
-@use '../../theme/mixins' as m;
+@use '../../design-system/theme/variables' as v;
+@use '../../design-system/theme/mixins' as m;
 
 .history-container {
     margin: 0 auto;
@@ -199,7 +199,7 @@ header h1 {
                         background: v.$bg-input;
                         padding: v.$spacing-md v.$spacing-lg; // More horizontal padding
                         // border-radius: 0.5rem;
-                        
+
                         @include m.respond-to('max-sm') {
                             flex-direction: column;
                             align-items: flex-start;
@@ -212,7 +212,7 @@ header h1 {
                             color: v.$text-secondary;
                             font-weight: 600;
                             min-width: 3.75rem;
-                            
+
                             @include m.respond-to('max-sm') {
                                 margin-bottom: 1rem; // Add space below label on mobile
                             }
@@ -254,7 +254,7 @@ header h1 {
     width: 12px !important;
     height: 12px !important;
     border-radius: 0 !important;
-    
+
     // Hide default SVG if present (from previous attempts or default rendering)
     svg {
         display: none !important;
@@ -270,7 +270,7 @@ header h1 {
         height: 0;
         border-style: solid;
         border-width: 12px 12px 0 0;
-        border-color: #8b5cf6 transparent transparent transparent;
+        border-color: var(--primary-color) transparent transparent transparent;
         z-index: 1;
     }
 
@@ -284,7 +284,7 @@ header h1 {
         height: 0;
         border-style: solid;
         border-width: 0 0 12px 12px;
-        border-color: transparent transparent #1e293b transparent;
+        border-color: transparent transparent var(--bg-elev-2) transparent;
         z-index: 1;
     }
 }
@@ -303,9 +303,9 @@ header h1 {
         display: flex;
         flex-direction: column;
         gap: 0.5rem; // Reduced gap between header and list
-        
+
         // Constrain height for scrolling
-        max-height: 78vh; 
+        max-height: 78vh;
         min-height: 25rem;
         overflow: hidden; // Contain the scrolling child
         position: relative; // Context
@@ -314,12 +314,12 @@ header h1 {
     .mobile-header {
         flex-shrink: 0; // Don't shrink the header
         padding: 0 0.5rem;
-        
+
         h3 {
             font-size: 1.35rem;
             font-weight: 800;
             color: v.$text-primary;
-            margin-bottom: 0px; 
+            margin-bottom: 0px;
         }
     }
 
@@ -331,7 +331,7 @@ header h1 {
         gap: 1.25rem;
         // Ample bottom padding to ensure last card visibility
     padding: 0.5rem 0.5rem 1.5rem 0.5rem;
-        
+
         // Scrollbar styling for webkit
         &::-webkit-scrollbar {
             width: 4px;
@@ -390,12 +390,39 @@ header h1 {
         background: var(--bg-surface);
         border: 1px solid v.$border-color;
 
+        &.ignored-card {
+            opacity: 0.65;
+            background-color: var(--bg-app) !important;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.06) 10px, rgba(0, 0, 0, 0.06) 20px);
+            border: 1px dashed var(--text-secondary) !important;
+            box-shadow: none;
+        }
+
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid v.$border-color;
             padding-bottom: 0.75rem;
+            .history-toggle-pill {
+                border: 0.0625rem solid v.$border-color;
+                background: v.$surface-color;
+                color: v.$text-secondary;
+                border-radius: v.$radius-full;
+                padding: 0.25rem 0.6rem;
+                font-size: 0.8rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                white-space: nowrap;
+                box-shadow: v.$shadow-sm;
+
+                &:hover {
+                    background: v.$bg-input;
+                    color: v.$primary-color;
+                    border-color: color-mix(in srgb, v.$primary-color, transparent 60%);
+                }
+            }
 
             .month-label {
                 font-size: 1.2rem;
@@ -427,7 +454,7 @@ header h1 {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            
+
             .stat-group {
                 display: flex;
                 flex-direction: column;
@@ -448,7 +475,7 @@ header h1 {
                     &.income { color: v.$success-color; }
                     &.expense { color: var(--danger-color); }
                     &.target { color: v.$text-secondary; }
-                    
+
                     &.saved {
                          color: v.$primary-color;
                          &.deficit { color: var(--danger-color); }
@@ -480,7 +507,7 @@ header h1 {
                     font-weight: 700;
                 }
             }
-            
+
             // Contextual styling for impact
             &.positive {
                 border-left: 3px solid v.$success-color;
@@ -489,8 +516,8 @@ header h1 {
 
             &.negative {
                 border-left: 3px solid var(--danger-color);
-                background-color: color.mix(#ff0000, white, 5%); // Using standard color mix for subtle red bg
-                
+                background-color: color-mix(in srgb, var(--danger-color), transparent 90%); // Subtle danger tint for context
+
                 .impact-header .val { color: var(--danger-color); }
             }
 
@@ -500,9 +527,9 @@ header h1 {
                 display: flex;
                 align-items: center;
                 gap: 0.5rem;
-                
+
                  .warning {
-                    color: #d97706; // Amber-600 like color for warning
+                         color: var(--warning-color);
                     font-weight: 500;
                  }
             }
@@ -514,13 +541,17 @@ header h1 {
             gap: 0.5rem;
             font-size: 0.85rem;
             font-weight: 600;
-            color: #d97706; // Amber
-            background: rgba(#d97706, 0.1);
+            color: var(--warning-color);
+            background: color-mix(in srgb, var(--warning-color), transparent 90%);
             padding: 0.5rem;
             border-radius: v.$radius-sm;
             margin-top: 0.25rem;
-            
+
             .icon { font-size: 1rem; }
         }
     }
+}
+
+.custom-toggle {
+  @include m.toggle-style;
 }

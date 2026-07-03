@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy, HostListener } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -12,11 +12,23 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './register.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
+   URLSTATE_isActionFromUser = (window?.history && window?.history?.state?.URLSTATE_isActionFromUser) ?? null; // an optional input uses (url state input) to determine if the action is initiated by the user (e.g., clicking a "Register" button)
+
+  ngOnInit(): void {
+    if (this.URLSTATE_isActionFromUser) {
+      // ignore the redirect logic if the action is initiated by the user (e.g., clicking a "Register" button)
+    }else {
+      // If the user is already authenticated or a guest, redirect them to the dashboard
+      if (this.authService.isAuthenticated() || this.authService.isGuest()) {
+        this.router.navigate(['/dashboard']);
+      }
+    }
+  }
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
-  
+
   isLoading = signal(false);
 
   // 3D Mouse Tracking Logic
@@ -31,7 +43,7 @@ export class RegisterComponent {
     this.mouseX.set(x);
     this.mouseY.set(y);
   }
-  
+
   registerForm = this.fb.group({
     username: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
@@ -50,27 +62,24 @@ export class RegisterComponent {
     this.router.navigate(['/dashboard']);
   }
 
+  onLoginClick() {
+    // Navigate to the login page
+    this.router.navigate(['/login'], {
+      state: {
+        URLSTATE_isActionFromUser: true // 👈 Sent ONLY on button click
+      }
+    });
+  }
+
   onSubmit() {
     if (this.registerForm.valid) {
       this.isLoading.set(true);
       this.errorMessage.set(null);
-      
+
       this.authService.register(this.registerForm.value).subscribe({
         next: () => {
-          // Auto login after registration
-          this.authService.login({
-            username: this.registerForm.value.username,
-            password: this.registerForm.value.password
-          }).subscribe({
-            next: () => {
-              this.isLoading.set(false);
-              this.router.navigate(['/dashboard']);
-            },
-            error: (err) => {
-              this.isLoading.set(false);
-              this.router.navigate(['/login']); // Fallback
-            }
-          });
+          this.isLoading.set(false);
+          this.router.navigate(['/dashboard']);
         },
         error: (err) => {
           this.isLoading.set(false);

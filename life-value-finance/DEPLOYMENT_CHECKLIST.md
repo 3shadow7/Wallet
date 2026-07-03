@@ -1,6 +1,6 @@
 Deployment checklist for MyWallet PWA
 
-- Serve the production `dist/life-value-finance` from a secure origin (HTTPS).
+- Serve the production `dist/qeeva` from a secure origin (HTTPS).
 - Ensure `ngsw-worker.js` and `manifest.webmanifest` are served at the site root (e.g., `https://example.com/manifest.webmanifest`).
 - Verify `ngsw-config.json` `index` and `assetGroups` match your deployment root.
 - If using a reverse proxy, make sure it forwards `/ngsw-worker.js` and `/ngsw.json` without modification.
