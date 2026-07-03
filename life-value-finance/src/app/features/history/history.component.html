@@ -125,11 +125,32 @@
                 </div>
             }
 
-            @for (item of history().reverse(); track item.date) {
-                <div class="history-card">
+            @for (item of reverseHistory(); track item.date) {
+                <div class="history-card" [ngClass]="{'ignored-card': item.excludedFromTotals}">
                     <div class="card-header">
                         <span class="month-label">{{ item.month }}</span>
-                        <button class="history-toggle-pill" (click)="toggleHistoryMonthExcluded(item.month)">{{ item.excludedFromTotals ? 'Count' : 'Ignore' }}</button>
+
+                        <!-- Toggle Switch -->
+                        <div class="custom-toggle">
+                        <!-- Optional Label Above -->
+                        <!-- <span class="toggle-label-above">{{ item.excludedFromTotals ? 'Count' : 'Ignore' }}</span> -->
+
+                        <label class="toggle-switch-wrapper">
+                          <input
+                            type="checkbox"
+                            class="toggle-input"
+                            [checked]="!item.excludedFromTotals"
+                            (change)="toggleHistoryMonthExcluded(item.month)">
+
+                          <!-- Track uses data attributes to pass the dynamic inner text to CSS -->
+                          <div class="toggle-track" [attr.data-on]="'Count'" [attr.data-off]="'Ignore'">
+                            <div class="toggle-knob"></div>
+                          </div>
+                        </label>
+                      </div>
+                      <!-- end Toggle Switch -->
+
+                        <!-- <button class="history-toggle-pill" (click)="toggleHistoryMonthExcluded(item.month)">{{ item.excludedFromTotals ? 'Count' : 'Ignore' }}</button> -->
                         <span class="balance-badge">
                             <span class="label">Total Balance:</span>
                             <span class="val">{{ item.savingsTotalAfterTransfer | currency:'USD':'symbol':'1.0-0' }}</span>

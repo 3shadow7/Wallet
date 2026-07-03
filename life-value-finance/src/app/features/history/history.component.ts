@@ -35,6 +35,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   // Signals
   totalSavings = this.savingsService.totalSavingsSignal;
   history = this.savingsService.historySignal;
+  reverseHistory = computed(() => [...this.history()].reverse());
   detailedHistory = this.budgetState.historySignal;
   avgSavingsRate = this.savingsService.averageSavingsRate;
 

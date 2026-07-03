@@ -390,6 +390,14 @@ header h1 {
         background: var(--bg-surface);
         border: 1px solid v.$border-color;
 
+        &.ignored-card {
+            opacity: 0.65;
+            background-color: var(--bg-app) !important;
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.06) 10px, rgba(0, 0, 0, 0.06) 20px);
+            border: 1px dashed var(--text-secondary) !important;
+            box-shadow: none;
+        }
+
         .card-header {
             display: flex;
             justify-content: space-between;
@@ -542,4 +550,8 @@ header h1 {
             .icon { font-size: 1rem; }
         }
     }
+}
+
+.custom-toggle {
+  @include m.toggle-style;
 }
