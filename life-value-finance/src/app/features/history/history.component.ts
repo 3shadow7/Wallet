@@ -483,16 +483,6 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
-
-          // ADD THIS Y-AXIS CONFIGURATION
-          yaxis: {
-              labels: {
-                  formatter: (value: number) => {
-                      return value.toFixed(2);
-                  }
-              }
-          },
-
           grid: commonGrid,
           colors: [tokens.primary],
           fill: {
@@ -508,7 +498,16 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               theme: themeMode,
               y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
-          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } }
+          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
       };
 
       this.sChart = new ApexCharts(this.savingsChartEl.nativeElement, savingsOptions);
@@ -567,7 +566,16 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               theme: themeMode,
               y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
-          legend: { position: 'top', horizontalAlign: 'right' }
+          legend: { position: 'top', horizontalAlign: 'right' },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
 
       };
 
@@ -707,6 +715,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           tooltip: {
             theme: themeMode,
             y: { formatter: (val: number) => '$' + val.toLocaleString() }
+          },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
           }
       };
 
@@ -823,6 +840,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           tooltip: {
             theme: themeMode,
             y: { formatter: (val: number) => '$' + val.toLocaleString() }
+          },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
           }
       };
 
