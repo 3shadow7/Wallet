@@ -90,7 +90,14 @@
   height: 100%;
   justify-content: flex-start;
   padding: v.$spacing-xl;
-    flex: 1 0 auto;
+  flex: 1 0 auto;
+
+
+  .details-container {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+  }
 
   .icon-container {
       width: 3.75rem;
@@ -294,4 +301,5 @@
     height: 100%;
     color: var(--text-secondary);
   }
+
 
