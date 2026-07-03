@@ -17,19 +17,27 @@
               </button>
             </div>
                         @if (canToggleMonthTotals()) {
-                            <button
-                                class="btn-month-totals-toggle"
-                                type="button"
-                                (click)="toggleMonthTotals()"
-                                [class.is-excluded]="isExcludedFromTotals()"
-                                [attr.aria-pressed]="!isExcludedFromTotals()"
-                            >
-                                @if (isExcludedFromTotals()) {
-                                    Count Income
-                                } @else {
-                                    Ignore Income
-                                }
-                            </button>
+                           <!-- Toggle Switch -->
+                        <div class="custom-toggle">
+                        <!-- Optional Label Above -->
+                        <!-- <span class="toggle-label-above">{{ item.excludedFromTotals ? 'Count' : 'Ignore' }}</span> -->
+
+                        <label class="toggle-switch-wrapper">
+                          <input
+                            type="checkbox"
+                            class="toggle-input"
+                            [checked]="!isExcludedFromTotals()"
+                            (change)="toggleMonthTotals()">
+
+                          <!-- Track uses data attributes to pass the dynamic inner text to CSS -->
+                          <div class="toggle-track" [attr.data-on]="'Count Income'" [attr.data-off]="'Ignore Income'">
+                            <!-- <div class="toggle-track-inner"> -->
+                              <div class="toggle-knob"></div>
+                            <!-- </div> -->
+                          </div>
+                        </label>
+                      </div>
+                      <!-- end Toggle Switch -->
                         }
           </div>
           <span class="row-count">{{ expenses().length }} Items</span>
@@ -145,19 +153,6 @@
                         </label>
                       </div>
                       <!-- end Toggle Switch -->
-                    <!-- <button
-                        class="btn-month-totals-toggle mobile-toggle"
-                        type="button"
-                        (click)="toggleMonthTotals()"
-                        [class.is-excluded]="isExcludedFromTotals()"
-                        [attr.aria-pressed]="!isExcludedFromTotals()"
-                    >
-                        @if (isExcludedFromTotals()) {
-                            Count Income
-                        } @else {
-                            Ignore Income
-                        }
-                    </button> -->
                 }
                 <div class="history-badge-mobile">HISTORY VIEW</div>
             </div>
