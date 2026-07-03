@@ -3,3 +3,5 @@ package.json
 node_modules/
 dist/
 backend/venv/
+backend/**/__pycache__/
+.history
