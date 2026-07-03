@@ -21,7 +21,7 @@
     height: 50rem;
     border-radius: 50%;
     filter: blur(5rem); /* Blur effect */
-    z-index: 0; 
+    z-index: 0;
     opacity: 0.15; /* Barely seeing */
     pointer-events: none;
     transition: background 1s ease;
@@ -105,8 +105,8 @@
 
   // Expenses Specifics
   &.expenses {
-      border-left: 0.25rem solid v.$error-color;
-      
+      // border-left: 0.25rem solid v.$error-color;
+
       .icon-container {
           background: color-mix(in srgb, var(--danger-color), transparent 90%);
           color: v.$error-color;
@@ -116,7 +116,7 @@
 
   // Remaining Specifics
   &.remaining {
-      border-left: 0.25rem solid v.$success-color;
+      // border-left: 0.25rem solid v.$success-color;
 
       .icon-container {
           background: color-mix(in srgb, var(--success-color), transparent 90%);
@@ -149,7 +149,7 @@
            border: 0.0625rem solid color-mix(in srgb, var(--primary-color), transparent 80%);
            color: v.$primary-color;
             width: fit-content;
-           
+
            &.deficit {
               border-color: color-mix(in srgb, var(--danger-color), transparent 50%);
               color: v.$error-color;
@@ -161,9 +161,9 @@
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          margin-left: auto; 
+          margin-left: auto;
           z-index: 2;
-          
+
           // Use mixin or custom style that matches card
           input {
             @include m.input-style;
@@ -173,7 +173,7 @@
               border-radius: v.$radius-sm;
               font-size: 0.85rem;
               outline: none;
-              
+
               &::placeholder {
                  font-size: 0.8rem;
               }
@@ -188,20 +188,20 @@
               align-items: center;
               justify-content: center;
               border: none;
-              background-color: v.$primary-color; 
-              color: white; 
+              background-color: v.$primary-color;
+              color: white;
               border-radius: v.$radius-sm;
               cursor: pointer;
               font-weight: bold;
               font-size: 1.1rem;
               line-height: inherit;
               transition: all 0.2s;
-              
+
               &:hover {
                   background-color: color-mix(in srgb, var(--primary-color), black 10%);
                   transform: scale(1.05);
               }
-              
+
               &:active {
                  transform: scale(0.95);
               }
@@ -212,7 +212,7 @@
   .savings-input-container{
     margin-left: auto;
   }
-  
+
   // Text Details
   .details {
       display: flex;
@@ -262,7 +262,7 @@
 
   // Wide layout: Table takes 2.5x space, Calculator takes 1x
   @media (min-width: 64rem) {
-    grid-template-columns: 2.5fr 1fr; 
+    grid-template-columns: 2.5fr 1fr;
     align-items: start; // Keep calculator at top even if table is long
   }
 }
@@ -277,12 +277,12 @@
     height: 100%;
   position: sticky;
   top: v.$spacing-lg;
-  
+
   // On mobile, just stack it normally
   @media (max-width: 64rem) {
     position: static;
   }
-  
+
   .amount {
       margin-top: var(--spacing-sm);
       color: var(--text-secondary);

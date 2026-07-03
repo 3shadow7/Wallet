@@ -125,7 +125,7 @@
                 </div>
             }
 
-            @for (item of history(); track item.date) {
+            @for (item of history().reverse(); track item.date) {
                 <div class="history-card">
                     <div class="card-header">
                         <span class="month-label">{{ item.month }}</span>
