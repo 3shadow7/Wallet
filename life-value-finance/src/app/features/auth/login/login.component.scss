@@ -81,12 +81,16 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    
+
     .logo-icon {
       background: rgba(255, 255, 255, 0.15);
       padding: var(--spacing-sm);
       border-radius: var(--radius-md);
       backdrop-filter: blur(8px);
+
+      img {
+        display: block;
+      }
     }
 
     .brand-name {
@@ -100,7 +104,7 @@
     position: relative;
     z-index: 10;
     max-width: 32rem;
-    
+
     h2 {
       font-size: var(--font-size-xxl);
       line-height: 1.1;
@@ -188,7 +192,7 @@
 
   .input-wrapper {
     position: relative;
-    
+
     .input-icon {
       position: absolute;
       left: var(--spacing-md);

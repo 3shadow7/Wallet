@@ -1,6 +1,6 @@
 Manual PWA verification steps
 
-1. Serve the production `dist/life-value-finance` folder on a secure host or local server (we used `npx http-server ./dist/life-value-finance -p 4400`).
+1. Serve the production `dist/qeeva` folder on a secure host or local server (we used `npx http-server ./dist/qeeva -p 4400`).
 
 2. Open Chrome (or Edge) and navigate to `http://localhost:4400/`.
 
@@ -29,5 +29,5 @@ Manual PWA verification steps
    - GET `/ngsw.json` → `application/json`
 
 8. Troubleshooting:
-   - Ensure server serves `dist/life-value-finance` at the site root, not `browser/` subfolder.
+   - Ensure server serves `dist/qeeva` at the site root, not `browser/` subfolder.
    - Ensure correct `Content-Type` headers and no reverse-proxy rewrites on those paths.

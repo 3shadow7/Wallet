@@ -38,7 +38,7 @@ export class BackupService {
     const a = document.createElement('a');
     a.href = url;
     const date = new Date().toISOString().split('T')[0];
-    a.download = `life-value-finance-backup-${date}.json`;
+    a.download = `qeeva-backup-${date}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

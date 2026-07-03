@@ -1,7 +1,7 @@
-# Life Value Finance — Personal Decision Intelligence Tool
+# Qeeva — Personal Decision Intelligence Tool
 
 ## Overview
-Life Value Finance is a privacy-first, offline-capable personal financial planning application built with modern web technologies. Unlike traditional budgeting apps that focus solely on currency, this tool emphasizes "Life Value" by converting financial costs into time-cost equivalents—helping users understand the true cost of their spending in terms of their life energy.
+Qeeva is a privacy-first, offline-capable personal financial planning application built with modern web technologies. It is designed to help you manage money with a simple, focused interface.
 
 ## Features
 - **Time-Value Calculation**: Instantly convert item prices into "hours of life" based on your hourly rate.
@@ -56,8 +56,8 @@ This project follows a **Standalone Architecture** pattern, eliminating `NgModul
 
 2. **Clone and Install**
    ```bash
-   git clone https://github.com/your-username/life-value-finance.git
-   cd life-value-finance
+  git clone https://github.com/your-username/qeeva.git
+  cd qeeva
    npm install
    ```
 
@@ -77,7 +77,7 @@ To build the project for production:
 ```bash
 ng build --configuration production
 ```
-The build artifacts will be stored in the `dist/life-value-finance` directory.
+The build artifacts will be stored in the `dist/qeeva` directory.
 
 ### Build Optimization
 The production configuration enables:
