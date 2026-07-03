@@ -453,6 +453,16 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
+
+          // ADD THIS Y-AXIS CONFIGURATION
+          yaxis: {
+              labels: {
+                  formatter: (value: number) => {
+                      return value.toFixed(2);
+                  }
+              }
+          },
+
           grid: commonGrid,
           colors: [tokens.primary],
           fill: {
@@ -466,7 +476,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           tooltip: {
               theme: themeMode,
-              y: { formatter: (val: number) => '$' + val.toLocaleString() }
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
           },
           markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } }
       };

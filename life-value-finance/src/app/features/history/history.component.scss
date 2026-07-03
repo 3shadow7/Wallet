@@ -508,7 +508,7 @@ header h1 {
 
             &.negative {
                 border-left: 3px solid var(--danger-color);
-                background-color: color-mix(in srgb, var(--danger-color), white 5%); // Subtle danger tint for context
+                background-color: color-mix(in srgb, var(--danger-color), transparent 90%); // Subtle danger tint for context
 
                 .impact-header .val { color: var(--danger-color); }
             }
