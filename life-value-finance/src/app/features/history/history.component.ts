@@ -277,6 +277,38 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         return getThemeTokens(this.isBrowser ? window : null);
     }
 
+    // Darkens a hex ("#rrggbb") or rgb(a) color string by `amount` (0-1 fraction).
+    // Returns the input unchanged if the format isn't recognized (e.g. named colors).
+    private darkenColor(color: string, amount: number): string {
+        const hexMatch = color.match(/^#([0-9a-fA-F]{6})$/);
+        if (hexMatch) {
+            const num = parseInt(hexMatch[1], 16);
+            const r = Math.max(0, Math.round(((num >> 16) & 0xff) * (1 - amount)));
+            const g = Math.max(0, Math.round(((num >> 8) & 0xff) * (1 - amount)));
+            const b = Math.max(0, Math.round((num & 0xff) * (1 - amount)));
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        const rgbMatch = color.match(/^rgba?\(([^)]+)\)$/);
+        if (rgbMatch) {
+            const parts = rgbMatch[1].split(',').map(p => parseFloat(p.trim()));
+            const [r, g, b, a] = parts;
+            const nr = Math.max(0, Math.round(r * (1 - amount)));
+            const ng = Math.max(0, Math.round(g * (1 - amount)));
+            const nb = Math.max(0, Math.round(b * (1 - amount)));
+            return a !== undefined ? `rgba(${nr}, ${ng}, ${nb}, ${a})` : `rgb(${nr}, ${ng}, ${nb})`;
+        }
+
+        return color;
+    }
+
+    // Chart series colors read from tokens are too bright against a dark
+    // background, so knock them down 20% whenever dark mode is active.
+    // Used everywhere a chart color is computed, including on theme toggle.
+    private getSeriesColor(baseColor: string): string {
+        return this.themeService.isDark() ? this.darkenColor(baseColor, 0.20) : baseColor;
+    }
+
   private updateChartTheme(isDark: boolean) {
       const themeMode = isDark ? 'dark' : 'light';
       const tokens = this.tokens;
@@ -315,7 +347,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       if (this.sChart) {
           this.sChart.updateOptions({
               ...commonOptions,
-              colors: [tokens.primary]
+              colors: [this.getSeriesColor(tokens.primary)]
           });
       }
 
@@ -323,11 +355,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           this.eChart.updateOptions({
               ...commonOptions,
               colors: [
-                  tokens.success, // Income
-                  tokens.danger,  // Expenses
-                  tokens.warning, // Direct Additions
-                  function({ value }: { value: number }) {
-                          return value < 0 ? tokens.textPrimary : tokens.primary; // Deficit vs Saved
+                  this.getSeriesColor(tokens.success), // Income
+                  this.getSeriesColor(tokens.danger),  // Expenses
+                  this.getSeriesColor(tokens.warning), // Direct Additions
+                  ({ value }: { value: number }) => {
+                          return this.getSeriesColor(value < 0 ? tokens.textPrimary : tokens.primary); // Deficit vs Saved
                   }
               ]
           });
@@ -493,7 +525,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               }
           },
           grid: commonGrid,
-          colors: [tokens.primary],
+          colors: [this.getSeriesColor(tokens.primary)],
           fill: {
               type: 'gradient',
               gradient: {
@@ -507,7 +539,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               theme: themeMode,
               y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
-          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } },
+          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: this.getSeriesColor(tokens.primary), strokeWidth: 2, hover: { size: 6 } },
           states: {
               hover: {
                   filter: { type: 'darken', value: 0.05 }
@@ -563,11 +595,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           grid: commonGrid,
                     colors: [
-                        tokens.success, // Income
-                        tokens.danger,  // Expenses
-                        tokens.warning, // Direct Additions
-                        function({ value }: { value: number }) {
-                                return value < 0 ? tokens.textPrimary : tokens.primary; // Deficit vs Saved
+                        this.getSeriesColor(tokens.success), // Income
+                        this.getSeriesColor(tokens.danger),  // Expenses
+                        this.getSeriesColor(tokens.warning), // Direct Additions
+                        ({ value }: { value: number }) => {
+                                return this.getSeriesColor(value < 0 ? tokens.textPrimary : tokens.primary); // Deficit vs Saved
                         }
                     ],
           fill: { opacity: 1 },
@@ -632,7 +664,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           'Emergency': tokens.textPrimary,
           'Gift': tokens.primary
       };
-      return map[category] || tokens.textSecondary;
+      return this.getSeriesColor(map[category] || tokens.textSecondary);
   }
 
   // Data-label text colors for the Breakdown chart, one per series in the
@@ -825,7 +857,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           colors: [
               tokens.primary, tokens.warning, tokens.success, tokens.danger, tokens.info,
               tokens.textPrimary, tokens.textSecondary, tokens.bgSurface, tokens.bgElev1, tokens.bgElev2
-          ],
+          ].map(c => this.getSeriesColor(c)),
           plotOptions: {
               treemap: {
                   distributed: true,
@@ -936,7 +968,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             else if (curr.type === 'Tax') color = tokens.warning; // Amber
             else if (curr.type === 'Saving') color = tokens.success; // Green
 
-            acc.push({ x: key, y: curr.amount, fillColor: color });
+            acc.push({ x: key, y: curr.amount, fillColor: this.getSeriesColor(color) });
         }
         return acc;
     }, [] as { x: string, y: number, fillColor?: string }[]);
