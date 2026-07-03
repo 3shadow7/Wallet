@@ -312,8 +312,26 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           }
       };
 
-      if (this.sChart) this.sChart.updateOptions(commonOptions);
-      if (this.eChart) this.eChart.updateOptions(commonOptions);
+      if (this.sChart) {
+          this.sChart.updateOptions({
+              ...commonOptions,
+              colors: [tokens.primary]
+          });
+      }
+
+      if (this.eChart) {
+          this.eChart.updateOptions({
+              ...commonOptions,
+              colors: [
+                  tokens.success, // Income
+                  tokens.danger,  // Expenses
+                  tokens.warning, // Direct Additions
+                  function({ value }: { value: number }) {
+                          return value < 0 ? tokens.textPrimary : tokens.primary; // Deficit vs Saved
+                  }
+              ]
+          });
+      }
 
       if (this.bChart) {
           this.bChart.updateOptions({
@@ -328,6 +346,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               }
             }
           });
+          // Bar colors depend on the current breakdown mode (type/priority) and
+          // are computed from CSS tokens, so recompute + reapply them here too.
+          const modeKeys = this.breakdownMode === 'type'
+              ? ['Burn', 'Tax', 'Saving']
+              : ['Must', 'Want', 'Emergency', 'Gift'];
+          this.bChart.updateOptions({
+              colors: modeKeys.map(k => this.getCategoryColor(k)),
+              dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
+          });
       }
 
       if (this.iChart) {
@@ -339,6 +366,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               }
               // Treemap dataLabels are usually white on colored blocks, so we don't override them with text color
           });
+          // Per-item tile colors (fillColor) were baked in from tokens at build time,
+          // so rebuild the series against the new theme's tokens.
+          this.updateItemChart();
       }
   }
 
@@ -476,7 +506,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           tooltip: {
               theme: themeMode,
-              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+              y: { formatter: (val: number) => '$' + val.toLocaleString() }
           },
           markers: { size: 4, colors: [tokens.bgSurface], strokeColors: tokens.primary, strokeWidth: 2, hover: { size: 6 } }
       };
@@ -586,6 +616,23 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           'Gift': tokens.primary
       };
       return map[category] || tokens.textSecondary;
+  }
+
+  // Data-label text colors for the Breakdown chart, one per series in the
+  // current mode's order. Emergency's bar fill IS tokens.textPrimary, which is
+  // also the default label color everywhere else, so its label would render
+  // invisible (dark-on-dark in light mode, light-on-light in dark mode).
+  // We force it to the opposite of the current theme instead.
+  private getBreakdownDataLabelColors(): string[] {
+      const isDark = this.themeService.isDark();
+      const textColor = this.tokens.textPrimary;
+      const emergencyLabelColor = isDark ? '#111111' : '#ffffff';
+
+      const keys = this.breakdownMode === 'type'
+          ? ['Burn', 'Tax', 'Saving']
+          : ['Must', 'Want', 'Emergency', 'Gift'];
+
+      return keys.map(k => k === 'Emergency' ? emergencyLabelColor : textColor);
   }
 
   // What fraction of this month's planned Saving items was actually honored,
@@ -721,7 +768,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
     this.bChart.updateOptions({
         xaxis: { categories: categories },
-        colors: colors.length > 0 ? colors : undefined
+        colors: colors.length > 0 ? colors : undefined,
+        dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
     });
 
     this.bChart.updateSeries(series);
