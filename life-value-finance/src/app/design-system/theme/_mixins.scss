@@ -182,9 +182,10 @@
     background-color: var(--bg-input); /*[cite: 2] */
     border-radius: var(--radius-full); /*[cite: 2] */
     border: 0.0625rem solid var(--border-color); /*[cite: 2] */
-    padding: 0.1875rem;
     transition: all 0.2s ease; /*[cite: 1] */
     box-sizing: border-box;
+    overflow: clip;
+    padding: 6%; /*[cite: 2] */
 
     /* Both texts are stacked in the exact same grid cell to dictate max width */
     &::before,
@@ -220,11 +221,16 @@
     }
   }
 
+  .toggle-track-inner{
+
+  }
+
   /* The sliding circular knob */
   .toggle-knob {
     position: absolute;
-    top: 0rem;
-    left: 0rem;
+    top: 50%;
+    left: 3%;
+    transform: translateY(-50%) translateX(0%);
     height: 1.5rem;
     width: 1.5rem;
     background-color: var(--bg-surface); /*[cite: 2] */
@@ -251,7 +257,8 @@
 
     .toggle-knob {
       /* Dynamically calculates the right edge: 100% width - knob size - padding */
-      left: calc(100% - 1.5rem );
+      left: 97%;
+      transform: translateY(-50%) translateX(-100%);
     }
   }
 
