@@ -483,6 +483,15 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
+
+          // ADD THIS Y-AXIS CONFIGURATION
+          yaxis: {
+              labels: {
+                  formatter: (value: number) => {
+                      return value.toFixed(2);
+                  }
+              }
+          },
           grid: commonGrid,
           colors: [tokens.primary],
           fill: {
