@@ -262,8 +262,6 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         const year = this.selectedYear(); // Ensure effect runs on year change too
         const detailed = this.detailedHistory(); // Ensure effect runs when a month is Ignored/Counted
 
-        console.log('Update Effect Triggered:', { selected, type, prio, year });
-
         if (this.iChart) {
             this.updateItemChart();
         }
@@ -273,8 +271,17 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   // State to track if user has manually filtered
   private userHasInteractedWithSlider = false;
 
-    private get tokens() {
+    // Memoized: getThemeTokens() forces a getComputedStyle() read. Keying this
+    // computed() off themeService.isDark() means the DOM is only touched once
+    // per real theme change instead of once per `this.tokens` access (which
+    // was happening 6-10x per update cycle across the various chart methods).
+    private tokensCache = computed(() => {
+        this.themeService.isDark(); // dependency: recompute only when theme flips
         return getThemeTokens(this.isBrowser ? window : null);
+    });
+
+    private get tokens() {
+        return this.tokensCache();
     }
 
     // Darkens a hex ("#rrggbb") or rgb(a) color string by `amount` (0-1 fraction).
@@ -368,6 +375,14 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       }
 
       if (this.bChart) {
+          // Bar colors depend on the current breakdown mode (type/priority) and
+          // are computed from CSS tokens. Read them once and fold into a single
+          // updateOptions() call instead of two separate writes (was causing an
+          // extra ApexCharts render cycle right after commonOptions applied).
+          const modeKeys = this.breakdownMode === 'type'
+              ? ['Burn', 'Tax', 'Saving']
+              : ['Must', 'Want', 'Emergency', 'Gift'];
+
           this.bChart.updateOptions({
             ...commonOptions,
             plotOptions: {
@@ -378,16 +393,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
                   }
                 }
               }
-            }
-          });
-          // Bar colors depend on the current breakdown mode (type/priority) and
-          // are computed from CSS tokens, so recompute + reapply them here too.
-          const modeKeys = this.breakdownMode === 'type'
-              ? ['Burn', 'Tax', 'Saving']
-              : ['Must', 'Want', 'Emergency', 'Gift'];
-          this.bChart.updateOptions({
-              colors: modeKeys.map(k => this.getCategoryColor(k)),
-              dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
+            },
+            colors: modeKeys.map(k => this.getCategoryColor(k, tokens)),
+            dataLabels: { style: { colors: this.getBreakdownDataLabelColors(textColor) } }
           });
       }
 
@@ -635,31 +643,28 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       // Ignored months should not influence any chart
       const data = rawData.filter(d => !d.excludedFromTotals);
 
-      this.sChart.updateSeries([{
-          data: data.map(d => d.savingsTotalAfterTransfer)
-      }]);
+      const categories = data.map(d => d.month);
 
+      // Series + xaxis categories folded into one updateOptions() call each,
+      // instead of updateSeries() immediately followed by updateOptions()
+      // (each call is its own ApexCharts render/layout pass).
       this.sChart.updateOptions({
-          xaxis: { categories: data.map(d => d.month) }
+          series: [{ data: data.map(d => d.savingsTotalAfterTransfer) }],
+          xaxis: { categories }
       });
 
-      this.eChart.updateSeries([{
-          data: data.map(d => d.income)
-      }, {
-          data: data.map(d => d.expenses)
-      }, {
-          data: data.map(d => d.manualAdded || 0)
-      }, {
-          data: data.map(d => d.transferredToSavings)
-      }]);
-
       this.eChart.updateOptions({
-          xaxis: { categories: data.map(d => d.month) }
+          series: [
+              { data: data.map(d => d.income) },
+              { data: data.map(d => d.expenses) },
+              { data: data.map(d => d.manualAdded || 0) },
+              { data: data.map(d => d.transferredToSavings) }
+          ],
+          xaxis: { categories }
       });
   }
 
-  private getCategoryColor(category: string): string {
-      const tokens = this.tokens;
+  private getCategoryColor(category: string, tokens: ReturnType<typeof getThemeTokens> = this.tokens): string {
       const map: Record<string, string> = {
           'Burn': tokens.danger,
           'Tax': tokens.warning,
@@ -677,9 +682,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   // also the default label color everywhere else, so its label would render
   // invisible (dark-on-dark in light mode, light-on-light in dark mode).
   // We force it to the opposite of the current theme instead.
-  private getBreakdownDataLabelColors(): string[] {
+  private getBreakdownDataLabelColors(textColor: string = this.tokens.textPrimary): string[] {
       const isDark = this.themeService.isDark();
-      const textColor = this.tokens.textPrimary;
       const emergencyLabelColor = isDark ? '#111111' : '#ffffff';
 
       const keys = this.breakdownMode === 'type'
@@ -830,12 +834,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
 
     this.bChart.updateOptions({
+        series,
         xaxis: { categories: categories },
         colors: colors.length > 0 ? colors : undefined,
         dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
     });
-
-    this.bChart.updateSeries(series);
   }
 
   private initItemChart() {
@@ -911,16 +914,12 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   private updateItemChart() {
     if (!this.iChart) return;
 
-        const isDark = this.themeService.isDark();
-        const tokens = this.tokens;
-        const textColor = tokens.textPrimary;
-        const themeMode = isDark ? 'dark' : 'light';
-
-    // Update title color dynamically on data change (hack since chart.updateOptions might reset)
-    this.iChart.updateOptions({
-        chart: { foreColor: textColor },
-        tooltip: { theme: themeMode }
-    });
+    // --- Reads first: theme tokens + filter state, nothing written to the
+    // chart yet, so no read/write/read/write interleaving with ApexCharts ---
+    const isDark = this.themeService.isDark();
+    const tokens = this.tokens;
+    const textColor = tokens.textPrimary;
+    const themeMode = isDark ? 'dark' : 'light';
 
     const data = this.detailedHistory();
     const selected = this.selectedMonths();
@@ -928,7 +927,13 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     const priorityFilter = this.filterPriority();
 
     if (selected.length === 0) {
-        this.iChart.updateSeries([{ data: [] }]);
+        // Single write: theme + empty series together instead of a separate
+        // updateOptions() call followed by updateSeries().
+        this.iChart.updateOptions({
+            chart: { foreColor: textColor },
+            tooltip: { theme: themeMode },
+            series: [{ data: [] }]
+        });
         return;
     }
 
@@ -981,14 +986,17 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     // Sort descending by value (Standard Treemap logic)
     combinedItems.sort((a,b) => b.y - a.y);
 
-    // Update Chart
-    this.iChart.updateSeries([{
-        name: 'All Items',
-        data: combinedItems
-    }]);
-
-    // Force distributed false so it uses data point colors
+    // Single write: theme (foreColor/tooltip), series, and the
+    // distributed/colors override all folded into one updateOptions() call
+    // instead of three sequential update calls.
     this.iChart.updateOptions({
+        chart: { foreColor: textColor },
+        tooltip: { theme: themeMode },
+        series: [{
+            name: 'All Items',
+            data: combinedItems
+        }],
+        // Force distributed false so it uses data point colors
         plotOptions: {
             treemap: {
                 distributed: false,

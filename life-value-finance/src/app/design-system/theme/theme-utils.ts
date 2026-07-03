@@ -44,6 +44,10 @@ const CSS_VARS: Record<TokenName, string> = {
   border: '--border-color'
 };
 
+// Kept for any external one-off callers. NOTE: this still does its own
+// getComputedStyle() call per invocation, which is fine for a single lookup
+// but must NOT be looped for multiple tokens — see getThemeTokens() below,
+// which reuses one computed style object for all of them.
 export function getCssVar(name: string, fallback?: string, win: Window | null = defaultWindow): string {
   const docEl = win?.document?.documentElement;
   if (!docEl) return fallback ?? `var(${name})`;
@@ -52,18 +56,33 @@ export function getCssVar(name: string, fallback?: string, win: Window | null = 
 }
 
 export function getThemeTokens(win: Window | null = defaultWindow): Record<TokenName, string> {
+  const docEl = win?.document?.documentElement;
+  if (!docEl) return { ...FALLBACKS };
+
+  // Single forced style resolution, reused for every token below. Previously
+  // getThemeTokens() routed through getCssVar() for each of the 11 tokens,
+  // which meant 11 separate getComputedStyle() calls per invocation — each
+  // one a forced synchronous style/layout flush if a DOM write (e.g. an
+  // ApexCharts updateOptions() call) was pending just before it.
+  const computed = win!.getComputedStyle(docEl);
+
+  const read = (token: TokenName): string => {
+    const value = computed.getPropertyValue(CSS_VARS[token]).trim();
+    return value || FALLBACKS[token];
+  };
+
   return {
-    primary: getCssVar(CSS_VARS.primary, FALLBACKS.primary, win),
-    success: getCssVar(CSS_VARS.success, FALLBACKS.success, win),
-    warning: getCssVar(CSS_VARS.warning, FALLBACKS.warning, win),
-    danger: getCssVar(CSS_VARS.danger, FALLBACKS.danger, win),
-    info: getCssVar(CSS_VARS.info, FALLBACKS.info, win),
-    textPrimary: getCssVar(CSS_VARS.textPrimary, FALLBACKS.textPrimary, win),
-    textSecondary: getCssVar(CSS_VARS.textSecondary, FALLBACKS.textSecondary, win),
-    bgSurface: getCssVar(CSS_VARS.bgSurface, FALLBACKS.bgSurface, win),
-    bgElev1: getCssVar(CSS_VARS.bgElev1, FALLBACKS.bgElev1, win),
-    bgElev2: getCssVar(CSS_VARS.bgElev2, FALLBACKS.bgElev2, win),
-    border: getCssVar(CSS_VARS.border, FALLBACKS.border, win)
+    primary: read('primary'),
+    success: read('success'),
+    warning: read('warning'),
+    danger: read('danger'),
+    info: read('info'),
+    textPrimary: read('textPrimary'),
+    textSecondary: read('textSecondary'),
+    bgSurface: read('bgSurface'),
+    bgElev1: read('bgElev1'),
+    bgElev2: read('bgElev2'),
+    border: read('border')
   };
 }
 
