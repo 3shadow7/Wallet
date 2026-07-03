@@ -11,13 +11,13 @@
   --text-secondary: #5e6472;
   --text-inverse: #ffffff;
   --text-muted: #9ca3af;
-  
+
   /* Backgrounds (4-layer system) */
   --bg-base: #f4f6fa;            // App/body background
   --bg-surface: #ffffff;         // Primary card surface
   --bg-elev-1: #f8f9fc;          // Subpanels / elevated cards
   --bg-elev-2: #eef1f7;          // Modals / overlays
-  --bg-surface-hover: #fcfcfd; 
+  --bg-surface-hover: #fcfcfd;
   --bg-input: #f2f3f7;
   --bg-app: var(--bg-base);      // Backward-compatible alias
   --bg-secondary: var(--bg-base);
@@ -27,12 +27,12 @@
   --border-focus: #8b5cf6; // Purple-500
   --border-subtle: #f1f5f9;
 
-  /* Brand Colors */
-  --primary-color: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lig));
-  --primary-color-hover: hsl(var(--color-primary-hue), var(--color-primary-sat), 45%);
-  --primary-color-light: hsl(var(--color-primary-hue), var(--color-primary-sat), 90%);
-  --primary-gradient: linear-gradient(135deg, hsl(260, 70%, 55%) 0%, hsl(280, 70%, 50%) 100%);
-  
+  /* Brand Colors (Converted from HSL to HEX) */
+  --primary-color: #713cdd;       // equivalent to hsl(260, 70%, 55%)
+  --primary-color-hover: #5822c3; // equivalent to hsl(260, 70%, 45%)
+  --primary-color-light: #e0d4f7; // equivalent to hsl(260, 70%, 90%)
+  --primary-gradient: linear-gradient(135deg, #713cdd 0%, #9d26d9 100%);
+
   /* Status Colors */
   --danger-color: #ef4444;
   --success-color: #10b981;
@@ -95,7 +95,7 @@
   --bg-surface: rgba(30, 41, 59, 0.7);      // Primary card surface (glass)
   --bg-elev-1: rgba(30, 41, 59, 0.82);      // Subpanels / elevated cards
   --bg-elev-2: #0b1221;                     // Modals / overlays
-  --bg-surface-hover: #334155; 
+  --bg-surface-hover: #334155;
   --bg-input: #334155;     // Slate-700
   --bg-app: var(--bg-base);
   --bg-secondary: var(--bg-base);
@@ -105,21 +105,21 @@
   --border-focus: #a78bfa; // Purple-400
   --border-subtle: #1e293b;
 
-  /* Brand Colors - Adjust for Dark Mode */
-  --primary-color: hsl(var(--color-primary-hue), var(--color-primary-sat), var(--color-primary-lig));
-  --primary-color-hover: hsl(var(--color-primary-hue), var(--color-primary-sat), 75%);
-  --primary-color-light: hsl(var(--color-primary-hue), var(--color-primary-sat), 20%); // Darker background for badges
-  
-  --primary-gradient: linear-gradient(135deg, hsl(260, 70%, 55%) 0%, hsl(280, 70%, 50%) 100%);
+  /* Brand Colors - Adjust for Dark Mode (Converted from HSL to HEX)*/
+  --primary-color: #9470db;       // equivalent to hsl(260, 60%, 65%)
+  --primary-color-hover: #b399e6; // equivalent to hsl(260, 60%, 75%)
+  --primary-color-light: #420561; // equivalent to hsl(260, 60%, 20%)
+
+  --primary-gradient: linear-gradient(135deg, #713cdd 0%, #9d26d9 100%);
 
   /* Status Colors - Adjust for visibility on dark */
   --danger-color: #f87171; // Red-400
   --success-color: #34d399; // Emerald-400
   --warning-color: #fbbf24; // Amber-400
-  
+
   /* Shadows - Lighter "Glow" for Dark Mode Visibility */
   --shadow-sm: 0 0.0625rem 0.125rem 0 rgba(255, 255, 255, 0.05);
-  --shadow-md: 0 0.25rem 0.375rem -0.0625rem rgba(255, 255, 255, 0.05), 0 0.125rem 0.625rem -0.0625rem rgba(0, 0, 0, 0.2); 
+  --shadow-md: 0 0.25rem 0.375rem -0.0625rem rgba(255, 255, 255, 0.05), 0 0.125rem 0.625rem -0.0625rem rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 0.625rem 0.9375rem -0.1875rem rgba(255, 255, 255, 0.05), 0 0.25rem 0.375rem -0.125rem rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 1.25rem 1.5625rem -0.3125rem rgba(255, 255, 255, 0.05), 0 0.5rem 0.625rem -0.375rem rgba(0, 0, 0, 0.1);
 }
@@ -156,7 +156,7 @@ $shadow-sm: var(--shadow-sm);
 $shadow-md: var(--shadow-md);
 $shadow-lg: var(--shadow-lg);
 
-// NOTE: Direct use of rgba($primary-color) will fail in SCSS. 
+// NOTE: Direct use of rgba($primary-color) will fail in SCSS.
 // Use these predefined translucent variants or calc() manually in CSS.
-// Defining hex values here just for SCSS manipulation if absolutely needed, 
+// Defining hex values here just for SCSS manipulation if absolutely needed,
 // but preferred to use CSS vars.

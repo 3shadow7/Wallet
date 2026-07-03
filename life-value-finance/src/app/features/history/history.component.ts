@@ -347,6 +347,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       if (this.sChart) {
           this.sChart.updateOptions({
               ...commonOptions,
+              yaxis: {labels: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }},
               colors: [this.getSeriesColor(tokens.primary)]
           });
       }
@@ -354,6 +355,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       if (this.eChart) {
           this.eChart.updateOptions({
               ...commonOptions,
+              yaxis: {labels: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }},
               colors: [
                   this.getSeriesColor(tokens.success), // Income
                   this.getSeriesColor(tokens.danger),  // Expenses
@@ -519,9 +521,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           // ADD THIS Y-AXIS CONFIGURATION
           yaxis: {
               labels: {
-                  formatter: (value: number) => {
-                      return value.toFixed(2);
-                  }
+                  formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
               }
           },
           grid: commonGrid,
@@ -537,7 +537,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           },
           tooltip: {
               theme: themeMode,
-              y: { formatter: (val: number) => '$' + val.toLocaleString() }
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
           },
           markers: { size: 4, colors: [tokens.bgSurface], strokeColors: this.getSeriesColor(tokens.primary), strokeWidth: 2, hover: { size: 6 } },
           states: {
@@ -593,6 +593,11 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
               axisBorder: { show: false },
               axisTicks: { show: false }
           },
+          yaxis: {
+              labels: {
+                  formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+          },
           grid: commonGrid,
                     colors: [
                         this.getSeriesColor(tokens.success), // Income
@@ -605,7 +610,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           fill: { opacity: 1 },
           tooltip: {
               theme: themeMode,
-              y: { formatter: (val: number) => '$' + val.toLocaleString() }
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
           },
           legend: { position: 'top', horizontalAlign: 'right' },
           states: {
