@@ -150,15 +150,14 @@
 
 @mixin toggle-style {
   display: inline-flex;
-  flex-direction: column; /* Stacks optional label above the switch */
-  gap: var(--spacing-sm); /*[cite: 2]*/
-  font-family: var(--font-family-body); /*[cite: 2]*/
+  flex-direction: column;
+  gap: var(--spacing-sm); /*[cite: 2] */
+  font-family: var(--font-family-body); /*[cite: 2] */
 
-  /* Optional label placed above the toggle */
   .toggle-label-above {
-    font-size: var(--font-size-sm); /*[cite: 2]*/
-    color: var(--text-secondary); /*[cite: 2]*/
-    font-weight: var(--font-weight-medium); /*[cite: 2]*/
+    font-size: var(--font-size-sm); /*[cite: 2] */
+    color: var(--text-secondary); /*[cite: 2] */
+    font-weight: var(--font-weight-medium); /*[cite: 2] */
   }
 
   .toggle-switch-wrapper {
@@ -174,92 +173,97 @@
     position: absolute;
   }
 
-  /* The wider track holding the text inside */
+  /* Dynamic Width Track using CSS Grid */
   .toggle-track {
     position: relative;
-    display: flex;
+    display: inline-grid;
+    grid-template-areas: "layer";
     align-items: center;
-    justify-content: space-between;
-    width: 4.5rem; /* Wide enough to fit text */
-    height: 2rem;
-    background-color: var(--bg-input); /*[cite: 2]*/
-    border-radius: var(--radius-full); /*[cite: 2]*/
-    border: 0.0625rem solid var(--border-color); /*[cite: 2]*/
-    padding: 0 0.625rem;
-    transition: all 0.2s ease; /*[cite: 1]*/
+    background-color: var(--bg-input); /*[cite: 2] */
+    border-radius: var(--radius-full); /*[cite: 2] */
+    border: 0.0625rem solid var(--border-color); /*[cite: 2] */
+    padding: 0.1875rem;
+    transition: all 0.2s ease; /*[cite: 1] */
     box-sizing: border-box;
 
-    /* Text typography inside the track */
+    /* Both texts are stacked in the exact same grid cell to dictate max width */
     &::before,
     &::after {
-      font-size: var(--font-size-xs); /*[cite: 2]*/
-      font-weight: var(--font-weight-bold); /*[cite: 2]*/
+      grid-area: layer;
+      display: flex;
+      align-items: center;
+      font-size: var(--font-size-xs); /*[cite: 2] */
+      font-weight: var(--font-weight-bold); /*[cite: 2] */
+      white-space: nowrap; /* Prevents any long text from wrapping */
+      transition: opacity 0.2s ease; /*[cite: 1] */
       z-index: 1;
     }
 
     /* "True" / "On" Text */
     &::before {
       content: attr(data-on);
-      color: var(--text-inverse); /*[cite: 2]*/
-      opacity: 0; /* Hidden by default */
-      transition: opacity 0.2s ease; /*[cite: 1]*/
+      color: var(--text-inverse); /*[cite: 2] */
+      padding-left: 0.5rem;
+      padding-right: 1.875rem; /* Leaves exact room for the knob when active */
+      justify-content: flex-start;
+      opacity: 0;
     }
 
     /* "False" / "Off" Text */
     &::after {
       content: attr(data-off);
-      color: var(--text-muted); /*[cite: 2]*/
-      opacity: 1; /* Visible by default */
-      transition: opacity 0.2s ease; /*[cite: 1]*/
+      color: var(--text-muted); /*[cite: 2] */
+      padding-left: 1.875rem; /* Leaves exact room for the knob when inactive */
+      padding-right: 0.5rem;
+      justify-content: flex-end;
+      opacity: 1;
     }
   }
 
-  /* The circular sliding knob */
+  /* The sliding circular knob */
   .toggle-knob {
     position: absolute;
+    top: 0rem;
+    left: 0rem;
     height: 1.5rem;
     width: 1.5rem;
-    left: 0.1875rem;
-    bottom: 0.1875rem;
-    background-color: var(--bg-surface); /*[cite: 2]*/
-    border-radius: var(--radius-full); /*[cite: 2]*/
-    box-shadow: var(--shadow-sm); /*[cite: 2]*/
-    transition: transform 0.2s ease; /*[cite: 1]*/
+    background-color: var(--bg-surface); /*[cite: 2] */
+    border-radius: var(--radius-full); /*[cite: 2] */
+    box-shadow: var(--shadow-sm); /*[cite: 2] */
+    /* Animate 'left' instead of 'transform' so it adapts to dynamic widths */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2;
   }
 
   /* Hover state */
   .toggle-switch-wrapper:hover .toggle-track {
-    background-color: var(--bg-surface-hover); /*[cite: 2]*/
-    border-color: var(--border-focus); /*[cite: 2]*/
+    background-color: var(--bg-surface-hover); /*[cite: 2] */
+    border-color: var(--border-focus); /*[cite: 2] */
   }
 
   /* Checked (True) state */
   .toggle-input:checked + .toggle-track {
-    background: var(--primary-gradient); /*[cite: 2]*/
+    background: var(--primary-gradient); /*[cite: 2] */
     border-color: transparent;
 
-    &::before {
-      opacity: 1; /* Reveal True text */
-    }
-    &::after {
-      opacity: 0; /* Hide False text */
-    }
+    &::before { opacity: 1; }
+    &::after { opacity: 0; }
 
     .toggle-knob {
-      transform: translateX(2.4rem);
+      /* Dynamically calculates the right edge: 100% width - knob size - padding */
+      left: calc(100% - 1.5rem );
     }
   }
 
   /* Focus & Accessibility */
   .toggle-input:focus-visible + .toggle-track {
-    box-shadow: var(--shadow-focus); /*[cite: 2]*/
+    box-shadow: var(--shadow-focus); /*[cite: 2] */
   }
 
-  /* Disabled state */
+  /* Disabled state mirroring primary button */
   .toggle-input:disabled + .toggle-track {
-    filter: grayscale(1); /*[cite: 1]*/
-    opacity: 0.6; /*[cite: 1]*/
-    cursor: not-allowed; /*[cite: 1]*/
+    filter: grayscale(1); /*[cite: 1] */
+    opacity: 0.6; /*[cite: 1] */
+    cursor: not-allowed; /*[cite: 1] */
   }
 }
