@@ -380,7 +380,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
             },
             colors: modeKeys.map(k => this.getCategoryColor(k, tokens)),
             dataLabels: { style: { colors: this.getBreakdownDataLabelColors(textColor) } }
-          });
+          }, true, false);
       }
 
       if (this.iChart) {
@@ -822,7 +822,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
         xaxis: { categories: categories },
         colors: colors.length > 0 ? colors : undefined,
         dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
-    });
+    }, true, false);
   }
 
   private initItemChart() {
