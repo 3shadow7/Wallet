@@ -6,6 +6,7 @@ import { BackupService } from '@core/services/backup.service';
 import { IncomeStoreService } from '@core/storage/stores/income-store.service';
 import { HistoryStoreService } from '@core/storage/stores/history-store.service';
 import { ItemsStoreService } from '@core/storage/stores/items-store.service';
+import { StorageMigrationService } from '@core/storage/migration/storage-migration.service';
 import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
 import { MonthlyItems } from '@core/domain/storage.models';
 
@@ -37,6 +38,7 @@ export class BudgetStateService {
     private incomeStore = inject(IncomeStoreService);
     private historyStore = inject(HistoryStoreService);
     private itemsStore = inject(ItemsStoreService);
+    private storageMigration = inject(StorageMigrationService);
     private storageEngine = inject(StorageEngineService);
 
   // --- Core State ---
@@ -113,6 +115,7 @@ export class BudgetStateService {
     readonly hourlyRate = computed(() => this.budgetSummary().hourlyRate);
 
   constructor() {
+        this.storageMigration.migrateIfNeeded();
     this.loadInitialState();
 
         effect(() => {
