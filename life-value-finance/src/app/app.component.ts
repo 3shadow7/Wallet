@@ -3,6 +3,7 @@ import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
 import { HeaderComponent } from './layout/header/header.component';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ViewportService } from '@core/viewPort/viewport.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'Qeeva';
   private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
+  viewport = inject(ViewportService);
 
   private touchStartX = 0;
   private touchEndX = 0;
