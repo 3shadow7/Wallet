@@ -13,11 +13,12 @@ import { getThemeTokens } from '@theme/theme-utils';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem, BudgetHistory } from '@core/domain/models';
 import { ToggleCellRendererComponent } from '@shared/toggle-cell-renderer/toggle-cell-renderer.component';
+import { ShowOnDirective } from '@core/viewPort/show-on.directive';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, AgGridAngular, FormsModule, MonthSliderComponent, MultiSelectComponent, SingleSelectComponent],
+  imports: [CommonModule, AgGridAngular, FormsModule, MonthSliderComponent, MultiSelectComponent, SingleSelectComponent, ShowOnDirective],
   templateUrl: './history.component.html',
   styleUrl: './history.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

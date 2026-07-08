@@ -84,7 +84,7 @@
 
               <!-- Month Selection Slider -->
               <div class="month-selector">
-                      <span class="label">Timeline:</span>
+                      <span class="label" *appShowOn="['tablet' , 'laptop' , 'desktop' , 'tv']" >Timeline:</span>
                       <div class="slider-wrapper">
                           <app-month-slider (rangeChange)="onTimeRangeChange($event)"></app-month-slider>
                       </div>
