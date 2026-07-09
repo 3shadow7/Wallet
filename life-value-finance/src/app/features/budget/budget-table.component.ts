@@ -377,6 +377,38 @@ export class BudgetTableComponent {
     },
 
     {
+      field: 'targetTotal',
+      headerName: 'Saving Goal ($)',
+      type: 'numericColumn',
+      width: 140,
+      flex: 0,
+      // Show only for Saving type items
+      cellStyle: (params: any) => {
+        if (params.data?.type !== 'Saving') {
+          return { display: 'none' } as any;
+        }
+        return { fontWeight: '500' } as any;
+      },
+      // Show only for Saving type items in edit mode
+      cellEditor: (params: any) => {
+        if (params.data?.type !== 'Saving') {
+          return undefined; // Don't show editor for non-Saving items
+        }
+        return 'agNumberCellEditor';
+      },
+      valueFormatter: (params: ValueFormatterParams) => {
+        if (params.data?.type !== 'Saving') return '';
+        if (params.value === null || params.value === undefined || params.value === '') return '--';
+        return `$${Number(params.value).toFixed(2)}`;
+      },
+      valueParser: (params) => {
+        const num = Number(params.newValue);
+        return isNaN(num) || num < 0 ? undefined : num;
+      },
+      editable: true,
+    },
+
+    {
       headerName: '',
       field: 'id',
       editable: false,
@@ -397,11 +429,6 @@ export class BudgetTableComponent {
             // SVGs for visual clarity
             const eyeOpen = `<svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z"/></svg>`;
             const eyeSlash = `<svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T702-576l-84-86q39-16 80-25t82-9q146 0 266 81.5T920-500q-26 65-67 117t-91 87ZM240-84l-52-52 116-116q-19-14-36.5-30.5T234-318q-72-46-126-107T40-500q54-137 174-218.5T480-800q77 0 148 23t135 65l65-64 52 52-640 640ZM480-200q-70 0-134-21.5T226-282q-13-10-25-21t-23-23q51 45 111 75.5T480-200Zm112-256-42-42q-3 6-4.5 12.5T544-474q-5-38-31-64t-65-30q-7 0-13 1.5t-13 4.5l-42-42q22-12 47-18t53-6q75 0 127.5 52.5T660-500q0 28-6 53t-18 47q-9-19-21-36.5T592-456Z"/></svg>`;
-
-            // Logic:
-            // If Ignored (isIgnored=true) -> State is "Hidden". Action is "Show". Icon: Eye Slash (Grayed out)
-            // If Active (isIgnored=false) -> State is "Visible". Action is "Hide". Icon: Eye Open (Normal)
-
             const icon = isIgnored ? eyeSlash : eyeOpen;
             const title = isIgnored ? 'Ignored (Click to Include)' : 'Active (Click to Ignore)';
             const activeClass = isIgnored ? 'ignored-btn' : 'active-btn';
@@ -444,16 +471,120 @@ export class BudgetTableComponent {
     }
   };
 
+  // Detect saving goal conflict when renaming items
+  private checkSavingGoalConflict(renamedItem: ExpenseItem, newName: string): { conflictItem: ExpenseItem | null, renamedGoal: number | undefined, conflictGoal: number | undefined } {
+    if (renamedItem.type !== 'Saving') {
+      return { conflictItem: null, renamedGoal: undefined, conflictGoal: undefined };
+    }
+
+    const otherSavingItem = this.expenses().find(
+      item => item.id !== renamedItem.id &&
+               item.name.toLowerCase() === newName.toLowerCase() &&
+               item.type === 'Saving'
+    );
+
+    if (otherSavingItem) {
+      return {
+        conflictItem: otherSavingItem,
+        renamedGoal: renamedItem.targetTotal,
+        conflictGoal: otherSavingItem.targetTotal
+      };
+    }
+
+    return { conflictItem: null, renamedGoal: undefined, conflictGoal: undefined };
+  }
+
+  // Show conflict dialog and resolve which goal to keep
+  private async showSavingGoalConflictDialog(
+    renamedItem: ExpenseItem,
+    conflictItem: ExpenseItem,
+    renamedGoal: number | undefined,
+    conflictGoal: number | undefined
+  ): Promise<number | undefined> {
+    return new Promise((resolve) => {
+      const renamedGoalText = renamedGoal ? `$${renamedGoal.toFixed(2)}` : 'No goal';
+      const conflictGoalText = conflictGoal ? `$${conflictGoal.toFixed(2)}` : 'No goal';
+
+      const msg = `🤔 Same Name Found\n\n` +
+                  `Pick which savings goal to keep:\n\n` +
+                  `○ This item: ${renamedGoalText}\n` +
+                  `○ Existing item: ${conflictGoalText}\n\n` +
+                  `[1] Keep this item's goal\n` +
+                  `[2] Keep existing goal\n` +
+                  `[3] Cancel rename`;
+
+      const result = prompt(msg, '');
+
+      if (result === '1') {
+        resolve(renamedGoal);
+      } else if (result === '2') {
+        resolve(conflictGoal);
+      } else {
+        resolve(undefined); // Cancel
+      }
+    });
+  }
+
   onCellValueChanged(event: CellValueChangedEvent) {
     const updatedExpense: ExpenseItem = event.data;
     if (!updatedExpense) return;
+
+    const field = event.colDef.field;
+
+    // Handle Saving Goal changes (targetTotal field)
+    if (field === 'targetTotal') {
+      const newGoal = updatedExpense.targetTotal === null || updatedExpense.targetTotal === undefined
+        ? undefined
+        : Number(updatedExpense.targetTotal);
+
+      this.budgetState.updateExpense(updatedExpense.id, { targetTotal: newGoal });
+      return;
+    }
+
+    // Handle Name changes with Saving Goal conflict detection
+    if (field === 'name') {
+      const newName = updatedExpense.name?.trim() || '';
+      if (!newName) {
+        // Revert if empty
+        updatedExpense.name = event.oldValue;
+        event.api.applyTransaction({ update: [updatedExpense] });
+        return;
+      }
+
+      // Check for saving goal conflict
+      if (updatedExpense.type === 'Saving') {
+        const conflict = this.checkSavingGoalConflict(updatedExpense, newName);
+        if (conflict.conflictItem) {
+          // Show conflict dialog (async, but using prompt for simplicity)
+          this.showSavingGoalConflictDialog(
+            updatedExpense,
+            conflict.conflictItem,
+            conflict.renamedGoal,
+            conflict.conflictGoal
+          ).then((selectedGoal) => {
+            if (selectedGoal === undefined) {
+              // User cancelled - revert name
+              updatedExpense.name = event.oldValue;
+              event.api.applyTransaction({ update: [updatedExpense] });
+              return;
+            }
+            // Apply selected goal
+            updatedExpense.targetTotal = selectedGoal;
+            this.budgetState.updateExpense(updatedExpense.id, updatedExpense);
+          });
+          return;
+        }
+      }
+
+      // No conflict - proceed with name change
+      this.budgetState.updateExpense(updatedExpense.id, { name: newName });
+      return;
+    }
 
     // ... (rest of logic) ...
     // Update validation to check for ignore status
     // If ignored, skip validation?
     // Usually user edits ACTIVE items. If ignored, editing amount should filter through updateItem anyway.
-
-    const field = event.colDef.field;
 
     // Handle Quantity Change special logic
     if (field === 'quantity') {

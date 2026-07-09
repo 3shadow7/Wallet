@@ -29,26 +29,11 @@ export class AddExpenseComponent {
     priority: [null, Validators.required],
     amount: [null, [Validators.required, Validators.min(0.01)]],
     type: [null, Validators.required],
-    // Long-term saving goal; only meaningful when type === 'Saving'.
-    // Matches ExpenseItem.targetTotal in @core/domain/models.
-    targetTotal: [null],
   });
 
-  // Keeps the targetTotal field required only while Type = Saving,
-  // and clears any stale value/error when the user switches away from it.
+  // Type change - no special handling needed for targetTotal (moved to table editing)
   onTypeChange(type: string) {
     this.expenseForm.patchValue({ type });
-
-    const goalControl = this.expenseForm.get('targetTotal');
-    if (!goalControl) return;
-
-    if (type === 'Saving') {
-      goalControl.setValidators([Validators.required, Validators.min(0.01)]);
-    } else {
-      goalControl.clearValidators();
-      goalControl.setValue(null);
-    }
-    goalControl.updateValueAndValidity();
   }
 
   submitExpense() {
@@ -73,14 +58,12 @@ export class AddExpenseComponent {
       const newExpense: ExpenseItem = {
         id: crypto.randomUUID(),
         name: val.name,
-        // category is optional now
         amount: amount,
         unitPrice: amount, // Default for single item
         quantity: 1,       // Default for single item
         type: val.type,
         priority: val.priority,
-        // Long-term target for Saving-type items; undefined for all other types
-        targetTotal: val.type === 'Saving' ? Number(val.targetTotal) : undefined,
+        // targetTotal is optional; can be set later in table editing
       };
 
       this.budgetState.addExpense(newExpense);
@@ -90,7 +73,6 @@ export class AddExpenseComponent {
         amount: null,
         type: null,
         priority: null,
-        targetTotal: null,
       });
     }
   }

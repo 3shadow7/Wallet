@@ -38,14 +38,6 @@
           <input type="number" [formControlName]="'amount'" placeholder="0.00" step="0.01">
         </div>
 
-        <!-- Saving Goal Input: only shown when Type = Saving -->
-        @if (expenseForm.get('type')?.value === 'Saving') {
-          <div class="input-group goal-input">
-            <label>Saving Goal ($)</label>
-            <input type="number" [formControlName]="'targetTotal'" placeholder="e.g. 5000.00" step="0.01">
-          </div>
-        }
-
         <!-- Add Button -->
         <button type="submit" [disabled]="expenseForm.invalid" (click)="submitExpense()">
           Add Item
