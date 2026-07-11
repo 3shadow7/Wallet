@@ -40,29 +40,27 @@ export class AuthService {
   }
 
   private checkInitialState() {
-    if (isPlatformBrowser(this.platformId)) {
-      try {
-        const token = this.authStorage.getAccessToken();
-        const savedUser = this.authStorage.getUser();
-        const guestFlag = this.authStorage.isGuest();
+  try {
+    const token = this.authStorage.getAccessToken();
+    const savedUser = this.authStorage.getUser();
+    const guestFlag = this.authStorage.isGuest();
 
-        if (token && savedUser) {
-          this.currentUser.set(savedUser);
-          this.isAuthenticated.set(true);
-          this.isGuest.set(false);
-        } else if (guestFlag) {
-          this.isGuest.set(true);
-          this.isAuthenticated.set(false);
-          this.currentUser.set(null);
-        } else {
-          this.logout();
-        }
-      } catch (e) {
-        console.error("Error restoring auth state", e);
-        this.logout();
-      }
+    if (token && savedUser) {
+      this.currentUser.set(savedUser);
+      this.isAuthenticated.set(true);
+      this.isGuest.set(false);
+    } else if (guestFlag) {
+      this.isGuest.set(true);
+      this.isAuthenticated.set(false);
+      this.currentUser.set(null);
+    } else {
+      this.logout();
     }
+  } catch (e) {
+    console.error('Error restoring auth state', e);
+    this.logout();
   }
+}
 
   login(credentials: any): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(this.apiUrl + "/login/", credentials).pipe(

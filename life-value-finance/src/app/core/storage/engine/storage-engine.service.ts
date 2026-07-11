@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 export class StorageEngineService {
   private platformId = inject(PLATFORM_ID);
 
-  private isBrowser(): boolean {
+  public isBrowser(): boolean {
     return isPlatformBrowser(this.platformId) && typeof localStorage !== 'undefined';
   }
 

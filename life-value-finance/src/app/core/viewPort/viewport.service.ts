@@ -1,6 +1,7 @@
-// viewport.service.ts
 import { Injectable, signal, computed, DestroyRef, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { INITIAL_DEVICE_TYPE } from './initial-device-type.token';
+import { CookieEngineService } from '@core/storage/engine/cookie-engine.service';
 
 export type DeviceType = 'watch' | 'mobile' | 'tablet' | 'laptop' | 'desktop' | 'tv';
 
@@ -19,14 +20,31 @@ const BREAKPOINTS: Breakpoint[] = [
   { name: 'tv',      maxWidth: Infinity },
 ];
 
+// Representative width for each guessed device type, so the existing
+// breakpoint-based `deviceType` computed still works unmodified.
+const REPRESENTATIVE_WIDTH: Record<DeviceType, number> = {
+  watch: 240,
+  mobile: 400,
+  tablet: 800,
+  laptop: 1280,
+  desktop: 1600,
+  tv: 2200,
+};
+
 @Injectable({ providedIn: 'root' })
 export class ViewportService {
   private destroyRef = inject(DestroyRef);
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
+  private initialGuess = inject(INITIAL_DEVICE_TYPE, { optional: true });
+  private cookieEngine = inject(CookieEngineService);
 
-  // القيمة الافتراضية وقت SSR: نفترض laptop (متوسط آمن)
-  private _width = signal(this.isBrowser ? window.innerWidth : 1280);
+  private initialWidth = this.isBrowser
+    ? window.innerWidth
+    : Number(this.cookieEngine.getItem('initialWidth')) || REPRESENTATIVE_WIDTH[this.initialGuess ?? 'mobile']; // safe default when SSR and no initial guess
+
+  // القيمة الافتراضية وقت SSR: نفترض mobile (متوسط آمن)
+  private _width = signal(this.initialWidth);
   private _height = signal(this.isBrowser ? window.innerHeight : 800);
 
   width = this._width.asReadonly();
@@ -61,6 +79,7 @@ export class ViewportService {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         this._width.set(window.innerWidth);
+        this.cookieEngine.setItem('initialWidth', window.innerWidth.toString(), 365*24*60*60); // حفظ العرض الحالي في الكوكيز لمدة سنة
         this._height.set(window.innerHeight);
       }, 100);
     };

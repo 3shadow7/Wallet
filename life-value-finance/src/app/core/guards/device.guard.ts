@@ -9,6 +9,7 @@ export function deviceGuard(disallowedDevices: DeviceType[], redirectTo: string)
     const router = inject(Router);
 
     const currentDevice = viewport.deviceType();
+    console.log('deviceGuard: ', currentDevice);
 
     if (disallowedDevices.includes(currentDevice)) {
       // redirect to the specified route if the current device is disallowed

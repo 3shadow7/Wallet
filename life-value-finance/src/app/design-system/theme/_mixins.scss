@@ -248,7 +248,7 @@
 
   /* Checked (True) state */
   .toggle-input:checked + .toggle-track {
-    background: var(--primary-gradient); /*[cite: 2] */
+    background: var(--primary-gradient-btn); /*[cite: 2] */
     border-color: transparent;
 
     &::before { opacity: 1; }

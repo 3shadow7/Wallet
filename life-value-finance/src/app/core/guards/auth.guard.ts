@@ -8,7 +8,7 @@ import { AuthService } from '../services/auth.service';
 export const authGuard: CanActivateFn = () => {
     const authService = inject(AuthService);
     const router = inject(Router);
-
+    console.log('authGuard: isAuthenticated:', authService.isAuthenticated(), 'isGuest:', authService.isGuest());
     // If fully authenticated user, allow access
     if (authService.isAuthenticated()) {
         return true;
@@ -19,7 +19,7 @@ export const authGuard: CanActivateFn = () => {
         return true;
     }
     // Redirect to register if neither authenticated nor guest
-    else return router.parseUrl('/register');
+    return router.parseUrl('/register');
 };
 
 /**
@@ -35,7 +35,7 @@ export const guestGuard: CanActivateFn = () => {
         return router.parseUrl('/dashboard');
     }
 
-    // Allow access to login/register if they are NOT authenticated 
+    // Allow access to login/register if they are NOT authenticated
     // (even if they have the 'isGuest' flag so they can choose to register/login)
     return true;
 };

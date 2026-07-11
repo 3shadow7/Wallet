@@ -1,11 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
+// import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
 import { STORAGE_KEYS } from '@core/storage/engine/storage-keys';
 import type { User } from '@core/services/auth.service';
+import { CookieEngineService } from '../engine/cookie-engine.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStorageService {
-  private engine = inject(StorageEngineService);
+  // private engine = inject(StorageEngineService);
+  private engine = inject(CookieEngineService);
 
   getAccessToken(): string | null {
     return this.engine.getItem(STORAGE_KEYS.accessToken);

@@ -3,6 +3,8 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
+import { MobileViewService } from '@core/services/mobile-view.service';
+import { ViewportService } from '@core/viewPort/viewport.service';
 
 @Component({
   selector: 'app-header',
@@ -16,6 +18,15 @@ export class HeaderComponent {
   themeService = inject(ThemeService);
   authService = inject(AuthService);
   router = inject(Router);
+  mobileViewService = inject(MobileViewService);
+  viewportService = inject(ViewportService);
+
+  currentPageIndex = this.mobileViewService.currentPageIndex; // just the signal, read it in template
+
+  goToPage(index: number): void {
+    this.mobileViewService.setPageIndex(index);
+    // event.preventDefault(); // Prevent default link behavior
+  }
 
   toggleTheme() {
     this.themeService.toggleTheme();

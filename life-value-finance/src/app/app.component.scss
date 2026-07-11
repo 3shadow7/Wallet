@@ -1,4 +1,4 @@
-:host {
+.app-container {
   display: flex;
   flex-direction: column;
   height: 100vh; /* Fallback for older browsers */
@@ -23,4 +23,12 @@
 
 .ag-root-wrapper {
   height: 100%;
+}
+
+.main-content {
+    flex: 1 0 auto;
+    height: 0%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
 }
