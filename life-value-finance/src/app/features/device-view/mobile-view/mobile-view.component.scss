@@ -8,7 +8,7 @@
 .mobile-view-container {
     display: flex;
     width: 100%;
-    height: stretch;
+    height: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
@@ -17,7 +17,6 @@
 
   section {
     flex: 1 0 100%;
-    height: stretch;
     overflow-y: auto;
     scroll-initial-target: nearest;
     scroll-snap-align: center;
