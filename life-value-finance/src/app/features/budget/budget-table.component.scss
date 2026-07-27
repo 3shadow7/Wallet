@@ -340,19 +340,15 @@
 .desktop-view {
   display: flex;
 
-  @include m.respond-to('max-xs') {
-    display: none !important;
-  }
 }
 
 .mobile-view {
-  display: none;
+  // display: none;
 
-  @include m.respond-to('max-xs') {
     display: flex;
     flex-direction: column;
     gap: 1.25rem; // Increased gap to prevent sticking
-  }
+
 
   .mobile-header {
     display: flex;

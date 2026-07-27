@@ -15,12 +15,13 @@ import {
 } from 'ag-grid-community';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem, PriorityLevel } from '@core/domain/models';
+import { ShowOnDirective } from '@core/viewPort/show-on.directive';
 // import { AddExpenseComponent } from './add-expense.component';
 
 @Component({
   selector: 'app-budget-table',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular, SingleSelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular, SingleSelectComponent, ShowOnDirective],
   templateUrl: './budget-table.component.html',
   styleUrl: './budget-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

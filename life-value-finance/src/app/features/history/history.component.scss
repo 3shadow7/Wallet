@@ -292,14 +292,10 @@ header h1 {
 /* Mobile Responsive Styles */
 .desktop-view {
     display: block;
-    @include m.respond-to('max-xs') {
-        display: none !important;
-    }
 }
 
 .mobile-view {
-    display: none;
-    @include m.respond-to('max-xs') {
+
         display: flex;
         flex-direction: column;
         gap: 0.5rem; // Reduced gap between header and list
@@ -309,7 +305,7 @@ header h1 {
         min-height: 25rem;
         overflow: hidden; // Contain the scrolling child
         position: relative; // Context
-    }
+
 
     .mobile-header {
         flex-shrink: 0; // Don't shrink the header

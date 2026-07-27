@@ -2,7 +2,7 @@
 
 
   <!-- Grid Card (Desktop Only) -->
-  <div class="grid-card desktop-view">
+  <div class="grid-card desktop-view" *appShowOn="[ 'tablet', 'laptop', 'desktop', 'tv' ]">
     <div class="card-header" [class.history-header]="!isCurrentMonth()">
       <div class="header-content">
           <div class="title-group">
@@ -98,7 +98,7 @@
   </div>
 
   <!-- Mobile Card List View -->
-  <div class="mobile-budget-list mobile-view">
+  <div class="mobile-budget-list mobile-view"  *appShowOn="[ 'mobile' ]">
 
     <div class="mobile-header" [class.history-header]="!isCurrentMonth()">
         <div class="header-top">
