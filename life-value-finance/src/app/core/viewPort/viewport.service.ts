@@ -65,8 +65,8 @@ export class ViewportService {
   isTv = computed(() => this.deviceType() === 'tv');
 
   // مفيد لو تبي تجمع أكثر من فئة بسهولة (مثلاً "صغير" = watch أو mobile)
-  isSmallScreen = computed(() => ['watch', 'mobile'].includes(this.deviceType()));
-  isLargeScreen = computed(() => ['desktop', 'tv'].includes(this.deviceType()));
+  isSmallScreen = computed(() => ['watch', 'mobile', 'tablet'].includes(this.deviceType()));
+  isLargeScreen = computed(() => ['laptop', 'desktop', 'tv'].includes(this.deviceType()));
 
   orientation = computed(() => (this._width() > this._height() ? 'landscape' : 'portrait'));
 

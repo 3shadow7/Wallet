@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -15,11 +15,48 @@ import { ViewportService } from '@core/viewPort/viewport.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HeaderComponent {
+
   themeService = inject(ThemeService);
   authService = inject(AuthService);
   router = inject(Router);
   mobileViewService = inject(MobileViewService);
   viewportService = inject(ViewportService);
+
+  constructor() {
+    effect(() => {
+      const currentType = this.viewportService.deviceType();
+      if (this.router.url === '/m-View' && ['laptop', 'desktop', 'tv'].includes(currentType)) {
+        switch (this.currentPageIndex()) {
+          case 0:
+            this.router.navigate(['/dashboard']);
+            break;
+          case 1:
+            this.router.navigate(['/history']);
+            break;
+          case 2:
+            this.router.navigate(['/settings']);
+            break;
+          default:
+            this.router.navigate(['/dashboard']);
+        }
+      }else if (this.router.url !== '/m-View' && ['watch', 'mobile', 'tablet'].includes(currentType)) {
+        switch (this.router.url) {
+          case '/dashboard':
+            this.mobileViewService.setPageIndex(0);
+            break;
+          case '/history':
+            this.mobileViewService.setPageIndex(1);
+            break;
+          case '/settings':
+            this.mobileViewService.setPageIndex(2);
+            break;
+          default:
+            this.mobileViewService.setPageIndex(0);
+        }
+        this.router.navigate(['/m-View']);
+      }
+    });
+  }
 
   currentPageIndex = this.mobileViewService.currentPageIndex; // just the signal, read it in template
 
