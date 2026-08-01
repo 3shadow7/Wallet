@@ -12,14 +12,15 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    /* REMOVED: scroll-behavior: smooth; */
 
   section {
     flex: 1 0 100%;
     overflow-y: auto;
-    scroll-initial-target: nearest;
     scroll-snap-align: center;
-    scroll-snap-stop: always;
+    scroll-snap-stop: always; /* Forces momentum to stop at the next item */
+    /* REMOVED: scroll-initial-target: nearest; */
   }
 }
