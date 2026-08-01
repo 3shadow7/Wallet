@@ -39,12 +39,13 @@ export class BudgetTableComponent {
   expenses = this.budgetState.expensesSignal;
   totalExpenses = this.budgetState.totalExpenses;
   viewedMonth = this.budgetState.viewedMonthSignal;
+  canRevertMonth = this.budgetState.canRevertMonth;
+  isFutureMonth = this.budgetState.isFutureMonth;
   activeMonth = computed(() => this.budgetState.settingsSignal().lastActiveMonth);
   isCurrentMonth = computed(() => this.viewedMonth() === this.activeMonth());
   historyEntry = computed(() => this.budgetState.historySignal().find(entry => entry.month === this.viewedMonth()));
   isExcludedFromTotals = computed(() => this.historyEntry()?.excludedFromTotals ?? false);
   canToggleMonthTotals = computed(() => !this.isCurrentMonth() && this.budgetState.isHistoryMonthEmpty(this.viewedMonth()));
-
   // Mobile Filters
   filterPriority = signal<string>('');
   filterType = signal<string>('');
@@ -563,13 +564,7 @@ export class BudgetTableComponent {
     }
   }
 
-  isFutureMonth(): boolean {
-      return this.budgetState.isFutureMonth();
-  }
 
-  canRevertMonth(): boolean {
-      return this.budgetState.canRevertMonth();
-  }
 
   async revertMonth() {
       if (this.canRevertMonth()) {
