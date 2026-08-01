@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ElementRef, computed, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SingleSelectRegistryService } from 'src/app/services/single-select/single-select-registry.service';
 
 @Component({
   selector: 'app-single-select',
@@ -11,36 +12,32 @@ import { CommonModule } from '@angular/common';
 })
 export class SingleSelectComponent {
   @Input() options: string[] = [];
-  @Input() value: string = '';
+  @Input() value = '';
   @Input() placeholder = 'Select...';
-  @Input() variant: 'dot' | 'badge' = 'dot'; // New input for variant style
+  @Input() variant: 'dot' | 'badge' = 'dot';
 
   @Output() valueChange = new EventEmitter<string>();
 
-  dropdownOpen = signal(false);
+  private registry = inject(SingleSelectRegistryService);
+  private elementRef = inject(ElementRef);
+  private id = crypto.randomUUID(); // unique per instance
 
-  constructor(private elementRef: ElementRef) {}
+  showDropdown = computed(() => this.registry.isOpen(this.id));
 
   toggleDropdown(event?: Event) {
-    if(event) event.stopPropagation();
-    this.dropdownOpen.update(v => !v);
+    if (event) event.stopPropagation();
+    if (this.showDropdown()) {
+      this.registry.close(this.id);
+    } else {
+      this.registry.open(this.id, this.elementRef.nativeElement);
+    }
   }
-
-  showDropdown = computed(() => this.dropdownOpen());
 
   selectOption(option: string, event: Event) {
     event.stopPropagation();
     this.value = option;
     this.valueChange.emit(option);
-    this.dropdownOpen.set(false); // Auto-close on single select
-  }
-
-  // Close when clicking outside
-  @HostListener('document:click', ['$event'])
-  onClickOutside(event: MouseEvent) {
-    if (!this.elementRef.nativeElement.contains(event.target)) {
-      this.dropdownOpen.set(false);
-    }
+    this.registry.close(this.id);
   }
 
   getColor(option: string): string {
