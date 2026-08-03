@@ -19,6 +19,7 @@
   section {
     flex: 1 0 100%;
     overflow-y: auto;
+    content-visibility: auto;
     scroll-snap-align: center;
     scroll-snap-stop: always; /* Forces momentum to stop at the next item */
     /* REMOVED: scroll-initial-target: nearest; */
