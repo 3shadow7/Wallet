@@ -1,4 +1,4 @@
-import { Component, ElementRef, viewChild, effect, inject, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, viewChild, effect, inject, computed, AfterViewInit } from '@angular/core';
 import { DashboardComponent } from "@features/dashboard/dashboard.component";
 import { SettingsComponent } from "@features/settings/settings.component";
 import { HistoryComponent } from "@features/history/history.component";
@@ -14,11 +14,26 @@ export class MobileViewComponent implements AfterViewInit {
   private mobileViewService = inject(MobileViewService);
   private container = viewChild.required<ElementRef<HTMLDivElement>>('container');
   private ticking = false;
+  private isUserScrolling = false;
+  private scrollEndTimeout: ReturnType<typeof setTimeout> | undefined;
+
+
+  activeIndex = this.mobileViewService.currentPageIndex;
+
+  // Render current page + 1 neighbor on each side, so swiping still feels instant
+  // (no blank flash while the adjacent section mounts mid-swipe)
+  shouldRender = (pageIndex: number) =>
+    computed(() => Math.abs(this.activeIndex() - pageIndex) <= 1);
+
+  dashboardVisible = this.shouldRender(0);
+  historyVisible = this.shouldRender(1);
+  settingsVisible = this.shouldRender(2);
 
   constructor() {
     // Runs whenever the signal changes (e.g. header click) -> scroll to it
     effect(() => {
       const index = this.mobileViewService.currentPageIndex();
+      if (this.isUserScrolling) return; // don't fight the user's own gesture
       this.scrollToIndex(index);
     });
   }
@@ -31,12 +46,17 @@ export class MobileViewComponent implements AfterViewInit {
   }
 
   private onScroll(el: HTMLDivElement): void {
-    console.log('onScroll called');
     if (this.ticking) return;
     this.ticking = true;
+    this.isUserScrolling = true;
+
+    clearTimeout(this.scrollEndTimeout);
+    this.scrollEndTimeout = setTimeout(() => {
+      this.isUserScrolling = false; // gesture settled, programmatic nav can work again
+    }, 150);
+
     requestAnimationFrame(() => {
       const index = Math.round(el.scrollLeft / el.clientWidth);
-      console.log('onScroll: calculated index:', index);
       this.mobileViewService.setPageIndex(index); // no-op if unchanged, no loop
       this.ticking = false;
     });

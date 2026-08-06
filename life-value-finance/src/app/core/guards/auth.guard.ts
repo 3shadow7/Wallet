@@ -8,7 +8,7 @@ import { AuthService } from '../services/auth.service';
 export const authGuard: CanActivateFn = () => {
     const authService = inject(AuthService);
     const router = inject(Router);
-    console.log('authGuard: isAuthenticated:', authService.isAuthenticated(), 'isGuest:', authService.isGuest());
+    // console.log('authGuard: isAuthenticated:', authService.isAuthenticated(), 'isGuest:', authService.isGuest());
     // If fully authenticated user, allow access
     if (authService.isAuthenticated()) {
         return true;
