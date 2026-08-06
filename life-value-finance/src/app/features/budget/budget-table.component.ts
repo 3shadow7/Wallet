@@ -17,11 +17,13 @@ import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem, PriorityLevel } from '@core/domain/models';
 import { ShowOnDirective } from '@core/viewPort/show-on.directive';
 // import { AddExpenseComponent } from './add-expense.component';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 @Component({
   selector: 'app-budget-table',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular, SingleSelectComponent, ShowOnDirective],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular,
+     SingleSelectComponent, ShowOnDirective, ScrollingModule],
   templateUrl: './budget-table.component.html',
   styleUrl: './budget-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -98,6 +100,7 @@ export class BudgetTableComponent {
   });
 
   onMobileAmountChange(item: ExpenseItem, event: Event) {
+
     const input = event.target as HTMLInputElement;
     const newAmount = Number(input.value);
 
