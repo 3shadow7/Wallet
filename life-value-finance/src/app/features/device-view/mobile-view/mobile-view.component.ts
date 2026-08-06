@@ -34,7 +34,13 @@ export class MobileViewComponent implements AfterViewInit {
     effect(() => {
       const index = this.mobileViewService.currentPageIndex();
       if (this.isUserScrolling) return; // don't fight the user's own gesture
-      this.scrollToIndex(index);
+
+      // Give Angular a frame to finish mounting the target component
+      // before we jump to its position — otherwise we scroll to it
+      // while it's still empty/skeleton.
+      requestAnimationFrame(() => {
+        this.scrollToIndex(index);
+      });
     });
   }
 
