@@ -39,9 +39,7 @@ export class MobileViewComponent implements AfterViewInit {
       if (!this.isBrowser) return; // no scrolling to do on the server, skip entirely
       if (this.isUserScrolling) return; // don't fight the user's own gesture
 
-      afterNextRender(() => {
-        this.scrollToIndex(index);
-      });
+      this.scrollToIndex(index);
     });
   }
 
