@@ -4,7 +4,7 @@
 @use 'app/design-system/theme/ag-grid-overrides';
 
 :root {
-  --stagger-step: 0.03s; // tune this — smaller = snappier, still spread out
+  --stagger-step: 0.05s; // tune this — smaller = snappier, still spread out
   --stagger-cap: 10;      // max depth levels counted, prevents runaway delay
 }
 
@@ -47,7 +47,7 @@ html, body {
     background-color 1s ease-in-out,
     color 0.3s ease-in-out,
     border-color 2s ease-in-out,
-    box-shadow 2s ease-in-out,
+    // box-shadow 2s ease-in-out,
     stroke 0.3s ease-in-out,
     fill 0.3s ease-in-out;
   transition-delay: calc(min(var(--depth, 0), var(--stagger-cap)) * var(--stagger-step));
