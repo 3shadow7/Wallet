@@ -1,8 +1,9 @@
-import { Component, ElementRef, viewChild, effect, inject, computed, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, viewChild, effect, inject, computed, AfterViewInit, PLATFORM_ID } from '@angular/core';
 import { DashboardComponent } from "@features/dashboard/dashboard.component";
 import { SettingsComponent } from "@features/settings/settings.component";
 import { HistoryComponent } from "@features/history/history.component";
 import { MobileViewService } from '@core/services/mobile-view.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-mobile-view',
@@ -13,6 +14,8 @@ import { MobileViewService } from '@core/services/mobile-view.service';
 export class MobileViewComponent implements AfterViewInit {
   private mobileViewService = inject(MobileViewService);
   private container = viewChild.required<ElementRef<HTMLDivElement>>('container');
+  private platformId = inject(PLATFORM_ID);
+  private isBrowser = isPlatformBrowser(this.platformId);
   private ticking = false;
   private isUserScrolling = false;
   private scrollEndTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -33,6 +36,7 @@ export class MobileViewComponent implements AfterViewInit {
     // Runs whenever the signal changes (e.g. header click) -> scroll to it
     effect(() => {
       const index = this.mobileViewService.currentPageIndex();
+      if (!this.isBrowser) return; // no scrolling to do on the server, skip entirely
       if (this.isUserScrolling) return; // don't fight the user's own gesture
 
       // Give Angular a frame to finish mounting the target component
