@@ -23,7 +23,6 @@
   padding: 0.125rem;
   border-radius: v.$radius-md;
   border: 1px solid v.$border-color; // Subtler border
-  box-shadow: v.$shadow-sm; // Add subtle lift
 
   button.nav-btn {
     background: transparent;
@@ -391,7 +390,7 @@
           margin: 0;
           border-bottom-left-radius: 0; // Top card style
           border-bottom-right-radius: 0;
-          border-bottom: 1px solid v.$border-color; // Separator
+          border-bottom: unset; // Separator
           z-index: 2; // Keep on top
 
           .nav-btn {
@@ -403,6 +402,11 @@
             font-size: 0.9rem;
             min-width: 90px;
           }
+        }
+
+        .month-nav-mobile.history-header {
+          border-bottom: 1px solid v.$border-color;
+          transition: unset;
         }
 
         .btn-delete-month-full {
@@ -453,7 +457,7 @@
         flex: 1;
         background: v.$surface-color;
         color: v.$primary-color;
-        border: 1px solid var(--border-subtle);
+        border: 1px solid var(--border-color);
         border-radius: v.$radius-md;
         padding: 0.75rem;
         font-size: 0.95rem;

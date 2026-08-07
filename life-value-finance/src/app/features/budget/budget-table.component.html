@@ -104,7 +104,7 @@
         <div class="header-top">
             <h3>{{ filteredExpenses().length }} Items</h3>
             <div class="mobile-nav-group">
-                <div class="month-nav-mobile">
+                <div class="month-nav-mobile" [class.history-header]="!isCurrentMonth()">
                     <button class="nav-btn" (click)="prevMonth()" title="Previous Month">
                     <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor"><path d="M560-240 320-480l240-240 56 56-184 184 184 184-56 56Z"/></svg>
                     </button>
