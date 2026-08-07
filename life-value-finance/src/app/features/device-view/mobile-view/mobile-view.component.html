@@ -2,16 +2,22 @@
   <section>
     @if (dashboardVisible()) {
       <app-dashboard></app-dashboard>
+    } @else {
+      <div class="tab-skeleton"></div>
     }
   </section>
   <section>
     @if (historyVisible()) {
       <app-history></app-history>
+    } @else {
+      <div class="tab-skeleton"></div>
     }
   </section>
   <section>
     @if (settingsVisible()) {
       <app-settings></app-settings>
+    }@else {
+      <div class="tab-skeleton"></div>
     }
   </section>
 </div>
