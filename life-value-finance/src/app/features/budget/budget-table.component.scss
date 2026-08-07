@@ -1091,5 +1091,36 @@
 
   .sheet-header { display:flex; justify-content:space-between; align-items:center; }
   .sheet-body { margin-top: 12px; }
+  .sheet-subtitle {
+    font-size: 0.875rem;
+    color: v.$text-secondary;
+    margin-bottom: 8px;
+  }
+
+  .progress {
+    height: 8px;
+    background: color-mix(in srgb, v.$bg-input, transparent 85%);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, v.$primary-color, color-mix(in srgb, v.$primary-color, black 8%));
+    width: 0%;
+    transition: width 250ms ease-in-out;
+  }
+
+  .sheet-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid v.$border-color;
+    border-radius: v.$radius-sm;
+    box-shadow: none;
+    outline: none;
+  }
+
   .sheet-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
 }

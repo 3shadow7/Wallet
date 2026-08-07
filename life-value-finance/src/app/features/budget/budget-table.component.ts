@@ -725,6 +725,18 @@ export class BudgetTableComponent {
     this.closeMobileGoalSheet();
   }
 
+  // Returns progress percent (0-100) for the mobile sheet progress bar
+  mobileGoalProgress(): number {
+    const item = this.mobileGoalSheetItem();
+    if (!item) return 0;
+    const target = item.targetTotal ?? 0;
+    if (!target || target === 0) return 0;
+    const amt = item.amount ?? 0;
+    const pct = (amt / target) * 100;
+    if (!isFinite(pct)) return 0;
+    return Math.max(0, Math.min(100, Math.round(pct)));
+  }
+
   startNewMonth() {
     if (confirm('Start a new month? This will:\n1. Archive current month to history\n2. Advance date to next month\n3. Keep current expenses as template')) {
         this.budgetState.archiveAndResetMonth();

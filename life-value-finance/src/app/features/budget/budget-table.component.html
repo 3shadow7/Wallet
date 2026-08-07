@@ -307,7 +307,11 @@
           </div>
           <div class="sheet-body">
             <label>Saving Goal ($)</label>
-            <input type="number" [value]="mobileGoalSheetValue()" inputmode="decimal" (input)="mobileGoalSheetValue.set($any($event.target).value)" placeholder="e.g. 5000.00" />
+            <div class="sheet-subtitle">Amount: ${{ mobileGoalSheetItem()?.amount | number:'1.2-2' }} · Goal: {{ mobileGoalSheetItem()?.targetTotal ? '$' + (mobileGoalSheetItem()?.targetTotal | number:'1.2-2') : '--' }}</div>
+            <div class="progress">
+              <div class="progress-bar" [style.width]="mobileGoalProgress() + '%'" [attr.aria-valuenow]="mobileGoalProgress()" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <input class="sheet-input" type="number" [value]="mobileGoalSheetValue()" inputmode="decimal" (input)="mobileGoalSheetValue.set($any($event.target).value)" placeholder="e.g. 5000.00" />
           </div>
           <div class="sheet-actions">
             <button class="btn-cancel" (click)="closeMobileGoalSheet()">Cancel</button>
