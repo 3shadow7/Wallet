@@ -264,7 +264,7 @@
                 </div>
 
                 <div class="mobile-actions">
-                  @if (item.type === 'Saving' || item.type === 'Tax') {
+                                    @if (item.type === 'Saving' || item.type === 'Tax') {
                     <button class="btn-ignore-mobile"
                             [class.active]="!item.isIgnored"
                             [class.ignored-btn]="item.isIgnored"
@@ -275,7 +275,14 @@
                         } @else {
                              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T702-576l-84-86q39-16 80-25t82-9q146 0 266 81.5T920-500q-26 65-67 117t-91 87ZM240-84l-52-52 116-116q-19-14-36.5-30.5T234-318q-72-46-126-107T40-500q54-137 174-218.5T480-800q77 0 148 23t135 65l65-64 52 52-640 640ZM480-200q-70 0-134-21.5T226-282q-13-10-25-21t-23-23q51 45 111 75.5T480-200Zm112-256-42-42q-3 6-4.5 12.5T544-474q-5-38-31-64t-65-30q-7 0-13 1.5t-13 4.5l-42-42q22-12 47-18t53-6q75 0 127.5 52.5T660-500q0 28-6 53t-18 47q-9-19-21-36.5T592-456Z"/></svg>
                         }
-                    </button>
+                                        </button>
+                                        <!-- Goal edit button (mobile) -->
+                                        @if (item.type === 'Saving') {
+                                            <button class="btn-goal-mobile" (click)="openMobileGoalSheet(item)" title="Edit Saving Goal">
+                                                <span class="goal-icon">🎯</span>
+                                                @if(item.targetTotal) { <span class="goal-value">${{ item.targetTotal }}</span> }
+                                            </button>
+                                        }
                   }
                   <button class="btn-delete-mobile" (click)="deleteMobile(item.id, item.name)" aria-label="Delete">
                       <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
@@ -286,92 +293,29 @@
     </cdk-virtual-scroll-viewport>
 
     }
-<!--
-        @for (item of filteredExpenses(); track item.id) {
-        <div class="budget-card"
-             [class.unfunded-savings]="savingsStatus().hasDeficit && item.type === 'Saving' && !item.isIgnored"
-             [class.ignored-card]="item.isIgnored">
 
-            @if (savingsStatus().hasDeficit && item.type === 'Saving' && !item.isIgnored) {
-                <div class="card-warning-stripe">⚠️ Partially Funded ({{ savingsStatus().percentFunded | number:'1.0-0' }}%)</div>
-            }
+    </div> <!-- cards-scroll-container -->
 
-            <div class="card-main">
-                <div class="card-top">
-                    <input type="text"
-                        class="category-name-input"
-                        [value]="item.name"
-                        (change)="onMobileNameChange(item, $event)"
-                        placeholder="Item Name">
-
-                    <div class="amount-group">
-                        <div class="qty-wrapper">
-                            <span>x</span>
-                            <input type="number"
-                                [value]="item.quantity || 1"
-                                (change)="onMobileQuantityChange(item, $event)"
-                                class="qty-input"
-                                min="1"
-                                title="Quantity">
-                        </div>
-                        <span class="currency-symbol">$</span>
-                        <input type="number"
-                            [value]="item.amount"
-                            (change)="onMobileAmountChange(item, $event)"
-                            class="amount-input"
-                            step="0.01">
-                    </div>
-                </div>
-
-                <div class="card-meta">
-                    <div class="mobile-select-group">
-                        <label>Importance:</label>
-                        <app-single-select
-                            [options]="priorityOptions"
-                            [value]="item.priority"
-                            variant="dot"
-                            (valueChange)="updateItemPriority(item, $event)"
-                            class="inline-single-select">
-                        </app-single-select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-footer">
-                <div class="mobile-select-group">
-                    <label>Type:</label>
-                    <app-single-select
-                        [options]="typeOptions"
-                        [value]="item.type"
-                        variant="badge"
-                        (valueChange)="updateItemType(item, $event)"
-                        class="inline-single-select">
-                    </app-single-select>
-                </div>
-
-
-                <div class="mobile-actions">
-                  @if (item.type === 'Saving' || item.type === 'Tax') {
-                    <button class="btn-ignore-mobile"
-                            [class.active]="!item.isIgnored"
-                            [class.ignored-btn]="item.isIgnored"
-                            (click)="toggleIgnore(item.id, !!item.isIgnored)"
-                            [title]="item.isIgnored ? 'Activate (Include)' : 'Ignore (Exclude)'">
-                        @if(!item.isIgnored) {
-                             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Z"/></svg>
-                        } @else {
-                             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="m644-428-58-58q9-47-27-88t-93-32l-58-58q17-8 34.5-12t37.5-4q75 0 127.5 52.5T660-500q0 20-4 37.5T644-428Zm128 126-58-56q38-29 67.5-63.5T702-576l-84-86q39-16 80-25t82-9q146 0 266 81.5T920-500q-26 65-67 117t-91 87ZM240-84l-52-52 116-116q-19-14-36.5-30.5T234-318q-72-46-126-107T40-500q54-137 174-218.5T480-800q77 0 148 23t135 65l65-64 52 52-640 640ZM480-200q-70 0-134-21.5T226-282q-13-10-25-21t-23-23q51 45 111 75.5T480-200Zm112-256-42-42q-3 6-4.5 12.5T544-474q-5-38-31-64t-65-30q-7 0-13 1.5t-13 4.5l-42-42q22-12 47-18t53-6q75 0 127.5 52.5T660-500q0 28-6 53t-18 47q-9-19-21-36.5T592-456Z"/></svg>
-                        }
-                    </button>
-                  }
-                  <button class="btn-delete-mobile" (click)="deleteMobile(item.id, item.name)" aria-label="Delete">
-                      <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
-                  </button>
-                </div>
-            </div>
+    <!-- Mobile Goal Bottom Sheet -->
+    @if (mobileGoalSheetOpen()) {
+      <div class="mobile-goal-sheet">
+        <div class="sheet-backdrop" (click)="closeMobileGoalSheet()"></div>
+        <div class="sheet-panel">
+          <div class="sheet-header">
+            <h4>{{ mobileGoalSheetItem()?.name }}</h4>
+            <button class="sheet-close" (click)="closeMobileGoalSheet()">✕</button>
+          </div>
+          <div class="sheet-body">
+            <label>Saving Goal ($)</label>
+            <input type="number" [value]="mobileGoalSheetValue()" inputmode="decimal" (input)="mobileGoalSheetValue.set($any($event.target).value)" placeholder="e.g. 5000.00" />
+          </div>
+          <div class="sheet-actions">
+            <button class="btn-cancel" (click)="closeMobileGoalSheet()">Cancel</button>
+            <button class="btn-primary" (click)="saveMobileGoal()">Save</button>
+          </div>
         </div>
+      </div>
     }
-     -->
-    </div>
-  </div>
-</div>
+
+  </div> <!-- mobile-budget-list -->
+</div> <!-- table-container -->

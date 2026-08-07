@@ -52,6 +52,11 @@ export class BudgetTableComponent {
   filterPriority = signal<string>('');
   filterType = signal<string>('');
 
+  // Mobile goal sheet state
+  mobileGoalSheetOpen = signal<boolean>(false);
+  mobileGoalSheetItem = signal<ExpenseItem | null>(null);
+  mobileGoalSheetValue = signal<string>('');
+
   // Options for SingleSelect
   priorityOptions: PriorityLevel[] = ['Must', 'Want', 'Emergency', 'Gift'];
   typeOptions: ExpenseItem['type'][] = ['Burn', 'Tax', 'Saving'];
@@ -394,13 +399,8 @@ export class BudgetTableComponent {
         }
         return { fontWeight: '500' } as any;
       },
-      // Show only for Saving type items in edit mode
-      cellEditor: (params: any) => {
-        if (params.data?.type !== 'Saving') {
-          return undefined; // Don't show editor for non-Saving items
-        }
-        return 'agNumberCellEditor';
-      },
+      // Use numeric editor and only allow editing for Saving type items
+      cellEditor: 'agNumberCellEditor',
       valueFormatter: (params: ValueFormatterParams) => {
         if (params.data?.type !== 'Saving') return '';
         if (params.value === null || params.value === undefined || params.value === '') return '--';
@@ -410,7 +410,7 @@ export class BudgetTableComponent {
         const num = Number(params.newValue);
         return isNaN(num) || num < 0 ? undefined : num;
       },
-      editable: true,
+      editable: (params: any) => params.data?.type === 'Saving',
     },
 
     {
@@ -690,6 +690,39 @@ export class BudgetTableComponent {
     if (confirm(`Delete "${name}"?`)) {
         this.budgetState.removeExpense(id);
     }
+  }
+
+  // Mobile bottom-sheet handlers for editing saving goal
+  openMobileGoalSheet(item: ExpenseItem) {
+    this.mobileGoalSheetItem.set(item);
+    this.mobileGoalSheetValue.set(item.targetTotal !== undefined && item.targetTotal !== null ? String(item.targetTotal) : '');
+    this.mobileGoalSheetOpen.set(true);
+  }
+
+  closeMobileGoalSheet() {
+    this.mobileGoalSheetOpen.set(false);
+    this.mobileGoalSheetItem.set(null);
+    this.mobileGoalSheetValue.set('');
+  }
+
+  saveMobileGoal() {
+    const item = this.mobileGoalSheetItem();
+    if (!item) return;
+    const raw = this.mobileGoalSheetValue().trim();
+    let num: number | undefined;
+    if (raw === '') {
+      num = undefined;
+    } else {
+      const parsed = Number(raw);
+      if (isNaN(parsed) || parsed < 0) {
+        // invalid input - ignore
+        return;
+      }
+      num = parsed;
+    }
+
+    this.budgetState.updateExpense(item.id, { targetTotal: num });
+    this.closeMobileGoalSheet();
   }
 
   startNewMonth() {
