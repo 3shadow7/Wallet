@@ -3,6 +3,11 @@
 @use 'app/design-system/theme/mixins' as m;
 @use 'app/design-system/theme/ag-grid-overrides';
 
+:root {
+  --stagger-step: 0.03s; // tune this — smaller = snappier, still spread out
+  --stagger-cap: 10;      // max depth levels counted, prevents runaway delay
+}
+
 // Reset & Base
 html, body {
   height: 100dvh;
@@ -33,6 +38,11 @@ html, body {
 // Global Transition Rule
 // Apply to common container elements to propagate the effect
 *, *::before, *::after {
+  --depth: calc(var(--depth, 0) + 1);
+
+  // Only transition what actually needs to fade.
+  // Drop box-shadow/border-color from the global rule — they're expensive
+  // (can trigger paint on large areas) and rarely need to fade on every element.
   transition:
     background-color 1s ease-in-out,
     color 0.3s ease-in-out,
@@ -40,6 +50,7 @@ html, body {
     box-shadow 2s ease-in-out,
     stroke 0.3s ease-in-out,
     fill 0.3s ease-in-out;
+  transition-delay: calc(min(var(--depth, 0), var(--stagger-cap)) * var(--stagger-step));
 }
 
 // Typography Hierarchy
