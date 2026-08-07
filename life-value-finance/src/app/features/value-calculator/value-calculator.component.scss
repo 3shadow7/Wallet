@@ -180,6 +180,12 @@ h2 {
     }
   }
 
+  .result-item.mobile-style {
+    padding: var(--spacing-xs);
+    .label {margin-bottom: 0;}
+    .value {margin: 0;}
+  }
+
   /* Emoji Feedback Section */
   .emoji-feedback {
     margin-top: var(--spacing-sm);
@@ -219,6 +225,10 @@ h2 {
         color: var(--text-primary);
         line-height: 1.4;
       }
+    }
+
+    .feedback-content.mobile-style {
+      padding-top: 0;
     }
   }
 }

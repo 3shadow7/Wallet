@@ -4,6 +4,7 @@ import { FinancialCalculatorService } from '@core/domain/financial-calculator.se
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { NumericInputDirective } from '@shared/numeric-input.directive';
 import { ValueAnalysis } from '@core/domain/models';
+import { ViewportService } from '@core/viewPort/viewport.service';
 
 @Component({
   selector: 'app-value-calculator',
@@ -16,6 +17,8 @@ import { ValueAnalysis } from '@core/domain/models';
 })
 export class ValueCalculatorComponent {
   private budgetState = inject(BudgetStateService);
+  viewportService = inject(ViewportService);
+  isMobile = this.viewportService.isMobile;
 
   // Inputs
   productPrice = signal<number | null>(null);
