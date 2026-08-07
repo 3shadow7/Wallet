@@ -226,7 +226,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
           if (data.length > 0 && this.selectedMonths().length === 0 && !this.userHasInteractedWithSlider) {
              this.selectedMonths.set([data[data.length - 1].month]);
           }
-      }, { allowSignalWrites: true });
+      });
 
       // Theme Change Effect
       effect(() => {

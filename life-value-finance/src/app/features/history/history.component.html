@@ -17,7 +17,9 @@
           <h3>Best Month</h3>
           <div class="mini-detail">
               <span class="value">{{ bestMonth()?.month || '--' }}</span>
-              <span class="sub" *ngIf="bestMonth()">{{ bestMonth()?.transferredToSavings | currency }} saved</span>
+              @if (bestMonth()) {
+                <span class="sub">{{ bestMonth()?.transferredToSavings | currency }} saved</span>
+              }
           </div>
       </div>
     </div>
@@ -95,7 +97,7 @@
     </div>
 
     <!-- Detailed History Table (Desktop) -->
-    <div class="table-card desktop-view">
+    <div class="table-card desktop-view"  *appShowOn="[  'laptop', 'desktop', 'tv' ]">
       <h3>Detailed Monthly Log</h3>
       @if (isBrowser) {
       <ag-grid-angular
@@ -112,7 +114,7 @@
     </div>
 
     <!-- Mobile History Cards -->
-    <div class="mobile-history-list mobile-view">
+    <div class="mobile-history-list mobile-view"  *appShowOn="[ 'mobile','tablet', ]">
         <div class="mobile-header">
             <h3>Monthly Log</h3>
         </div>

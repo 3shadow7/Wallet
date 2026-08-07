@@ -1,0 +1,17 @@
+<div class="mobile-view-container" #container>
+  <section>
+    @if (dashboardVisible()) {
+      <app-dashboard></app-dashboard>
+    }
+  </section>
+  <section>
+    @if (historyVisible()) {
+      <app-history></app-history>
+    }
+  </section>
+  <section>
+    @if (settingsVisible()) {
+      <app-settings></app-settings>
+    }
+  </section>
+</div>

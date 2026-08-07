@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, signal, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter, take } from 'rxjs/operators';
 import { HeaderComponent } from './layout/header/header.component';

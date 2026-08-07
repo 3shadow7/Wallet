@@ -24,6 +24,7 @@
       flex-direction: column;
       height: auto;
       padding: var(--spacing-sm) var(--spacing-md);
+      padding-bottom: 0;
       gap: var(--spacing-sm);
     }
   }
@@ -70,7 +71,7 @@
       justify-content: center;
       border-top: 1px solid var(--border-color);
       padding: var(--spacing-xs) 0;
-      margin-top: var(--spacing-md);
+      padding-bottom: 0;
     }
 
     a {
@@ -92,8 +93,13 @@
         border-bottom: 2px solid transparent;
 
         &.active {
-          background-color: transparent !important;
+          background: linear-gradient(0deg, var(--primary-color-light) 0%, transparent 85%) !important;
           border-bottom-color: var(--primary-color);
+        }
+
+        &:hover {
+          color: var(--text-primary);
+          background-color: unset ;
         }
       }
 

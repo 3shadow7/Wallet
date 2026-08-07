@@ -15,12 +15,15 @@ import {
 } from 'ag-grid-community';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem, PriorityLevel } from '@core/domain/models';
+import { ShowOnDirective } from '@core/viewPort/show-on.directive';
 // import { AddExpenseComponent } from './add-expense.component';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 @Component({
   selector: 'app-budget-table',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular, SingleSelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, AgGridAngular,
+     SingleSelectComponent, ShowOnDirective, ScrollingModule],
   templateUrl: './budget-table.component.html',
   styleUrl: './budget-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,12 +41,13 @@ export class BudgetTableComponent {
   expenses = this.budgetState.expensesSignal;
   totalExpenses = this.budgetState.totalExpenses;
   viewedMonth = this.budgetState.viewedMonthSignal;
+  canRevertMonth = this.budgetState.canRevertMonth;
+  isFutureMonth = this.budgetState.isFutureMonth;
   activeMonth = computed(() => this.budgetState.settingsSignal().lastActiveMonth);
   isCurrentMonth = computed(() => this.viewedMonth() === this.activeMonth());
   historyEntry = computed(() => this.budgetState.historySignal().find(entry => entry.month === this.viewedMonth()));
   isExcludedFromTotals = computed(() => this.historyEntry()?.excludedFromTotals ?? false);
   canToggleMonthTotals = computed(() => !this.isCurrentMonth() && this.budgetState.isHistoryMonthEmpty(this.viewedMonth()));
-
   // Mobile Filters
   filterPriority = signal<string>('');
   filterType = signal<string>('');
@@ -96,6 +100,7 @@ export class BudgetTableComponent {
   });
 
   onMobileAmountChange(item: ExpenseItem, event: Event) {
+
     const input = event.target as HTMLInputElement;
     const newAmount = Number(input.value);
 
@@ -693,13 +698,7 @@ export class BudgetTableComponent {
     }
   }
 
-  isFutureMonth(): boolean {
-      return this.budgetState.isFutureMonth();
-  }
 
-  canRevertMonth(): boolean {
-      return this.budgetState.canRevertMonth();
-  }
 
   async revertMonth() {
       if (this.canRevertMonth()) {

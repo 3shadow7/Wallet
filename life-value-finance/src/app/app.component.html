@@ -1,6 +1,11 @@
+<div class="app-container">
+
 @if (showHeader()) {
-  <app-header class="header" />
+  <app-header class="header"  />
 }
-<main [class.auth-layout]="!showHeader()">
+
+<main class="main-content" [class.auth-layout]="!showHeader()">
   <router-outlet />
 </main>
+
+</div>

@@ -474,24 +474,23 @@ export class BudgetStateService {
    */
   // --- REVERT / UNDO LOGIC ---
 
-  canRevertMonth(): boolean {
+  readonly canRevertMonth = computed(() => {
       const currentActive = this.settings().lastActiveMonth;
       const now = new Date();
       const realMonthStr = now.toISOString().slice(0, 7);
       const history = this.history();
-
       // Can only revert if:
       // 1. We have history to go back to.
       // 2. The *current active month* is in the future relative to real time.
       return history.length > 0 && currentActive > realMonthStr;
-  }
+  });
 
-  isFutureMonth(): boolean {
+  readonly isFutureMonth = computed(() => {
       const currentActive = this.settings().lastActiveMonth;
       const now = new Date();
       const realMonthStr = now.toISOString().slice(0, 7);
       return currentActive > realMonthStr;
-  }
+  });
 
   revertToPreviousMonth() {
       const history = this.history();

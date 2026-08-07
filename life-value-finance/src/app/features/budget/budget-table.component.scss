@@ -20,10 +20,9 @@
   gap: 0.25rem;
   margin: 0 1rem;
   background: v.$surface-color; // Cleaner background
-  padding: 0.125rem;
+  padding: 0.25rem;
   border-radius: v.$radius-md;
   border: 1px solid v.$border-color; // Subtler border
-  box-shadow: v.$shadow-sm; // Add subtle lift
 
   button.nav-btn {
     background: transparent;
@@ -340,20 +339,15 @@
 .desktop-view {
   display: flex;
 
-  @include m.respond-to('max-xs') {
-    display: none !important;
-  }
 }
 
 .mobile-view {
-  display: none;
+  // display: none;
 
-  @include m.respond-to('max-xs') {
     display: flex;
     flex-direction: column;
     gap: 1.25rem; // Increased gap to prevent sticking
-    padding-bottom: 5rem;
-  }
+
 
   .mobile-header {
     display: flex;
@@ -396,7 +390,7 @@
           margin: 0;
           border-bottom-left-radius: 0; // Top card style
           border-bottom-right-radius: 0;
-          border-bottom: 1px solid v.$border-color; // Separator
+          border-bottom: unset; // Separator
           z-index: 2; // Keep on top
 
           .nav-btn {
@@ -408,6 +402,11 @@
             font-size: 0.9rem;
             min-width: 90px;
           }
+        }
+
+        .month-nav-mobile.history-header {
+          border-bottom: 1px solid v.$border-color;
+          transition: unset;
         }
 
         .btn-delete-month-full {
@@ -458,7 +457,7 @@
         flex: 1;
         background: v.$surface-color;
         color: v.$primary-color;
-        border: 1px solid var(--border-subtle);
+        border: 1px solid var(--border-color);
         border-radius: v.$radius-md;
         padding: 0.75rem;
         font-size: 0.95rem;
@@ -528,12 +527,16 @@
   }
 
   .cards-scroll-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    // display: flex;
+    // flex-direction: column;
+    // gap: 1rem;
+    // will-change: transform;
+    // transform: translateZ(0); // force its own compositing layer
+    // contain: layout style paint; // isolate layout/paint from the rest of the page
     // Assume roughly 110-120px per card, so ~360px shows roughly 3 cards
-    max-height: 450px;
-    overflow-y: auto;
+    // max-height: 450px;
+    height: 450px;
+    // overflow-y: auto;
     padding: 0.5rem; // Increase padding to prevent clipping of borders/shadows
     margin: -0.5rem; // Negative margin to compensate for padding
     border-top: 1px solid var(--border-color);
@@ -585,12 +588,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin: 0.5rem;
     padding: 1rem; // Adequate padding
     position: relative;
     flex-shrink: 0; // Don't shrink in scroll container
     box-shadow: none !important; // Remove shadow to emphasize border style
     background: v.$surface-color;
     transition: transform 0.2s ease, border-color 2s ease-in-out;
+    // content-visibility: auto;
+    // contain-intrinsic-size: 0 180px; // adjust to real avg card height
 
     // Dark mode adj
     @media (prefers-color-scheme: light) {
