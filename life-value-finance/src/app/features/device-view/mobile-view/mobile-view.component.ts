@@ -1,4 +1,4 @@
-import { Component, ElementRef, viewChild, effect, inject, computed, AfterViewInit, PLATFORM_ID } from '@angular/core';
+import { Component, ElementRef, viewChild, effect, inject, computed, AfterViewInit, PLATFORM_ID, afterNextRender } from '@angular/core';
 import { DashboardComponent } from "@features/dashboard/dashboard.component";
 import { SettingsComponent } from "@features/settings/settings.component";
 import { HistoryComponent } from "@features/history/history.component";
@@ -39,10 +39,7 @@ export class MobileViewComponent implements AfterViewInit {
       if (!this.isBrowser) return; // no scrolling to do on the server, skip entirely
       if (this.isUserScrolling) return; // don't fight the user's own gesture
 
-      // Give Angular a frame to finish mounting the target component
-      // before we jump to its position — otherwise we scroll to it
-      // while it's still empty/skeleton.
-      requestAnimationFrame(() => {
+      afterNextRender(() => {
         this.scrollToIndex(index);
       });
     });
