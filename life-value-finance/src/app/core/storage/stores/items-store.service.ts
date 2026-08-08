@@ -2,7 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
 import { STORAGE_KEYS } from '@core/storage/engine/storage-keys';
 import { ItemsData, ItemsStore } from '@core/domain/storage.models';
-import { UserSettings } from '@core/domain/models';
+import { ExpenseItem, UserSettings } from '@core/domain/models';
+import { normalizeName } from '@core/storage/engine/saving-goal-storage.utils';
 
 const STORE_VERSION = 1;
 const DEFAULT_SETTINGS: UserSettings = {
@@ -24,6 +25,24 @@ export class ItemsStoreService {
 
   setData(data: ItemsData): void {
     this.writeStore(data);
+  }
+
+  listAllItems(): ExpenseItem[] {
+    return Object.values(this.engine.getRoot().canonicalItems ?? {}).map(item => ({ ...item }));
+  }
+
+  getCanonical(itemKey: string): ExpenseItem | null {
+    const canonical = this.engine.getRoot().canonicalItems?.[itemKey];
+    return canonical ? { ...canonical } : null;
+  }
+
+  searchItems(query: string, type?: ExpenseItem['type']): ExpenseItem[] {
+    const text = normalizeName(query);
+    return this.listAllItems().filter(item => {
+      const matchesType = !type || item.type === type;
+      const matchesName = normalizeName(item.name).includes(text);
+      return matchesType && matchesName;
+    });
   }
 
   updateData(patch: Partial<ItemsData>): void {

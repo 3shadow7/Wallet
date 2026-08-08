@@ -130,6 +130,10 @@ export class BudgetTableComponent {
       this.updateItem(item, { name: newName });
   }
 
+  openAllItemsExplorer(): void {
+    window.alert('All Items explorer is planned for the next feature step.');
+  }
+
   onMobileQuantityChange(item: ExpenseItem, event: Event) {
     const input = event.target as HTMLInputElement;
     const newQty = Number(input.value);

@@ -9,6 +9,7 @@ import { ItemsStoreService } from '@core/storage/stores/items-store.service';
 import { StorageMigrationService } from '@core/storage/migration/storage-migration.service';
 import { StorageEngineService } from '@core/storage/engine/storage-engine.service';
 import { MonthlyItems } from '@core/domain/storage.models';
+import { createItemId } from '@core/storage/engine/saving-goal-storage.utils';
 
 const INITIAL_SETTINGS: UserSettings = {
   timezone: 'Africa/Tripoli',
@@ -647,6 +648,7 @@ export class BudgetStateService {
       const isReducible = item.isReducible ?? true;
       return {
           ...item,
+          id: item.id || createItemId(item.name, normalizedType),
           type: normalizedType,
           priority: normalizedPriority,
           isReducible: normalizedType === 'Saving' ? isReducible : item.isReducible
@@ -720,6 +722,11 @@ export class BudgetStateService {
             settings: { ...settings }
         });
 
+        this.storageEngine.writeMonth(settings.lastActiveMonth, this.toPersistableEntries(currentExpenses));
+        history.forEach(entry => {
+            this.storageEngine.writeMonth(entry.month, this.toPersistableEntries(entry.expenses ?? []));
+        });
+
         const historyData = this.historyStore.getData();
         const summary = historyData.savingsSummary ?? {
             totalSavings: 0,
@@ -747,6 +754,18 @@ export class BudgetStateService {
             };
             return acc;
         }, {});
+    }
+
+    private toPersistableEntries(items: ExpenseItem[]): (Pick<ExpenseItem, 'name' | 'type' | 'amount' | 'quantity' | 'targetTotal' | 'id'> & { note?: string })[] {
+        return (items ?? []).map(item => ({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            amount: item.amount ?? 0,
+            quantity: item.quantity ?? 1,
+            targetTotal: item.targetTotal,
+            note: (item as ExpenseItem & { note?: string }).note
+        }));
     }
 }
 

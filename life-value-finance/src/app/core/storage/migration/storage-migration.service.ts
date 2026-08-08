@@ -83,6 +83,11 @@ export class StorageMigrationService {
     this.historyStore.setData(historyData);
     this.itemsStore.setData(itemsData);
 
+    this.engine.writeMonth(currentMonth, this.toPersistableEntries(itemsData.currentMonth.items));
+    legacyHistory.forEach(entry => {
+      this.engine.writeMonth(entry.month, this.toPersistableEntries(entry.expenses ?? []));
+    });
+
     this.clearLegacyKeys();
 
     return true;
@@ -173,6 +178,18 @@ export class StorageMigrationService {
     });
 
     return months;
+  }
+
+  private toPersistableEntries(items: ExpenseItem[]): (Pick<ExpenseItem, 'name' | 'type' | 'amount' | 'quantity' | 'targetTotal' | 'id'> & { note?: string })[] {
+    return (items ?? []).map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type,
+      amount: item.amount ?? 0,
+      quantity: item.quantity ?? 1,
+      targetTotal: item.targetTotal,
+      note: (item as ExpenseItem & { note?: string }).note
+    }));
   }
 
   private buildHistoryAnalysis(history: BudgetHistory[], totalSavings: number, now: string) {

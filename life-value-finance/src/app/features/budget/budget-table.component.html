@@ -52,6 +52,10 @@
               📅 Start New Month
             </button>
 
+            <button class="btn-archive" type="button" (click)="openAllItemsExplorer()" title="Open the upcoming all-items explorer">
+              🗂️ All Items (explorer)
+            </button>
+
             <!-- Revert / Reset Logic -->
             @if (canRevertMonth()) {
                 <button class="btn-revert" (click)="revertMonth()" title="Delete this month and revert to previous">
