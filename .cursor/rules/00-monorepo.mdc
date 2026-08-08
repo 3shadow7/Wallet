@@ -1,0 +1,38 @@
+---
+description: Monorepo layout, dev commands, and workflow for MyWallet
+alwaysApply: true
+---
+
+# MyWallet monorepo
+
+## Layout
+
+- **Frontend:** `life-value-finance/` — Angular 21 PWA (see `life-value-finance/AGENTS.md`)
+- **Backend:** `backend/` — Django REST + SimpleJWT (see `backend/AGENTS.md`)
+- **Plans:** `plans/` — feature plans; create new plans as `YYYYMMDD-short-title.md`
+- **API spec:** `swagger-local/openapi.json`
+
+## Quick start
+
+Frontend:
+```bash
+cd life-value-finance && npm install && npm run build && npm start
+```
+
+Backend:
+```bash
+cd backend && python manage.py migrate && python manage.py runserver
+```
+
+## Agent behavior
+
+- Treat the user as project manager; implement features incrementally.
+- Read nested `AGENTS.md` in the directory you are editing.
+- After code changes: summary, run commands, manual QA steps.
+- Do not add test files, reset databases, or expand scope unless asked.
+- Legacy Copilot agents live in `.github/agents/` — Cursor uses `AGENTS.md` and `.cursor/` instead.
+
+## Invoke specialist mode
+
+- Frontend lead: type `/frontend-senior` or `@frontend-senior` in Agent chat
+- Backend lead: type `/backend-senior` or `@backend-senior` in Agent chat
