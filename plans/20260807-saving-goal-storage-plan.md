@@ -114,3 +114,112 @@ Where each `CanonicalItem` contains:
 ## Notes / Future
 - This structure is lean, scalable, and ready for future sync and richer analytics.
 - The linked-item model can later support more advanced relationships such as categories, aliases, or dependency-based financial rules.
+
+
+## Overall assessment
+This plan fits your project direction well, and it is already aligned with the core goals of being offline-first, simple, and modular. The main improvements I would make are about implementation scope, architecture alignment, and keeping the first version focused on the basic user experience.
+
+## What should stay in the plan
+- A dedicated item-management route for exploration and linking
+- A canonical, versioned storage model with stable item ids
+- Shared-target behavior for explicit links only
+- Lightweight month entries that reference canonical items instead of duplicating full item payloads
+- Cents-based money storage internally
+
+## What should be enhanced
+### 1. Align the feature with the existing Angular structure
+The current app already has a clear domain structure under the Angular app. The new feature should fit that structure instead of feeling like a standalone addition.
+
+Recommended placement:
+- feature route under the finance area, for example: features/finance/item-explorer/
+- state and storage logic should stay in core services and storage services rather than living in the component only
+
+This keeps the solution consistent with the existing frontend agent instructions and avoids unnecessary abstraction.
+
+### 2. Prefer extending existing services over creating a new parallel architecture
+The project already has:
+- StorageEngineService
+- ItemsStoreService
+- BudgetStateService
+
+The plan should make it explicit that the new feature should extend these services first, rather than introducing a completely separate storage or state path.
+
+Suggested wording:
+- Extend StorageEngineService for canonical item storage and link-group persistence
+- Extend ItemsStoreService for search and retrieval APIs
+- Integrate BudgetStateService so month entries and current-month behavior continue to work
+
+### 3. Keep the first version intentionally simple
+The plan should clearly say that this first step is not a full financial graph or analytics engine. It should focus on three things:
+- search
+- explicit linking
+- shared target editing
+
+That keeps the experience easy for a normal user and avoids overengineering before the base feature is proven.
+
+### 4. Make the UX goal explicit for the basic user
+The plan should reflect that the feature is meant to make monthly budgeting easier, not to overwhelm the user with too many options.
+
+Recommended UX principles:
+- search first
+- small action panel for linking and target editing
+- clear visual indication when items are linked
+- purchased items should be visually muted and removed from active focus by default
+- no advanced charts or complex rules in this first step
+
+### 5. Clarify the business rule around shared targets
+The plan is strong, but it should be more explicit that shared-target behavior is only about target configuration and not about item identity itself.
+
+Recommended rule:
+- linked items share target values
+- linked items remain distinct items with their own name, state, and history
+- different names should remain different items unless the user explicitly links them
+
+## Refined implementation plan
+1. Create the new feature route as a simple page shell
+   - Keep the first screen focused on search, selection, linking, and shared target editing.
+
+2. Extend the storage layer
+   - Add helpers for item id creation and name normalization.
+   - Add shared-target resolution helpers.
+   - Update StorageEngineService to support:
+     - versioned root read/write
+     - month read/write using lightweight references
+     - canonical item upsert
+     - link-group creation and update
+     - shared target propagation
+
+3. Extend the item store layer
+   - Add or expand query methods such as:
+     - listAllItems()
+     - getItem(itemId)
+     - searchItems(query, type?)
+     - getLinkedItems(itemId)
+
+4. Integrate with the existing budget flow
+   - When an item is added or edited, write to the canonical item model and the month entry.
+   - When a linked target is edited, propagate it to the linked partners automatically.
+   - Keep month entries lightweight and avoid duplicating full item objects.
+
+5. Build the explorer UI
+   - Search by name and type
+   - Select multiple items and create a shared-target link group
+   - Show a clear note that linked items share target logic
+   - Allow editing the shared target from one place
+   - Allow marking an item as purchased/fulfilled and remove it from active focus
+
+## Suggested acceptance criteria
+- A user can create several items with different names and link them into one shared-target group.
+- Editing the target on one linked item updates the others automatically.
+- Removing the link stops the shared-target behavior.
+- Searching the explorer finds the expected items and related linked partners.
+- Marking an item as purchased removes it from the active focus list.
+- The existing dashboard and monthly budget flow still work after the change.
+- Reloading the app preserves the data.
+
+## Advice for the agent
+- Work incrementally and preserve the current behavior first.
+- Keep the first version small and focused on the basic user journey.
+- Avoid introducing advanced analytics, backend sync, or extra rules before the shared-target feature is working well.
+- Prefer small, readable changes over large rewrites.
+- Verify the app build after each major step.
