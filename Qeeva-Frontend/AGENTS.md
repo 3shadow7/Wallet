@@ -18,7 +18,7 @@ Act as the frontend lead for the Angular app in this directory.
 ## Dev commands
 
 ```bash
-cd life-value-finance
+cd Qeeva-Frontend
 npm install
 npm run build          # build before first SSR serve
 npm start              # SSR dev server (dist/qeeva/server)

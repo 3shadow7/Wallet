@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "MyWallet Frontend Storage Vision",
+    "title": "Qeeva Frontend Storage Vision",
     "version": "0.2.0",
     "description": "Swagger-style contract for the planned localStorage structure. Storage is grouped into main stores for income, history/analysis, and items, using versioned envelopes for scalability."
   },

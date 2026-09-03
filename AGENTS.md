@@ -1,4 +1,4 @@
-# MyWallet — Project Instructions
+# Qeeva — Project Instructions
 
 Personal money management and financial analytics system. Offline-first; online sync comes later.
 
@@ -6,13 +6,13 @@ Personal money management and financial analytics system. Offline-first; online 
 
 | Path | Stack | Purpose |
 |------|-------|---------|
-| `life-value-finance/` | Angular 21, Signals, SCSS, AG Grid | Frontend PWA |
-| `backend/` | Django REST, SimpleJWT, SQLite | Backend API (auth + finance) |
+| `Qeeva-Frontend/` | Angular 21, Signals, SCSS, AG Grid | Frontend PWA |
+| `Qeeva-Backend/` | Django REST, SimpleJWT, SQLite | Backend API (auth + finance) |
 | `plans/` | Markdown | Feature plans and refactor notes |
 | `swagger-local/` | OpenAPI | Local API reference |
 
-When editing frontend files, follow `life-value-finance/AGENTS.md`.
-When editing backend files, follow `backend/AGENTS.md`.
+When editing frontend files, follow `Qeeva-Frontend/AGENTS.md`.
+When editing backend files, follow `Qeeva-Backend/AGENTS.md`.
 
 ## Product vision
 

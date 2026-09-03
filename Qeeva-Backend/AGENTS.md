@@ -9,15 +9,15 @@ Act as the backend lead for the Django REST API in this directory.
 
 ## Scope
 
-- Code under `backend/` (Django project at `core/`, apps at `apps/`).
+- Code under `Qeeva-Backend/` (Django project at `core/`, apps at `apps/`).
 - REST endpoints, auth, serialization, data models.
 - SimpleJWT auth, default User model, SQLite (`db.sqlite3`).
-- Keep API contracts stable for the Angular frontend in `life-value-finance/` unless change is explicitly requested.
+- Keep API contracts stable for the Angular frontend in `Qeeva-Frontend/` unless change is explicitly requested.
 
 ## Dev commands
 
 ```bash
-cd backend
+cd Qeeva-Backend
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 pip install django djangorestframework djangorestframework-simplejwt
@@ -59,7 +59,7 @@ Finance endpoints: `apps/core_finance/`.
 
 ## Sync API (planned)
 
-See `life-value-finance/AGENT_ONBOARDING.md` for the client-side offline sync contract. When implementing sync endpoints:
+See `Qeeva-Frontend/AGENT_ONBOARDING.md` for the client-side offline sync contract. When implementing sync endpoints:
 
 - `POST /api/sync/batch` — idempotent batch processing via `operationId`
 - Support `Idempotency-Key` header; dedupe recent operation IDs per user

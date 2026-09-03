@@ -1,16 +1,16 @@
 ---
 description: Django REST API, auth, serializers, and database conventions
-globs: backend/**/*
+globs: Qeeva-Backend/**/*
 alwaysApply: false
 ---
 
 # Backend scope
 
-You are working in the Django backend. Follow `backend/AGENTS.md` for full rules.
+You are working in the Qeeva Django backend. Follow `Qeeva-Backend/AGENTS.md` for full rules.
 
 Key constraints:
 - Django REST + SimpleJWT; SQLite default
 - Serializers for validation; proper HTTP status codes
 - Add migrations when models change; never drop/reset DB without approval
-- Keep endpoints backward compatible with `life-value-finance/` frontend
-- Run from `backend/`: `python manage.py migrate && python manage.py runserver`
+- Keep endpoints backward compatible with `Qeeva-Frontend/` frontend
+- Run from `Qeeva-Backend/`: `python manage.py migrate && python manage.py runserver`
