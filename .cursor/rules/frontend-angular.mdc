@@ -1,0 +1,16 @@
+---
+description: Frontend Angular architecture, state, storage, and UI conventions
+globs: Qeeva-Frontend/**/*
+alwaysApply: false
+---
+
+# Frontend scope
+
+You are working in the Qeeva Angular frontend. Follow `Qeeva-Frontend/AGENTS.md` for full rules.
+
+Key constraints:
+- Signals-first state; OnPush; lazy routes
+- No direct `localStorage` — use storage abstraction services in `core/storage/`
+- Financial calculations live in `core/domain/` — keep UI decoupled
+- Preserve API contracts with `Qeeva-Backend/` unless explicitly asked to change them
+- Run from `Qeeva-Frontend/`: `npm start` (SSR) or `ng serve` (:4200)

@@ -56,17 +56,17 @@ Goal: Restructure the Angular frontend to a scalable, readable architecture that
 ## Relevant Files
 - frontendDataVision.json (storage vision contract)
 - swagger-local/openapi.json (Swagger source)
-- life-value-finance/src/app/core/services/persistence.service.ts (legacy storage)
-- life-value-finance/src/app/core/services/savings.service.ts
-- life-value-finance/src/app/core/state/budget-state.service.ts
-- life-value-finance/src/app/core/services/auth.service.ts
-- life-value-finance/src/app/core/services/theme.service.ts
-- life-value-finance/src/app/core/services/backup.service.ts
-- life-value-finance/src/app/core/services/offline-sync.service.ts
-- life-value-finance/src/app/features/dashboard/dashboard.component.ts
-- life-value-finance/src/app/features/history/history.component.ts
-- life-value-finance/src/app/features/settings/settings.component.ts
-- life-value-finance/src/app/layout/header/header.component.ts
+- Qeeva-Frontend/src/app/core/services/persistence.service.ts (legacy storage)
+- Qeeva-Frontend/src/app/core/services/savings.service.ts
+- Qeeva-Frontend/src/app/core/state/budget-state.service.ts
+- Qeeva-Frontend/src/app/core/services/auth.service.ts
+- Qeeva-Frontend/src/app/core/services/theme.service.ts
+- Qeeva-Frontend/src/app/core/services/backup.service.ts
+- Qeeva-Frontend/src/app/core/services/offline-sync.service.ts
+- Qeeva-Frontend/src/app/features/dashboard/dashboard.component.ts
+- Qeeva-Frontend/src/app/features/history/history.component.ts
+- Qeeva-Frontend/src/app/features/settings/settings.component.ts
+- Qeeva-Frontend/src/app/layout/header/header.component.ts
 
 ## Decisions (Current)
 - New storage keys: `lvf_income_store`, `lvf_history_store`, `lvf_items_store`.

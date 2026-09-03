@@ -1,4 +1,4 @@
-Deployment checklist for MyWallet PWA
+Deployment checklist for Qeeva PWA
 
 - Serve the production `dist/qeeva` from a secure origin (HTTPS).
 - Ensure `ngsw-worker.js` and `manifest.webmanifest` are served at the site root (e.g., `https://example.com/manifest.webmanifest`).

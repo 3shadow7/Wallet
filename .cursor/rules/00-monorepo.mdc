@@ -1,0 +1,38 @@
+---
+description: Monorepo layout, dev commands, and workflow for Qeeva
+alwaysApply: true
+---
+
+# Qeeva monorepo
+
+## Layout
+
+- **Frontend:** `Qeeva-Frontend/` — Angular 21 PWA (see `Qeeva-Frontend/AGENTS.md`)
+- **Backend:** `Qeeva-Backend/` — Django REST + SimpleJWT (see `Qeeva-Backend/AGENTS.md`)
+- **Plans:** `plans/` — feature plans; create new plans as `YYYYMMDD-short-title.md`
+- **API spec:** `swagger-local/openapi.json`
+
+## Quick start
+
+Frontend:
+```bash
+cd Qeeva-Frontend && npm install && npm run build && npm start
+```
+
+Backend:
+```bash
+cd Qeeva-Backend && python manage.py migrate && python manage.py runserver
+```
+
+## Agent behavior
+
+- Treat the user as project manager; implement features incrementally.
+- Read nested `AGENTS.md` in the directory you are editing.
+- After code changes: summary, run commands, manual QA steps.
+- Do not add test files, reset databases, or expand scope unless asked.
+- Legacy Copilot agents live in `.github/agents/` — Cursor uses `AGENTS.md` and `.cursor/` instead.
+
+## Invoke specialist mode
+
+- Frontend lead: type `/frontend-senior` or `@frontend-senior` in Agent chat
+- Backend lead: type `/backend-senior` or `@backend-senior` in Agent chat
