@@ -7,3 +7,4 @@ backend/venv/
 .history/
 **/__pycache__/
 **/*.py[cod]
+**/.angular/
