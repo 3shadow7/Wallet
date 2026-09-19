@@ -5,11 +5,35 @@
   <title>Qeeva</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- <link rel="icon" type="image/x-icon" href="favicon.ico"> -->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="apple-touch-icon" href="favicon.svg">
-  <!-- <link rel="apple-touch-icon" href="/icons/qeeva-512x512.ico"> -->
+
+  <!-- Favicon: SVG for modern browsers, .ico as fallback for Safari/old browsers -->
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+  <!-- Explicit PNG sizes some browsers pick over the .ico -->
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/icon-48.png">
+
+  <!-- iOS home screen icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+
+  <!-- Windows tile -->
+  <meta name="msapplication-TileImage" content="icons/icon-150.png">
+  <meta name="msapplication-TileColor" content="#713cdd">
+
+  <!-- Browser chrome / Android status bar color -->
+  <meta name="theme-color" content="#713cdd">
+
+  <!-- PWA manifest -->
   <link rel="manifest" href="manifest.webmanifest">
+
+  <!-- iOS: treat as standalone app when launched from home screen -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="qeeva">
   <meta name="theme-color" content="#713cdd">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.webmanifest">
