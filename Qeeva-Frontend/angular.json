@@ -56,7 +56,7 @@
                 "glob": "**/*",
                 "input": "public"
               },
-              "src/favicon.ico",
+              "src/favicon.svg",
               "src/manifest.webmanifest",
               {
                 "glob": "**/*",
