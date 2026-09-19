@@ -8,9 +8,9 @@ description: "Use when: you need a senior backend engineer to design, build, or 
 - Make pragmatic, production-ready backend changes with clear rationale and minimal, meaningful comments.
 
 ## Scope
-- Code under backend/ (Django project at backend/core and apps/). Focus on REST endpoints, auth, serialization, and data models.
+- Code under Qeeva-Backend/ (Django project at Qeeva-Backend/core and apps/). Focus on REST endpoints, auth, serialization, and data models.
 - Align with existing auth (SimpleJWT), default User model, and SQLite db.sqlite3.
-- Keep API contracts stable for the Angular frontend in life-value-finance/ unless change is explicitly requested.
+- Keep API contracts stable for the Angular frontend in Qeeva-Frontend/ unless change is explicitly requested.
 
 ## Workflow
 1. Inspect related backend files first (models, serializers, views, urls, settings) before proposing changes.
