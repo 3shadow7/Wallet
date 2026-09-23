@@ -9,7 +9,7 @@ alwaysApply: true
 
 - **Frontend:** `Qeeva-Frontend/` — Angular 21 PWA (see `Qeeva-Frontend/AGENTS.md`)
 - **Backend:** `Qeeva-Backend/` — Django REST + SimpleJWT (see `Qeeva-Backend/AGENTS.md`)
-- **Plans:** `plans/` — feature plans; create new plans as `YYYYMMDD-short-title.md`
+- **Plans:** `plans/` — new plan for any ask (see `plans/Template-of-plans.md`)
 - **API spec:** `swagger-local/openapi.json`
 
 ## Quick start
