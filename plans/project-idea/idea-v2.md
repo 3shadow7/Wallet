@@ -1,0 +1,9 @@
+- build a backend , so any thing that stored at localstorage , we must do an a route to it , and make it save direct to backend if user is not guest and connected online , any func work to do some changes at localstorage , we should handle it at backend from endpoints and database and also duble check at frontend to make this work fine
+- we will have a toggle for normal stupid user that have so less features and less business logic and less btns and also have a toggle for power user that have more features and more insights and charts and statistics but for now we will start with the normal user toggle and then we can add the power user toggle later when we have a solid foundation for the system.
+- we will have ar langulage support in the future but for now we will start with english language support and then we can add arabic language support later when we have a solid foundation for the system until i asked for it.
+- we will have a telegram bot with bring your ai token to set items by voice and if there is data that required to be inserted but not provided by the user in the voice command, the bot should ask the user for that data in a simple and intuitive way as btns but for now we will focus on the basic functionality until i asked for it.
+- at dashboard at set item , i want tap to change the set item card to set a Credits/debits (gifts, emergency, debts) same card but at their own tab and own logic.
+
+Clarified Vision/Spec :
+- Role modes: start with basic ("stupid") role; advanced role later adds multiple income types and hourly salary aggregation used in the dashboard "Product Price ($)" field.
+- Income (basic): single income source (usually salary). Advanced role later can have multiple income types.
