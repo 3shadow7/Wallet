@@ -8,7 +8,7 @@ Quick summary of current state
 - App is a PWA: `manifest.webmanifest`, `ngsw-config.json`, and `ngsw-worker.js` are present.
 - Local persistence: versioned store envelopes (`lvf_income_store`, `lvf_history_store`, `lvf_items_store`) via the storage engine.
 - Offline queue: `OfflineSyncService` records queued operations in `localStorage` under `offline_sync_queue_v1`.
-- Headless test exists at `scripts/check-sw-control.js` and a manual verification doc is available.
+- Headless test exists at `@SCRIPTS/check-sw-control.js` and a manual verification doc is available.
 
 Top-level goals for the agent
 1. Implement robust client->server sync using the existing `OfflineSyncService` queue.

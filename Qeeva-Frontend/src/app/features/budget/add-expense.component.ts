@@ -1,7 +1,7 @@
 import { Component, inject, ChangeDetectionStrategy, ViewEncapsulation, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
-import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
+import { SingleSelectComponent } from 'src/app/@COMPONENTS/single-select/single-select.component';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem } from '@core/domain/models';
 

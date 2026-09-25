@@ -9,4 +9,4 @@ Deployment checklist for Qeeva PWA
 - Test install flow on Android (Chrome) and desktop (Chrome/Edge): DevTools -> Application -> Manifest -> "Add to home screen" flow.
 - Test offline F5: Open site, ensure service worker status is "Activated and is controlling the page", set network to "Offline" in DevTools, refresh, verify shell loads and UI shows stored data.
 - Monitor cache sizes and evictions in production; adjust `ngsw-config.json` `maxSize`/`maxAge` as needed.
-- Use the `scripts/check-pwa.js` to validate endpoints before smoke tests.
+- Use the `@SCRIPTS/check-pwa.js` to validate endpoints before smoke tests.

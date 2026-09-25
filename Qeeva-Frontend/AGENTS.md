@@ -48,19 +48,13 @@ Create a component only when:
 
 Do NOT create components for trivial markup, one-time templates, or unnecessary abstraction.
 
-### Component types
-
-| Type | Purpose |
-|------|---------|
-| Shared UI | Visual-only, configurable via inputs/outputs, no direct API calls |
-| Feature | Domain-specific to one feature |
-| Page | Route-level: loads data, orchestrates state, composes features |
-| Layout | Shell: navbar, sidebar, dashboard layout, mobile nav |
-
 ### Folder structure (prefer)
 
 ```
-src/app/
+./
+└── @SCRIPTS/ # dev tools, scripts for boss project manager and 1 .md file have the explines, checkers/searches
+  └──[script-feature-name]/ 
+./src/app/
 ├── @COMPONENTS/     # set component folders as the tree of desktop route
   ├──[component-page-name]/ # under this folder set the component and any thing works at this component
     ├──component-page-name # component.html, component.ts, component.scss, component.route.ts files
@@ -72,9 +66,8 @@ src/app/
   ├──[component-page-name]/ 
     ├──name-of-type # type, interface
 ├── @SHARED/     # components, directives, pipes, utils, models
-├── @DESIGN-SYSTEM/ # design system , theme , overwrite style of a design lib , variables , mixins
-└── @SCRIPTS/ # dev tools, scripts for boss project manager and 1 .md file have the explines, checkers/searches
-  └──[script-feature-name]/ 
+└── @DESIGN-SYSTEM/ # design system , theme , overwrite style of a design lib , variables , mixins
+
 ```
 
 Avoid deeply nested unclear folders.

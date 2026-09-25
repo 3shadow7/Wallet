@@ -1,5 +1,5 @@
-@use '../../design-system/theme/variables' as v;
-@use '../../design-system/theme/mixins' as m;
+@use '../../@DESIGN-SYSTEM/theme/variables' as v;
+@use '../../@DESIGN-SYSTEM/theme/mixins' as m;
 
 :host {
   display: block;
@@ -15,7 +15,7 @@ app-single-select {
 }
 
 .add-expense-card {
-  @include m.card-style;  
+  @include m.card-style;
   z-index: 2;
   border: 0.5rem dashed v.$border-color;
   h3 {
@@ -36,8 +36,8 @@ app-single-select {
     }
 
     .form-row {
-      display: contents; 
-      
+      display: contents;
+
       @media (min-width: 48rem) {
         display: flex;
         flex: 1;
@@ -79,7 +79,7 @@ app-single-select {
       height: 2.875rem; // Match input height roughly
       align-self: flex-end;
       min-width: 6.25rem;
-      
+
       &:disabled {
         background: v.$text-secondary;
         cursor: not-allowed;

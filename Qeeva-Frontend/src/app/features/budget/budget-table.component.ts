@@ -3,8 +3,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ThemeService } from '@core/services/theme.service';
-import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
-import { getThemeTokens } from '@theme/theme-utils';
+import { SingleSelectComponent } from 'src/app/@COMPONENTS/single-select/single-select.component';
+import { getThemeTokens } from 'src/app/@DESIGN-SYSTEM/theme/theme-utils';
 import {
   ColDef,
   GridOptions,

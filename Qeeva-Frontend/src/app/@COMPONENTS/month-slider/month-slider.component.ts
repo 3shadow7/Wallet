@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter, ElementRef, ViewChild, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NoSwipeDirective } from '@shared/no-swipe.directive';
+import { NoSwipeDirective } from 'src/app/@SHARED/no-swipe.directive';
 
 export interface SliderRange {
   min: number;
@@ -18,7 +18,7 @@ export interface SliderRange {
 export class MonthSliderComponent implements OnDestroy {
   @Input() min = 1;
   @Input() max = 12;
-  
+
   // Internal state
   currentMin = signal(1);
   currentMax = signal(12);
@@ -35,14 +35,14 @@ export class MonthSliderComponent implements OnDestroy {
   monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   fullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-  private isDragging = false; 
+  private isDragging = false;
   // We need to store global event listeners to remove them later
   private mouseMoveListener: ((e: MouseEvent) => void) | null = null;
   private mouseUpListener: (() => void) | null = null;
 
   private lastEmittedMin = -1;
   private lastEmittedMax = -1;
-  
+
   constructor() {}
 
   ngOnInit() {
@@ -57,11 +57,11 @@ export class MonthSliderComponent implements OnDestroy {
   }
 
   // --- Helpers ---
-  
+
   toPercent(val: number): number {
     return ((val - this.min) / (this.max - this.min)) * 100;
   }
-  
+
   fromPercent(percent: number): number {
       const raw = this.min + (percent * (this.max - this.min));
       return Math.round(raw);
@@ -91,14 +91,14 @@ export class MonthSliderComponent implements OnDestroy {
 
       const target = event.target as HTMLElement;
       if (target.classList.contains('handle')) return;
-      
+
       const val = this.getValueFromEvent(event);
-      
+
       const currentMin = this.currentMin();
       const currentMax = this.currentMax();
       const distMin = Math.abs(val - currentMin);
       const distMax = Math.abs(val - currentMax);
-      
+
       let handleToActivate: 'min' | 'max';
       if (distMin < distMax) {
           handleToActivate = 'min';
@@ -113,17 +113,17 @@ export class MonthSliderComponent implements OnDestroy {
   jumpTo(val: number) {
       const currentMin = this.currentMin();
       const currentMax = this.currentMax();
-      
+
       const distMin = Math.abs(val - currentMin);
       const distMax = Math.abs(val - currentMax);
 
       if (distMin < distMax) {
           // Closer to min
           if (val > currentMax) {
-               // If jumping past max, push max just a bit or stop at max? 
+               // If jumping past max, push max just a bit or stop at max?
                // Standard logic: if clicking past max, we usually move the closest handle (max) unless we determine logic otherwise.
                // But here, we chose Min as closest. If val > Max, then distMax would have been smaller.
-               // So this case (val > Max && distMin < distMax) is impossible mathematically 
+               // So this case (val > Max && distMin < distMax) is impossible mathematically
                // unless val acts weird.
                this.currentMin.set(Math.min(val, currentMax));
           } else {
@@ -144,7 +144,7 @@ export class MonthSliderComponent implements OnDestroy {
       event.preventDefault();
       event.stopPropagation();
       this.isDragging = true;
-      
+
       let activeHandle = handle;
 
       this.mouseMoveListener = (e: MouseEvent | TouchEvent) => {
@@ -152,7 +152,7 @@ export class MonthSliderComponent implements OnDestroy {
           const val = this.getValueFromEvent(e);
           const currentMin = this.currentMin();
           const currentMax = this.currentMax();
-          
+
           if (activeHandle === 'min') {
               if (val > currentMax) {
                   // Swap roles
@@ -184,7 +184,7 @@ export class MonthSliderComponent implements OnDestroy {
       // Mouse events
       document.addEventListener('mousemove', this.mouseMoveListener as EventListener);
       document.addEventListener('mouseup', this.mouseUpListener);
-      
+
       // Touch events
       document.addEventListener('touchmove', this.mouseMoveListener as EventListener, { passive: false });
       document.addEventListener('touchend', this.mouseUpListener);
@@ -193,7 +193,7 @@ export class MonthSliderComponent implements OnDestroy {
 
   private getValueFromEvent(event: MouseEvent | TouchEvent): number {
       if (!this.container) return 1;
-      
+
       let clientX;
       if (window.TouchEvent && event instanceof TouchEvent) {
           clientX = event.touches[0].clientX;
@@ -205,7 +205,7 @@ export class MonthSliderComponent implements OnDestroy {
       // Handle edge cases where touch is outside element bounds
       const x = clientX - rect.left;
       const width = rect.width;
-      
+
       const percent = Math.max(0, Math.min(1, x / width));
       // Map percent to 1-12 range
       // We want distinct steps
@@ -228,10 +228,10 @@ export class MonthSliderComponent implements OnDestroy {
   private emitChange() {
       const min = this.currentMin();
       const max = this.currentMax();
-      
+
       if (min !== this.lastEmittedMin || max !== this.lastEmittedMax) {
           this.lastEmittedMin = min;
-          this.lastEmittedMax = max;          
+          this.lastEmittedMax = max;
           this.rangeChange.emit({ min, max });
       }
   }

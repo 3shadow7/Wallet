@@ -2,17 +2,17 @@ import { Component, ElementRef, ViewChild, AfterViewInit, inject, ChangeDetectio
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
-import { MonthSliderComponent, SliderRange } from '@shared/components/month-slider/month-slider.component';
-import { MultiSelectComponent } from '@shared/components/multi-select/multi-select.component';
-import { SingleSelectComponent } from '@shared/components/single-select/single-select.component';
+import { MonthSliderComponent, SliderRange } from 'src/app/@COMPONENTS/month-slider/month-slider.component';
+import { MultiSelectComponent } from 'src/app/@COMPONENTS/multi-select/multi-select.component';
+import { SingleSelectComponent } from 'src/app/@COMPONENTS/single-select/single-select.component';
 import { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { SavingsService, MonthlyRecord } from '@core/services/savings.service';
 import ApexCharts from 'apexcharts';
 import { ThemeService } from '@core/services/theme.service';
-import { getThemeTokens } from '@theme/theme-utils';
+import { getThemeTokens } from 'src/app/@DESIGN-SYSTEM/theme/theme-utils';
 import { BudgetStateService } from '@core/state/budget-state.service';
 import { ExpenseItem, BudgetHistory } from '@core/domain/models';
-import { ToggleCellRendererComponent } from '@shared/toggle-cell-renderer/toggle-cell-renderer.component';
+import { ToggleCellRendererComponent } from 'src/app/@COMPONENTS/toggle-cell-renderer/toggle-cell-renderer.component';
 import { ShowOnDirective } from '@core/viewPort/show-on.directive';
 
 @Component({

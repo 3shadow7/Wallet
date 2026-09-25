@@ -2,7 +2,7 @@ import { Component, computed, inject, signal, ChangeDetectionStrategy, ViewEncap
 import { CommonModule } from '@angular/common';
 import { FinancialCalculatorService } from '@core/domain/financial-calculator.service';
 import { BudgetStateService } from '@core/state/budget-state.service';
-import { NumericInputDirective } from '@shared/numeric-input.directive';
+import { NumericInputDirective } from 'src/app/@SHARED/numeric-input.directive';
 import { ValueAnalysis } from '@core/domain/models';
 import { ViewportService } from '@core/viewPort/viewport.service';
 
