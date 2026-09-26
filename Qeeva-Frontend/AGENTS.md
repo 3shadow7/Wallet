@@ -55,17 +55,18 @@ Do NOT create components for trivial markup, one-time templates, or unnecessary 
 └── @SCRIPTS/ # dev tools, scripts for boss project manager and 1 .md file have the explines, checkers/searches
   └──[script-feature-name]/ 
 ./src/app/
-├── @COMPONENTS/     # set component folders as the tree of desktop route
-  ├──[component-page-name]/ # under this folder set the component and any thing works at this component
-    ├──component-page-name # component.html, component.ts, component.scss, component.route.ts files
-    ├──[name-of-feature]/ # things work at same page only, not shared to another components out of component page name
+├── @COMPONENTS/  # set component folders as the tree of desktop route
+  ├──pages/
+    ├──[component-page-name]/ # under this folder set the component and any thing works at this component
+      ├──component-page-name # component.html, component.ts, component.scss, component.route.ts files
+      ├──[name-of-feature]/ # things work at same page only, not shared to another components out of component page name
 ├── @SERVICES/     # auth, guards, storage, component-service
-  ├──[component-service]/ # under this folder set the component service (name-of-component.service.ts) , same tree of @components does had
 ├── @API/  # endpoint of backend when device is online connected ,same tree of @components does had
-├── @TYPES/ # types , interfaces , same tree of @components does had
+  ├──pages/
+├── @TYPES/ # types, interfaces, models, utils, same tree of @components does had
   ├──[component-page-name]/ 
     ├──name-of-type # type, interface
-├── @SHARED/     # components, directives, pipes, utils, models
+├── @SHARED/     # components, directives, pipes
 └── @DESIGN-SYSTEM/ # design system , theme , overwrite style of a design lib , variables , mixins
 
 ```

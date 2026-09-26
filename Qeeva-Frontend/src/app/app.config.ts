@@ -5,10 +5,10 @@ import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { GlobalErrorHandler } from './core/services/global-error-handler.service';
-import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { GlobalErrorHandler } from './@SERVICES/global-error-handler.service';
+import { authInterceptor } from './@SERVICES/auth/auth.interceptor';
 import { provideServiceWorker } from '@angular/service-worker';
-import { INITIAL_DEVICE_TYPE } from '@core/viewPort/initial-device-type.token';
+import { INITIAL_DEVICE_TYPE } from '@SHARED/components/viewport/initial-device-type.token';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 

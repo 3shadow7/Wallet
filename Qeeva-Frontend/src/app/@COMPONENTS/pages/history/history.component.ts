@@ -1,0 +1,995 @@
+import { Component, ElementRef, ViewChild, AfterViewInit, inject, ChangeDetectionStrategy, effect, OnDestroy, PLATFORM_ID, signal, computed } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AgGridAngular } from 'ag-grid-angular';
+import { MonthSliderComponent, SliderRange } from '@SHARED/components/month-slider/month-slider.component';
+import { MultiSelectComponent } from '@SHARED/components/multi-select/multi-select.component';
+import { SingleSelectComponent } from '@SHARED/components/single-select/single-select.component';
+import { ColDef, ValueFormatterParams } from 'ag-grid-community';
+import { SavingsService, MonthlyRecord } from '@SERVICES/savings.service';
+import ApexCharts from 'apexcharts';
+import { ThemeService } from '@SERVICES/theme.service';
+import { getThemeTokens } from 'src/app/@DESIGN-SYSTEM/theme/theme-utils';
+import { BudgetStateService } from '@SERVICES/state/budget-state.service';
+import { ExpenseItem, BudgetHistory } from '@TYPES/models';
+import { ToggleCellRendererComponent } from '@SHARED/components/ag-grid/toggle-cell-renderer/toggle-cell-renderer.component';
+import { ShowOnDirective } from '@SHARED/components/viewport/show-on.directive';
+
+@Component({
+  selector: 'app-history',
+  standalone: true,
+  imports: [CommonModule, AgGridAngular, FormsModule, MonthSliderComponent, MultiSelectComponent, SingleSelectComponent, ShowOnDirective],
+  templateUrl: './history.component.html',
+  styleUrl: './history.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class HistoryComponent implements AfterViewInit, OnDestroy {
+  private savingsService = inject(SavingsService);
+  private budgetState = inject(BudgetStateService);
+  private platformId = inject(PLATFORM_ID);
+  public themeService = inject(ThemeService); // Made public for template if needed
+  protected Math = Math; // Expose Math to template
+
+  isBrowser = isPlatformBrowser(this.platformId);
+  breakdownMode: 'type' | 'priority' = 'type';
+
+  // Signals
+  totalSavings = this.savingsService.totalSavingsSignal;
+  history = this.savingsService.historySignal;
+  reverseHistory = computed(() => [...this.history()].reverse());
+  detailedHistory = this.budgetState.historySignal;
+  avgSavingsRate = this.savingsService.averageSavingsRate;
+
+  bestMonth = () => {
+      const h = this.history().filter(d => !d.excludedFromTotals);
+      if (!h.length) return null;
+      return h.reduce((prev, current) => (prev.transferredToSavings > current.transferredToSavings) ? prev : current);
+  };
+
+  // Chart References
+  @ViewChild('savingsChart') savingsChartEl!: ElementRef;
+  @ViewChild('expensesChart') expensesChartEl!: ElementRef;
+  @ViewChild('breakdownChart') breakdownChartEl!: ElementRef;
+  @ViewChild('itemChart') itemChartEl!: ElementRef;
+    @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
+
+  private sChart: ApexCharts | null = null;
+  private eChart: ApexCharts | null = null;
+  private bChart: ApexCharts | null = null;
+  private iChart: ApexCharts | null = null;
+
+  // Interactive Selection
+  selectedMonths = signal<string[]>([]);
+
+  // Advance Filters
+  selectedYear = signal<string>(new Date().getFullYear().toString());
+
+  // Multi-select signals
+    filterType = signal<string[]>(['Burn', 'Tax', 'Saving']);
+    filterPriority = signal<string[]>(['Must', 'Want', 'Emergency', 'Gift']);
+
+    availableTypes = ['Burn', 'Tax', 'Saving'];
+    availablePriorities = ['Must', 'Want', 'Emergency', 'Gift'];
+
+  // Computed: Years Available
+  availableYears = computed(() => {
+      const h = this.detailedHistory();
+      const years = new Set<string>();
+      if (h.length === 0) return [new Date().getFullYear().toString()];
+
+      h.forEach(record => {
+          // Format expected: "YYYY-MM"
+          const parts = record.month.split('-');
+          if (parts.length >= 2) {
+              years.add(parts[0]);
+          } else {
+              // Fallback or legacy format handling
+              const spaceParts = record.month.split(' ');
+              if (spaceParts.length > 1) years.add(spaceParts[1]);
+              else years.add(new Date().getFullYear().toString());
+          }
+      });
+      return Array.from(years).sort().reverse();
+  });
+
+  // Computed: Months for buttons based on selected year
+  monthsForYear = computed(() => {
+      const y = this.selectedYear();
+      return this.detailedHistory().filter(d => {
+          // If month string has year, check match
+          // Expected "YYYY-MM" -> we check if it starts with YYYY
+          if (d.month.startsWith(y + '-')) return true;
+
+          // Legacy support (e.g. "January 2024")
+          if (d.month.includes(y)) return true;
+
+          return false;
+      });
+  });
+
+  // Grid Config
+  defaultColDef: ColDef = {
+    sortable: true,
+    filter: false,
+    resizable: true,
+    flex: 1,
+    valueFormatter: (params: ValueFormatterParams) => {
+      if (params.value === null || params.value === undefined || params.value === '') {
+        return '--';
+      }
+      return params.value;
+    }
+  };
+
+  gridContext: any = { componentParent: this };
+
+  colDefs: ColDef[] = [
+    {
+    field: 'excludedFromTotals',
+    headerName: '',
+    sortable: false,
+    cellRenderer: ToggleCellRendererComponent,
+  },
+    { field: 'month', headerName: 'Month', sort: 'desc' },
+    {
+        field: 'income',
+        headerName: 'Income',
+        valueFormatter: p => `$${p.value.toFixed(2)}`
+    },
+    {
+        field: 'expenses',
+        headerName: 'Planned Outflow',
+        valueFormatter: p => `$${p.value.toFixed(2)}`
+    },
+    {
+        field: 'plannedSavings',
+        headerName: 'Target Savings',
+        headerTooltip: 'Total of all "Saving" items planned for this month',
+        cellStyle: { color: 'var(--primary-color)', fontWeight: '500' },
+        valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '$0.00'
+    },
+    {
+        field: 'freeMoney',
+        headerName: 'Free Money & Savings Impact',
+        width: 250,
+        minWidth: 250,
+        wrapText: true, // Allow wrapping for multi-line content
+        autoHeight: true, // Auto-adjust row height
+        cellRenderer: (params: any) => {
+            // Check for valid window/document (SSR safety)
+            if (typeof document === 'undefined') return params.value;
+
+            const val = params.value;
+            const container = document.createElement('div');
+            container.style.lineHeight = '1.4';
+            container.style.padding = '8px 0';
+
+            if (val >= 0) {
+                 container.innerHTML = `<span style="color:var(--success-color, green); font-weight:bold;">$${val.toFixed(2)}</span>`;
+            } else {
+                // Negative Free Money: This is the impact on savings
+                const deficit = Math.abs(val);
+                const planned = params.data.plannedSavings || 0;
+
+                let html = `<div style="display:flex; flex-direction:column;">`;
+                // Main Value
+                html += `<span style="color:var(--danger-color, red); font-weight:bold; font-size: 1.1em;">-$${deficit.toFixed(2)}</span>`;
+
+                // Context
+                if (planned > 0) {
+                    const impactPct = Math.min(100, (deficit / planned) * 100).toFixed(1);
+                    html += `<span style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">⚠️ Reduced Saving Goal by ${impactPct}%</span>`;
+                    html += `<span style="font-size:0.8em; color:var(--text-muted); opacity:0.8;">(Saving Items affected by $${deficit.toFixed(2)})</span>`;
+                } else {
+                     html += `<span style="font-size:0.85em; color:var(--text-muted); margin-top:4px;">⚠️ Dipped into Savings Storage</span>`;
+                }
+
+                html += `</div>`;
+                container.innerHTML = html;
+            }
+            return container;
+        }
+    },
+    {
+        field: 'transferredToSavings',
+        headerName: 'From Budget',
+        tooltipValueGetter: (p: any) => p.data.plannedSavings ? `Planned: $${p.data.plannedSavings.toFixed(2)}` : '',
+        cellStyle: params => params.value < 0 ? { color: 'var(--danger-color)', fontWeight: 'bold' } : { color: 'var(--primary-color)', fontWeight: 'bold' },
+        valueFormatter: p => p.value < 0 ? `${p.value.toFixed(2)} (Deficit)` : `$${p.value.toFixed(2)}`
+    },
+    {
+        field: 'manualAdded',
+        headerName: 'Direct Additions',
+        cellStyle: { fontWeight: 'bold', color: 'var(--warning-color)' }, // Tokenized amber
+        valueFormatter: p => p.value ? `$${p.value.toFixed(2)}` : '--'
+    },
+    {
+        field: 'savingsTotalAfterTransfer',
+        headerName: 'Total Savings Balance',
+        valueFormatter: p => `$${p.value.toFixed(2)}`
+    }
+  ];
+
+  constructor() {
+      // Re-render charts when history changes
+      effect(() => {
+          if (!this.isBrowser) return;
+
+          const data = this.history();
+          if (this.sChart && this.eChart && this.bChart) {
+              this.updateCharts(data);
+              this.updateBreakdownChart();
+          }
+
+          // Auto-select latest month ONLY on initial data load (if nothing selected yet)
+          // We check if this is the "first" load by seeing if we have data but no selection
+          if (data.length > 0 && this.selectedMonths().length === 0 && !this.userHasInteractedWithSlider) {
+             this.selectedMonths.set([data[data.length - 1].month]);
+          }
+      });
+
+      // Theme Change Effect
+      effect(() => {
+          if (!this.isBrowser) return;
+          const isDark = this.themeService.isDark();
+
+          this.updateChartTheme(isDark);
+      });
+
+      // Update Item Treemap when ANY selection changes
+      effect(() => {
+        if (!this.isBrowser) return;
+
+        // Track dependencies
+        const selected = this.selectedMonths();
+        const type = this.filterType();
+        const prio = this.filterPriority();
+        const year = this.selectedYear(); // Ensure effect runs on year change too
+        const detailed = this.detailedHistory(); // Ensure effect runs when a month is Ignored/Counted
+
+        if (this.iChart) {
+            this.updateItemChart();
+        }
+      });
+  }
+
+  // State to track if user has manually filtered
+  private userHasInteractedWithSlider = false;
+
+    // Memoized: getThemeTokens() forces a getComputedStyle() read. Keying this
+    // computed() off themeService.isDark() means the DOM is only touched once
+    // per real theme change instead of once per `this.tokens` access (which
+    // was happening 6-10x per update cycle across the various chart methods).
+    private tokensCache = computed(() => {
+        this.themeService.isDark(); // dependency: recompute only when theme flips
+        return getThemeTokens(this.isBrowser ? window : null);
+    });
+
+    private get tokens() {
+        return this.tokensCache();
+    }
+
+    // Darkens a hex ("#rrggbb") or rgb(a) color string by `amount` (0-1 fraction).
+    // Returns the input unchanged if the format isn't recognized (e.g. named colors).
+    private darkenColor(color: string, amount: number): string {
+        const hexMatch = color.match(/^#([0-9a-fA-F]{6})$/);
+        if (hexMatch) {
+            const num = parseInt(hexMatch[1], 16);
+            const r = Math.max(0, Math.round(((num >> 16) & 0xff) * (1 - amount)));
+            const g = Math.max(0, Math.round(((num >> 8) & 0xff) * (1 - amount)));
+            const b = Math.max(0, Math.round((num & 0xff) * (1 - amount)));
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        }
+
+        const rgbMatch = color.match(/^rgba?\(([^)]+)\)$/);
+        if (rgbMatch) {
+            const parts = rgbMatch[1].split(',').map(p => parseFloat(p.trim()));
+            const [r, g, b, a] = parts;
+            const nr = Math.max(0, Math.round(r * (1 - amount)));
+            const ng = Math.max(0, Math.round(g * (1 - amount)));
+            const nb = Math.max(0, Math.round(b * (1 - amount)));
+            return a !== undefined ? `rgba(${nr}, ${ng}, ${nb}, ${a})` : `rgb(${nr}, ${ng}, ${nb})`;
+        }
+
+        return color;
+    }
+
+    // Chart series colors read from tokens are too bright against a dark
+    // background, so knock them down 20% whenever dark mode is active.
+    // Used everywhere a chart color is computed, including on theme toggle.
+    private getSeriesColor(baseColor: string): string {
+        return this.themeService.isDark() ? this.darkenColor(baseColor, 0.20) : baseColor;
+    }
+
+  private updateChartTheme(isDark: boolean) {
+      const themeMode = isDark ? 'dark' : 'light';
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const gridColor = tokens.border;
+
+      const commonOptions = {
+          chart: {
+              foreColor: textColor
+          },
+          grid: {
+              borderColor: gridColor
+          },
+          tooltip: {
+              theme: themeMode,
+              style: {
+                fontSize: '12px',
+                fontFamily: undefined
+              },
+          },
+          xaxis: {
+             labels: { style: { colors: textColor } }
+          },
+          yaxis: {
+             labels: { style: { colors: textColor } }
+          },
+          title: {
+             style: { color: textColor }
+          },
+          // Ensure data labels contrast correctly
+          dataLabels: {
+              style: { colors: [textColor] }
+          }
+      };
+
+      if (this.sChart) {
+          this.sChart.updateOptions({
+              ...commonOptions,
+              yaxis: {labels: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }},
+              colors: [this.getSeriesColor(tokens.primary)]
+          });
+      }
+
+      if (this.eChart) {
+          this.eChart.updateOptions({
+              ...commonOptions,
+              yaxis: {labels: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }},
+              colors: [
+                  this.getSeriesColor(tokens.success), // Income
+                  this.getSeriesColor(tokens.danger),  // Expenses
+                  this.getSeriesColor(tokens.warning), // Direct Additions
+                  ({ value }: { value: number }) => {
+                          return this.getSeriesColor(value < 0 ? tokens.textPrimary : tokens.primary); // Deficit vs Saved
+                  }
+              ]
+          });
+      }
+
+      if (this.bChart) {
+          // Bar colors depend on the current breakdown mode (type/priority) and
+          // are computed from CSS tokens. Read them once and fold into a single
+          // updateOptions() call instead of two separate writes (was causing an
+          // extra ApexCharts render cycle right after commonOptions applied).
+          const modeKeys = this.breakdownMode === 'type'
+              ? ['Burn', 'Tax', 'Saving']
+              : ['Must', 'Want', 'Emergency', 'Gift'];
+
+          this.bChart.updateOptions({
+            ...commonOptions,
+            plotOptions: {
+              bar: {
+                dataLabels: {
+                  total: {
+                    style: { color: textColor }
+                  }
+                }
+              }
+            },
+            colors: modeKeys.map(k => this.getCategoryColor(k, tokens)),
+            dataLabels: { style: { colors: this.getBreakdownDataLabelColors(textColor) } }
+          }, true, false);
+      }
+
+      if (this.iChart) {
+          // Treemap title needs specific update
+          this.iChart.updateOptions({
+              ...commonOptions,
+              title: {
+                 style: { color: textColor }
+              }
+              // Treemap dataLabels are usually white on colored blocks, so we don't override them with text color
+          });
+          // Per-item tile colors (fillColor) were baked in from tokens at build time,
+          // so rebuild the series against the new theme's tokens.
+          this.updateItemChart();
+      }
+  }
+
+  ngAfterViewInit() {
+      if (!this.isBrowser) return;
+
+      // Small delay to ensure container exists
+      setTimeout(() => this.initCharts(), 100);
+      setTimeout(() => this.initBreakdownChart(), 150);
+      setTimeout(() => this.initItemChart(), 200);
+  }
+
+  ngOnDestroy() {
+      if (this.sChart) this.sChart.destroy();
+      if (this.eChart) this.eChart.destroy();
+      if (this.bChart) this.bChart.destroy();
+      if (this.iChart) this.iChart.destroy();
+  }
+
+  setBreakdownMode(mode: 'type' | 'priority') {
+      this.breakdownMode = mode;
+      this.updateBreakdownChart();
+  }
+
+  toggleHistoryMonthExcluded(month: string) {
+      const entry = this.detailedHistory().find(d => d.month === month);
+      const current = entry?.excludedFromTotals ?? false;
+      this.budgetState.setHistoryMonthExcluded(month, !current);
+
+      // Ensure ag-Grid reflects the change immediately
+      try {
+          if (this.agGrid && (this.agGrid as any).api) {
+              (this.agGrid as any).api.refreshCells({ force: true });
+          }
+      } catch (e) {
+          // Quietly ignore if grid isn't ready yet
+      }
+  }
+
+  // Range Slider Integration
+  onTimeRangeChange(range: SliderRange) {
+      if (!this.userHasInteractedWithSlider) {
+          this.userHasInteractedWithSlider = true;
+      }
+
+      const year = this.selectedYear();
+
+      // Calculate start and end months (1-12)
+      const startMonth = range.min;
+      const endMonth = range.max;
+
+      // Find records that match both the selected YEAR and Month Range
+      const availableData = this.monthsForYear();
+
+      const matchedMonths = availableData
+          .filter(d => {
+              // Parse month from "YYYY-MM" format
+              const parts = d.month.split('-');
+              let mNum = -1;
+
+              if (parts.length >= 2) {
+                  // YYYY-MM
+                  mNum = parseInt(parts[1], 10);
+              } else {
+                  // Fallback: "MonthName YYYY" or just "MonthName"
+                  const mName = d.month.split(' ')[0];
+                  const idx = ['January', 'February', 'March', 'April', 'May', 'June',
+                               'July', 'August', 'September', 'October', 'November', 'December']
+                               .indexOf(mName);
+                  if (idx !== -1) mNum = idx + 1;
+              }
+
+              return mNum >= startMonth && mNum <= endMonth;
+          })
+          .map(d => d.month);
+
+      this.selectedMonths.set(matchedMonths);
+  }
+
+  private initCharts() {
+      const data = this.history().filter(d => !d.excludedFromTotals);
+      const isDark = this.themeService.isDark();
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const gridColor = tokens.border;
+      const themeMode = isDark ? 'dark' : 'light';
+
+      // Common Styling
+      const commonGrid = {
+          borderColor: gridColor,
+          strokeDashArray: 4,
+      };
+
+      // 1. Savings Growth Area Chart
+      const savingsOptions = {
+          series: [{
+              name: 'Total Savings',
+              data: data.map(d => d.savingsTotalAfterTransfer)
+          }],
+          chart: {
+              type: 'area',
+              height: 350,
+              fontFamily: 'Inter, sans-serif',
+              toolbar: { show: false },
+              zoom: { enabled: false },
+              foreColor: textColor
+          },
+          dataLabels: { enabled: false },
+          stroke: { curve: 'smooth', width: 3 },
+          xaxis: {
+              categories: data.map(d => d.month),
+              axisBorder: { show: false },
+              axisTicks: { show: false }
+          },
+
+          // ADD THIS Y-AXIS CONFIGURATION
+          yaxis: {
+              labels: {
+                  formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+          },
+          grid: commonGrid,
+          colors: [this.getSeriesColor(tokens.primary)],
+          fill: {
+              type: 'gradient',
+              gradient: {
+                  shadeIntensity: 1,
+                  opacityFrom: 0.6,
+                  opacityTo: 0.1,
+                  stops: [0, 100]
+              }
+          },
+          tooltip: {
+              theme: themeMode,
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+          },
+          markers: { size: 4, colors: [tokens.bgSurface], strokeColors: this.getSeriesColor(tokens.primary), strokeWidth: 2, hover: { size: 6 } },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
+      };
+
+      this.sChart = new ApexCharts(this.savingsChartEl.nativeElement, savingsOptions);
+      this.sChart.render();
+
+      // 2. Income vs Expenses Bar Chart
+      const expenseOptions = {
+          series: [{
+              name: 'Income',
+              data: data.map(d => d.income)
+          }, {
+              name: 'Expenses',
+              data: data.map(d => d.expenses)
+          },
+          {
+            name: 'Direct Additions',
+            data: data.map(d => d.manualAdded || 0)
+          },
+          {
+            name: 'Budget Savings',
+            data: data.map(d => d.transferredToSavings)
+          }],
+          chart: {
+              type: 'bar',
+              height: 350,
+              fontFamily: 'Inter, sans-serif',
+              toolbar: { show: false },
+              foreColor: textColor
+          },
+          plotOptions: {
+              bar: {
+                  horizontal: false,
+                  columnWidth: '60%',
+                  borderRadius: 4,
+                  dataLabels: { position: 'top' }
+              },
+          },
+          dataLabels: { enabled: false },
+          stroke: { show: true, width: 2, colors: ['transparent'] },
+          xaxis: {
+              categories: data.map(d => d.month),
+              axisBorder: { show: false },
+              axisTicks: { show: false }
+          },
+          yaxis: {
+              labels: {
+                  formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              }
+          },
+          grid: commonGrid,
+                    colors: [
+                        this.getSeriesColor(tokens.success), // Income
+                        this.getSeriesColor(tokens.danger),  // Expenses
+                        this.getSeriesColor(tokens.warning), // Direct Additions
+                        ({ value }: { value: number }) => {
+                                return this.getSeriesColor(value < 0 ? tokens.textPrimary : tokens.primary); // Deficit vs Saved
+                        }
+                    ],
+          fill: { opacity: 1 },
+          tooltip: {
+              theme: themeMode,
+              y: { formatter: (val: number) => '$' + val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+          },
+          legend: { position: 'top', horizontalAlign: 'right' },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
+
+      };
+
+      this.eChart = new ApexCharts(this.expensesChartEl.nativeElement, expenseOptions);
+      this.eChart.render();
+  }
+
+  private updateCharts(rawData: MonthlyRecord[]) {
+      if (!this.sChart || !this.eChart) return;
+
+      // Ignored months should not influence any chart
+      const data = rawData.filter(d => !d.excludedFromTotals);
+
+      const categories = data.map(d => d.month);
+
+      // Series + xaxis categories folded into one updateOptions() call each,
+      // instead of updateSeries() immediately followed by updateOptions()
+      // (each call is its own ApexCharts render/layout pass).
+      this.sChart.updateOptions({
+          series: [{ data: data.map(d => d.savingsTotalAfterTransfer) }],
+          xaxis: { categories }
+      });
+
+      this.eChart.updateOptions({
+          series: [
+              { data: data.map(d => d.income) },
+              { data: data.map(d => d.expenses) },
+              { data: data.map(d => d.manualAdded || 0) },
+              { data: data.map(d => d.transferredToSavings) }
+          ],
+          xaxis: { categories }
+      });
+  }
+
+  private getCategoryColor(category: string, tokens: ReturnType<typeof getThemeTokens> = this.tokens): string {
+      const map: Record<string, string> = {
+          'Burn': tokens.danger,
+          'Tax': tokens.warning,
+          'Saving': tokens.success,
+          'Must': tokens.danger,
+          'Want': tokens.success,
+          'Emergency': tokens.textPrimary,
+          'Gift': tokens.primary
+      };
+      return this.getSeriesColor(map[category] || tokens.textSecondary);
+  }
+
+  // Data-label text colors for the Breakdown chart, one per series in the
+  // current mode's order. Emergency's bar fill IS tokens.textPrimary, which is
+  // also the default label color everywhere else, so its label would render
+  // invisible (dark-on-dark in light mode, light-on-light in dark mode).
+  // We force it to the opposite of the current theme instead.
+  private getBreakdownDataLabelColors(textColor: string = this.tokens.textPrimary): string[] {
+      const isDark = this.themeService.isDark();
+      const emergencyLabelColor = isDark ? '#111111' : '#ffffff';
+
+      const keys = this.breakdownMode === 'type'
+          ? ['Burn', 'Tax', 'Saving']
+          : ['Must', 'Want', 'Emergency', 'Gift'];
+
+      return keys.map(k => k === 'Emergency' ? emergencyLabelColor : textColor);
+  }
+
+  // What fraction of this month's planned Saving items was actually honored,
+  // after overspending (negative freeMoney) ate into them. Same logic as the
+  // "Reduced Saving Goal by X%" indicator in the ag-Grid freeMoney column.
+  private getMonthSavingRatio(record: BudgetHistory): number {
+      const activeSavingItems = (record.expenses || []).filter(e => !e.isIgnored && e.type === 'Saving');
+      const plannedSavings = activeSavingItems.reduce((sum, e) => sum + (e.amount || 0), 0);
+      if (plannedSavings <= 0) return 1;
+
+      const freeMoney = record.summary?.freeMoney ?? 0;
+      const deficit = freeMoney < 0 ? Math.abs(freeMoney) : 0;
+      const ratio = 1 - Math.min(deficit, plannedSavings) / plannedSavings;
+      return Math.max(0, Math.min(1, ratio));
+  }
+
+  // Real, post-shortfall amount for a single expense item. Non-Saving items are
+  // unaffected; Saving items are scaled down by the month's saving ratio so
+  // charts reflect what was actually saved, not the static planned amount.
+  private getActualItemAmount(item: ExpenseItem, record: BudgetHistory): number {
+      if (item.type !== 'Saving') return item.amount || 0;
+      return (item.amount || 0) * this.getMonthSavingRatio(record);
+  }
+
+  private initBreakdownChart() {
+      const isDark = this.themeService.isDark();
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const themeMode = isDark ? 'dark' : 'light';
+
+      const options: any = { // Use any to allow dynamic property updates easily
+          series: [],
+          title: {
+            text: 'Monthly Spending Breakdown',
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor }
+          },
+          chart: {
+              type: 'bar',
+              height: 350,
+              stacked: true,
+              toolbar: { show: false },
+              fontFamily: 'Inter, sans-serif',
+              animations: { enabled: true },
+              foreColor: textColor
+          },
+          plotOptions: {
+            bar: {
+              horizontal: true,
+              borderRadius: 4,
+            }
+          },
+          // Colors will be set on update
+          colors: [],
+          stroke: { width: 1, colors: ['var(--bg-surface)'] },
+          xaxis: {
+              categories: [],
+              labels: {
+                  formatter: function (val: number) {
+                      return val >= 1000 ? (val / 1000).toFixed(1) + 'k' : val.toFixed(0);
+                  }
+              },
+              axisBorder: { show: false },
+              axisTicks: { show: false }
+          },
+                    grid: {
+                        borderColor: tokens.border,
+                        xaxis: { lines: { show: true } },
+                        yaxis: { lines: { show: false } }
+                    },
+          fill: { opacity: 1 },
+          legend: { position: 'top', horizontalAlign: 'right' },
+          tooltip: {
+            theme: themeMode,
+            y: { formatter: (val: number) => '$' + val.toLocaleString() }
+          },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
+      };
+
+      if (this.breakdownChartEl) {
+        this.bChart = new ApexCharts(this.breakdownChartEl.nativeElement, options);
+        this.bChart.render();
+        // Initialize data immediately
+        this.updateBreakdownChart();
+      }
+  }
+
+  private updateBreakdownChart() {
+    if (!this.bChart) return;
+
+    // Get detailed history which has the full expense list, excluding ignored months
+    const data = this.detailedHistory().filter(d => !d.excludedFromTotals);
+    const categories = data.length > 0
+        ? data.map(d => d.month)
+        : this.history().filter(d => !d.excludedFromTotals).map(d => d.month);
+
+    let series: any[] = [];
+    let colors: string[] = [];
+
+    if (!data || data.length === 0) {
+        this.bChart.updateSeries([]);
+        return;
+    }
+
+    if (this.breakdownMode === 'type') {
+        const types = ['Burn', 'Tax', 'Saving'] as const;
+        colors = types.map(t => this.getCategoryColor(t));
+        series = types.map(type => {
+            return {
+                name: type,
+                data: data.map(record => {
+                    return (record.expenses || [])
+                        .filter(e => !e.isIgnored && e.type === type)
+                        .reduce((sum, e) => sum + this.getActualItemAmount(e, record), 0);
+                })
+            };
+        });
+    } else {
+        const priorities = ['Must', 'Want', 'Emergency', 'Gift'] as const;
+        // Fix: Ensure correct color mapping array order for Stacked Chart
+        // Map returns colors in same order as priorities array
+        colors = priorities.map(p => this.getCategoryColor(p));
+
+        series = priorities.map(p => {
+            return {
+                name: p,
+                data: data.map(record => {
+                    return (record.expenses || [])
+                        .filter(e => !e.isIgnored && e.priority === p)
+                        .reduce((sum, e) => sum + this.getActualItemAmount(e, record), 0);
+                })
+            };
+        });
+    }
+
+    this.bChart.updateOptions({
+        series,
+        xaxis: { categories: categories },
+        colors: colors.length > 0 ? colors : undefined,
+        dataLabels: { style: { colors: this.getBreakdownDataLabelColors() } }
+    }, true, false);
+  }
+
+  private initItemChart() {
+      const isDark = this.themeService.isDark();
+      const tokens = this.tokens;
+      const textColor = tokens.textPrimary;
+      const themeMode = isDark ? 'dark' : 'light';
+
+      const options = {
+          series: [],
+          title: {
+            text: 'Item Level Breakdown (Treemap)',
+            style: { fontFamily: 'Inter, sans-serif', fontSize: '16px', fontWeight: 600, color: textColor }
+          },
+          chart: {
+              type: 'treemap',
+              height: 400,
+              fontFamily: 'Inter, sans-serif',
+              toolbar: { show: false },
+              animations: { enabled: true },
+              foreColor: textColor
+          },
+          // Extended palette for distributed colors
+          colors: [
+              tokens.primary, tokens.warning, tokens.success, tokens.danger, tokens.info,
+              tokens.textPrimary, tokens.textSecondary, tokens.bgSurface, tokens.bgElev1, tokens.bgElev2
+          ].map(c => this.getSeriesColor(c)),
+          plotOptions: {
+              treemap: {
+                  distributed: true,
+                  enableShades: true,
+                  shadeIntensity: 0.5
+              }
+          },
+          dataLabels: {
+              enabled: true,
+              style: {
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                  fontWeight: 'bold',
+                  colors: ['var(--text-inverse)']
+              },
+              formatter: function(text: string, op: any) {
+                  return [text, '$' + op.value.toLocaleString()];
+              },
+              offsetY: -4
+          },
+          tooltip: {
+            theme: themeMode,
+            y: { formatter: (val: number) => '$' + val.toLocaleString() }
+          },
+          states: {
+              hover: {
+                  filter: { type: 'darken', value: 0.05 }
+              },
+              active: {
+                  filter: { type: 'darken', value: 0.15 },
+                  allowMultipleDataPointsSelection: false
+              }
+          }
+      };
+
+      if (this.itemChartEl) {
+        this.iChart = new ApexCharts(this.itemChartEl.nativeElement, options);
+        this.iChart.render();
+        // Initial update if months selected
+        if(this.selectedMonths().length > 0) {
+            this.updateItemChart();
+        }
+      }
+  }
+
+  private updateItemChart() {
+    if (!this.iChart) return;
+
+    // --- Reads first: theme tokens + filter state, nothing written to the
+    // chart yet, so no read/write/read/write interleaving with ApexCharts ---
+    const isDark = this.themeService.isDark();
+    const tokens = this.tokens;
+    const textColor = tokens.textPrimary;
+    const themeMode = isDark ? 'dark' : 'light';
+
+    const data = this.detailedHistory();
+    const selected = this.selectedMonths();
+    const typeFilter = this.filterType();
+    const priorityFilter = this.filterPriority();
+
+    if (selected.length === 0) {
+        // Single write: theme + empty series together instead of a separate
+        // updateOptions() call followed by updateSeries().
+        this.iChart.updateOptions({
+            chart: { foreColor: textColor },
+            tooltip: { theme: themeMode },
+            series: [{ data: [] }]
+        });
+        return;
+    }
+
+    // 1. Get expenses from selected months, excluding any that are ignored
+    const relevantRecords = data.filter(d => selected.includes(d.month) && !d.excludedFromTotals);
+    let allExpenses: ExpenseItem[] = [];
+    relevantRecords.forEach(r => {
+        if(r.expenses) {
+            // Replace each Saving item's static amount with what was actually
+            // saved this month, after any overspend shortfall is applied.
+            const withActualAmounts = r.expenses
+                .filter(e => !e.isIgnored)
+                .map(e => ({ ...e, amount: this.getActualItemAmount(e, r) }));
+            allExpenses = [...allExpenses, ...withActualAmounts];
+        }
+    });
+
+    // 2. Global Filters
+    if (typeFilter.length > 0) {
+        allExpenses = allExpenses.filter(e => typeFilter.includes(e.type));
+    } else {
+        allExpenses = []; // No types selected
+    }
+
+    if (priorityFilter.length > 0) {
+        allExpenses = allExpenses.filter(e => priorityFilter.includes(e.priority));
+    } else {
+        allExpenses = []; // No priorities selected
+    }
+
+    // 3. Group Strategy: Flatten items and use colors based on Type
+    const combinedItems = allExpenses.reduce((acc, curr) => {
+        const key = curr.name;
+        // Group logic: sum amounts if name matches
+        const existing = acc.find(x => x.x === key);
+        if (existing) {
+            existing.y += curr.amount; // update sum
+        } else {
+            // Determine color based on Type (Matches Dashboard Badges)
+            let color = tokens.textSecondary; // Default slate
+            if (curr.type === 'Burn') color = tokens.danger; // Red
+            else if (curr.type === 'Tax') color = tokens.warning; // Amber
+            else if (curr.type === 'Saving') color = tokens.success; // Green
+
+            acc.push({ x: key, y: curr.amount, fillColor: this.getSeriesColor(color) });
+        }
+        return acc;
+    }, [] as { x: string, y: number, fillColor?: string }[]);
+
+    // Sort descending by value (Standard Treemap logic)
+    combinedItems.sort((a,b) => b.y - a.y);
+
+    // Single write: theme (foreColor/tooltip), series, and the
+    // distributed/colors override all folded into one updateOptions() call
+    // instead of three sequential update calls.
+    this.iChart.updateOptions({
+        chart: { foreColor: textColor },
+        tooltip: { theme: themeMode },
+        series: [{
+            name: 'All Items',
+            data: combinedItems
+        }],
+        // Force distributed false so it uses data point colors
+        plotOptions: {
+            treemap: {
+                distributed: false,
+                enableShades: false // Disable shades so our specific colors stick
+            }
+        },
+        colors: undefined // Clear default palette
+    });
+  }
+
+}

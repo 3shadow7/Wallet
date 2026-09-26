@@ -2,8 +2,8 @@ import { provideServerRendering, withRoutes } from '@angular/ssr';
 import { mergeApplicationConfig, ApplicationConfig, inject, REQUEST } from '@angular/core';
 import { appConfig } from './app.config';
 import { serverRoutes } from './app.routes.server';
-import { INITIAL_DEVICE_TYPE } from '@core/viewPort/initial-device-type.token';
-import { detectDeviceTypeFromUA } from '@core/viewPort/device-detection.util';
+import { INITIAL_DEVICE_TYPE } from '@SHARED/components/viewport/initial-device-type.token';
+import { detectDeviceTypeFromUA } from '@SHARED/components/viewport/device-detection.util';
 
 const serverConfig: ApplicationConfig = {
   providers: [
