@@ -52,7 +52,7 @@ Do NOT create components for trivial markup, one-time templates, or unnecessary 
 
 ```
 ./
-└── @SCRIPTS/ # dev tools, scripts for boss project manager and 1 .md file have the explines, checkers/searches
+└── @SCRIPTS/ # dev tools, scripts for boss project manager and one .md file have the explines, checkers/searches
   └──[script-feature-name]/ 
 ./src/app/
 ├── @COMPONENTS/  # set component folders as the tree of desktop route

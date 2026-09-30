@@ -11,7 +11,7 @@ Act as the backend lead for the Django REST API in this directory.
 
 - Code under `Qeeva-Backend/` (Django project at `core/`, apps at `apps/`).
 - REST endpoints, auth, serialization, data models.
-- SimpleJWT auth, default User model, SQLite (`db.sqlite3`).
+- SimpleJWT auth, default User model, db.PostgreSQL (`db.PostgreSQL`).
 - Keep API contracts stable for the Angular frontend in `Qeeva-Frontend/` unless change is explicitly requested.
 
 ## Dev commands

@@ -1,13 +1,13 @@
 # Qeeva
 
-Personal money management app — offline-first Angular PWA with optional Django REST backend.
+Personal money management app — offline-first Angular PWA with Django REST backend could add in version 2.
 
 ## Project structure
 
 ```
 Qeeva/
 ├── Qeeva-Frontend/   # Angular 21 frontend (PWA)
-├── Qeeva-Backend/    # Django REST + SimpleJWT
+├── Qeeva-Backend/    # Django REST + SimpleJWT + db.PostgreSQL
 ├── plans/            # Feature plans and refactor notes
 ├── swagger-local/    # OpenAPI spec
 ├── AGENTS.md         # Project-wide agent instructions
