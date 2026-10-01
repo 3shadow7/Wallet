@@ -5,7 +5,7 @@ import { AgGridAngular } from 'ag-grid-angular';
 import { MonthSliderComponent, SliderRange } from '@SHARED/components/month-slider/month-slider.component';
 import { MultiSelectComponent } from '@SHARED/components/multi-select/multi-select.component';
 import { SingleSelectComponent } from '@SHARED/components/single-select/single-select.component';
-import { ColDef, ValueFormatterParams } from 'ag-grid-community';
+import { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import { SavingsService, MonthlyRecord } from '@SERVICES/savings.service';
 import ApexCharts from 'apexcharts';
 import { ThemeService } from '@SERVICES/theme.service';
@@ -60,6 +60,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   // Interactive Selection
   selectedMonths = signal<string[]>([]);
+    showExcludedMonths = signal(false);
 
   // Advance Filters
   selectedYear = signal<string>(new Date().getFullYear().toString());
@@ -130,6 +131,28 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     sortable: false,
     cellRenderer: ToggleCellRendererComponent,
   },
+        {
+            headerName: '',
+            sortable: false,
+            filter: false,
+            width: 90,
+            maxWidth: 90,
+            cellClass: 'action-cell',
+            cellRenderer: (params: ICellRendererParams) => {
+                if (!this.isDeletableHistoryMonth(params.data.month)) return '';
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'action-btn delete-btn';
+                button.title = 'Delete empty excluded month';
+                button.setAttribute('aria-label', `Delete empty excluded month ${params.data.month}`);
+                button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor" aria-hidden="true"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>';
+                button.addEventListener('click', () => this.deleteHistoryMonth(params.data.month));
+                return button;
+            },
+            // cellStyle: { 'display': 'flex', 'justify-content': 'flex-end', 'align-items': 'center', 'padding-right': '10px' }
+
+        },
     { field: 'month', headerName: 'Month', sort: 'desc' },
     {
         field: 'income',
@@ -255,6 +278,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   // State to track if user has manually filtered
   private userHasInteractedWithSlider = false;
+
+    private chartHistory = computed(() => this.showExcludedMonths()
+            ? this.history()
+            : this.history().filter(record => !record.excludedFromTotals));
 
     // Memoized: getThemeTokens() forces a getComputedStyle() read. Keying this
     // computed() off themeService.isDark() means the DOM is only touched once
@@ -435,6 +462,22 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       }
   }
 
+  isDeletableHistoryMonth(month: string): boolean {
+      const entry = this.detailedHistory().find(item => item.month === month);
+      return !!entry?.excludedFromTotals && entry.expenses.length === 0;
+  }
+
+  toggleShowExcludedMonths(): void {
+      this.showExcludedMonths.update(value => !value);
+  }
+
+  deleteHistoryMonth(month: string): void {
+      if (!this.isDeletableHistoryMonth(month)) return;
+      if (this.isBrowser && !window.confirm(`Delete the empty history for ${month}?`)) return;
+
+      this.budgetState.deleteHistoryMonth(month);
+  }
+
   // Range Slider Integration
   onTimeRangeChange(range: SliderRange) {
       if (!this.userHasInteractedWithSlider) {
@@ -476,7 +519,7 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
   }
 
   private initCharts() {
-      const data = this.history().filter(d => !d.excludedFromTotals);
+    const data = this.chartHistory();
       const isDark = this.themeService.isDark();
       const tokens = this.tokens;
       const textColor = tokens.textPrimary;
@@ -626,7 +669,9 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       if (!this.sChart || !this.eChart) return;
 
       // Ignored months should not influence any chart
-      const data = rawData.filter(d => !d.excludedFromTotals);
+      const data = this.showExcludedMonths()
+          ? rawData
+          : rawData.filter(d => !d.excludedFromTotals);
 
       const categories = data.map(d => d.month);
 
@@ -774,10 +819,10 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     if (!this.bChart) return;
 
     // Get detailed history which has the full expense list, excluding ignored months
-    const data = this.detailedHistory().filter(d => !d.excludedFromTotals);
+    const data = this.detailedHistory().filter(d => this.showExcludedMonths() || !d.excludedFromTotals);
     const categories = data.length > 0
         ? data.map(d => d.month)
-        : this.history().filter(d => !d.excludedFromTotals).map(d => d.month);
+        : this.chartHistory().map(d => d.month);
 
     let series: any[] = [];
     let colors: string[] = [];
@@ -923,7 +968,8 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
     }
 
     // 1. Get expenses from selected months, excluding any that are ignored
-    const relevantRecords = data.filter(d => selected.includes(d.month) && !d.excludedFromTotals);
+    const relevantRecords = data.filter(d => selected.includes(d.month)
+        && (this.showExcludedMonths() || !d.excludedFromTotals));
     let allExpenses: ExpenseItem[] = [];
     relevantRecords.forEach(r => {
         if(r.expenses) {

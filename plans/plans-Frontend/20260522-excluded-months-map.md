@@ -2,7 +2,7 @@
 title: "Excluded Months Map - Frontend"
 author: "GitHub Copilot"
 date: "2026-10-01"
-status: "proposed"
+status: "done"
 ---
 
 # Excluded Months Map - Frontend
@@ -23,22 +23,24 @@ Already present:
 - Charts filtered to excluded months by default, with the existing history display path available for showing them.
 - Storage and backup normalization carry the exclusion field.
 
-Partially complete or requiring verification:
+Implemented in this pass:
 
-- `normalizeHistory` currently falls back to `false` when the flag is missing, while the requirement says an effectively empty month should default to excluded.
-- Add/update/remove and ignore flows must be checked together for the all-items-ignored case.
-- The chart show-excluded interaction and delete visibility need a focused manual pass.
-- No dedicated automated tests were added, per repository rules.
+- Missing legacy flags now derive from empty or all-ignored expenses.
+- Historical archive, add, update, and remove flows now derive exclusion from effective emptiness.
+- Charts have an explicit show/hide excluded-month control.
+- Delete is exposed only when an excluded month has zero remaining items; all-ignored items must still be removed first.
+- No dedicated automated tests were added, per repository rules; manual QA remains.
 
 ## Steps
 
-1. Confirm the existing model and storage contract.
-2. Change history normalization so missing exclusion state is derived from whether the month has no effective expenses, while preserving an explicit user choice.
-3. Audit add, update, ignore, remove, archive, and restore flows so an empty or all-ignored historical month is excluded and a month with an active item is included.
-4. Verify savings totals, last-month transfer, average savings rate, and chart datasets all use the same exclusion rule.
-5. Verify the dashboard toggle is available only for an empty past month and persists after refresh/reload.
-6. Verify history styling, delete visibility, deletion, and chart show-excluded behavior.
-7. Run the frontend build and lint, then perform the QA checklist below.
+1. [x] Confirm the existing model and storage contract.
+2. [x] Derive missing exclusion state from effective emptiness while preserving explicit choices.
+3. [x] Apply the exclusion rule to archive, add, update, and remove flows.
+4. [x] Keep savings totals and chart datasets aligned with exclusion state.
+5. [x] Keep the dashboard toggle limited to empty past months.
+6. [x] Add history chart visibility and guarded deletion controls.
+7. [x] Run the frontend production build; lint remains blocked by pre-existing project-wide errors.
+8. [ ] Perform browser QA for reload, toggling, deletion, and chart appearance.
 
 ## Relevant files
 
@@ -57,7 +59,7 @@ Partially complete or requiring verification:
 - `npm run lint`
 - Manually create a past month, remove or ignore every item, reload, and confirm it is excluded.
 - Toggle the month back into totals and confirm savings and charts update.
-- Confirm delete appears only for an empty excluded month.
+- Confirm delete appears only after every item, including ignored items, has been removed and the month is excluded.
 - Confirm excluded chart data is hidden by default and visibly marked when shown.
 
 ## Decisions

@@ -196,7 +196,7 @@ export class BudgetStateService {
                 incomeConfig: this.incomeConfig(),
                 expenses: expenses,
                 summary: this.budgetSummary(),
-            excludedFromTotals: false
+            excludedFromTotals: this.isExpensesEffectivelyEmpty(expenses)
         };
 
         this.history.update(h => [...h, historyEntry]);
@@ -254,8 +254,7 @@ export class BudgetStateService {
                             entry.incomeConfig || this.incomeConfig(),
                             updatedExpenses.filter(e => !e.isIgnored)
                         );
-                        // const shouldExclude = this.isExpensesEffectivelyEmpty(updatedExpenses);
-                        return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: false };
+                        return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: this.isExpensesEffectivelyEmpty(updatedExpenses) };
                     }
                     return entry;
                 });
@@ -273,7 +272,7 @@ export class BudgetStateService {
                 incomeConfig: incomeConfig,
                 expenses: [finalExpense],
                 summary: updatedSummary,
-                excludedFromTotals: false
+                excludedFromTotals: this.isExpensesEffectivelyEmpty([finalExpense])
             };
 
             return [...history, newEntry];
@@ -321,8 +320,7 @@ export class BudgetStateService {
                         entry.incomeConfig || this.incomeConfig(),
                         updatedExpenses.filter(e => !e.isIgnored)
                     );
-                    // const shouldExclude = this.isExpensesEffectivelyEmpty(updatedExpenses);
-                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: false };
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: this.isExpensesEffectivelyEmpty(updatedExpenses) };
                 }
                 return entry;
             })
@@ -344,8 +342,7 @@ export class BudgetStateService {
                         entry.incomeConfig || this.incomeConfig(),
                         updatedExpenses.filter(e => !e.isIgnored)
                     );
-                    // const shouldExclude = this.isExpensesEffectivelyEmpty(updatedExpenses);
-                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: false };
+                    return { ...entry, expenses: updatedExpenses, summary: updatedSummary, excludedFromTotals: this.isExpensesEffectivelyEmpty(updatedExpenses) };
                 }
                 return entry;
             })
@@ -628,7 +625,7 @@ export class BudgetStateService {
   private normalizeHistory(history: BudgetHistory[]): BudgetHistory[] {
       return history.map(entry => {
           const normalizedExpenses = this.normalizeItems(entry.expenses ?? []);
-          const isExcluded = entry.excludedFromTotals ?? false;
+          const isExcluded = entry.excludedFromTotals ?? this.isExpensesEffectivelyEmpty(normalizedExpenses);
 
           return {
               ...entry,

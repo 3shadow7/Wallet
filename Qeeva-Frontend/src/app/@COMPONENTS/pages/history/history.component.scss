@@ -92,6 +92,28 @@ header h1 {
     grid-template-columns: 1fr;
     gap: v.$spacing-lg;
 
+    .chart-filter-bar {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .chart-filter-button {
+        border: 1px solid v.$border-color;
+        border-radius: v.$radius-sm;
+        background: v.$surface-color;
+        color: v.$text-secondary;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            color: v.$primary-color;
+            border-color: v.$primary-color;
+        }
+    }
+
     @media (min-width: 64rem) {
         grid-template-columns: 1fr 1fr;
     }
@@ -288,6 +310,50 @@ header h1 {
         z-index: 1;
     }
 }
+
+
+// Desktop Grid Action Buttons (injected via ::ng-deep because inside Ag-Grid)
+.history-grid .action-cell {
+    display: flex !important;
+    align-items: center;
+    justify-content: right;
+    gap: 0.5rem;
+    padding-right: 0.5rem;
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s;
+        padding: 0;
+
+        svg {
+            pointer-events: none; // Ensure clicks pass to button
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        &:hover {
+            transform: scale(1.15); // Scale up effect requested
+        }
+
+        // Delete Button Style
+        &.delete-btn {
+            color: var(--text-secondary);
+            &:hover {
+                background-color: rgba(var(--danger-color), 0.1);
+                color: var(--danger-color);
+            }
+        }
+    }
+}
+
 
 /* Mobile Responsive Styles */
 .desktop-view {
