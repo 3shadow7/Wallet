@@ -14,11 +14,13 @@ import { BudgetStateService } from '@SERVICES/state/budget-state.service';
 import { ExpenseItem, BudgetHistory } from '@TYPES/models';
 import { ToggleCellRendererComponent } from '@SHARED/components/ag-grid/toggle-cell-renderer/toggle-cell-renderer.component';
 import { ShowOnDirective } from '@SHARED/components/viewport/show-on.directive';
+import { SwipeActionCardComponent, SwipeActionConfig } from '@SHARED/components/swipe-action-card/swipe-action-card.component';
+import { UndoActionService } from '@SHARED/services/undo-action.service';
 
 @Component({
   selector: 'app-history',
   standalone: true,
-  imports: [CommonModule, AgGridAngular, FormsModule, MonthSliderComponent, MultiSelectComponent, SingleSelectComponent, ShowOnDirective],
+    imports: [CommonModule, AgGridAngular, FormsModule, MonthSliderComponent, MultiSelectComponent, SingleSelectComponent, ShowOnDirective, SwipeActionCardComponent],
   templateUrl: './history.component.html',
   styleUrl: './history.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -26,6 +28,7 @@ import { ShowOnDirective } from '@SHARED/components/viewport/show-on.directive';
 export class HistoryComponent implements AfterViewInit, OnDestroy {
   private savingsService = inject(SavingsService);
   private budgetState = inject(BudgetStateService);
+    private undoActionService = inject(UndoActionService);
   private platformId = inject(PLATFORM_ID);
   public themeService = inject(ThemeService); // Made public for template if needed
   protected Math = Math; // Expose Math to template
@@ -467,15 +470,64 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
       return !!entry?.excludedFromTotals && entry.expenses.length === 0;
   }
 
+  getSwipeLeftAction(item: MonthlyRecord): SwipeActionConfig {
+      return item.excludedFromTotals
+          ? { id: 'include', label: 'Include', tone: 'primary', undoDurationMs: 6000 }
+          : { id: 'ignore', label: 'Ignore', tone: 'warning', undoDurationMs: 6000 };
+  }
+
+  getSwipeRightAction(item: MonthlyRecord): SwipeActionConfig | null {
+      return this.isDeletableHistoryMonth(item.month)
+          ? { id: 'delete', label: 'Delete', tone: 'danger', undoDurationMs: 8000 }
+          : null;
+  }
+
+  onSwipeAction(action: SwipeActionConfig, item: MonthlyRecord): void {
+      const entry = this.detailedHistory().find(record => record.month === item.month);
+      if (!entry) return;
+
+      if (action.id === 'delete') {
+          this.deleteHistoryEntryWithUndo(entry, action);
+          return;
+      }
+
+      if (action.id === 'ignore' || action.id === 'include') {
+          const previousValue = entry.excludedFromTotals ?? false;
+          const nextValue = action.id === 'ignore';
+          this.budgetState.setHistoryMonthExcluded(item.month, nextValue);
+          this.undoActionService.start({
+              message: nextValue ? `${item.month} ignored` : `${item.month} included`,
+              durationMs: action.undoDurationMs,
+              showAlert: true,
+              position: 'bottom',
+              undo: () => this.budgetState.setHistoryMonthExcluded(item.month, previousValue)
+          });
+      }
+  }
+
   toggleShowExcludedMonths(): void {
       this.showExcludedMonths.update(value => !value);
   }
 
   deleteHistoryMonth(month: string): void {
-      if (!this.isDeletableHistoryMonth(month)) return;
+      const entry = this.detailedHistory().find(item => item.month === month);
+      if (!entry) return;
       if (this.isBrowser && !window.confirm(`Delete the empty history for ${month}?`)) return;
 
-      this.budgetState.deleteHistoryMonth(month);
+      this.deleteHistoryEntryWithUndo(entry);
+  }
+
+    private deleteHistoryEntryWithUndo(entry: BudgetHistory, action?: SwipeActionConfig): void {
+      if (!this.isDeletableHistoryMonth(entry.month)) return;
+
+      this.budgetState.deleteHistoryMonth(entry.month);
+      this.undoActionService.start({
+          message: `${entry.month} deleted`,
+          durationMs: action?.undoDurationMs ?? 8000,
+          showAlert: true,
+          position: 'bottom',
+          undo: () => this.budgetState.restoreHistoryMonth(entry)
+      });
   }
 
   // Range Slider Integration

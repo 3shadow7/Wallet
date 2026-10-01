@@ -4,11 +4,12 @@ import { filter, take } from 'rxjs/operators';
 import { HeaderComponent } from './@COMPONENTS/header/header.component';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ViewportService } from '@SHARED/components/viewport/viewport.service';
+import { UndoActionAlertComponent } from '@SHARED/components/undo-action-alert/undo-action-alert.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, UndoActionAlertComponent, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -551,6 +551,14 @@ export class BudgetStateService {
       this.recalculateHistorySavings();
   }
 
+  restoreHistoryMonth(entry: BudgetHistory): void {
+      this.history.update(history => {
+          if (history.some(item => item.month === entry.month)) return history;
+          return [...history, entry].sort((a, b) => a.month.localeCompare(b.month));
+      });
+      this.recalculateHistorySavings();
+  }
+
   isHistoryMonthEmpty(month: string): boolean {
       const entry = this.history().find(h => h.month === month);
       if (!entry) return false;

@@ -134,6 +134,10 @@
             }
 
             @for (item of reverseHistory(); track item.date) {
+                <app-swipe-action-card
+                    [leftAction]="getSwipeLeftAction(item)"
+                    [rightAction]="getSwipeRightAction(item)"
+                    (actionTriggered)="onSwipeAction($event, item)">
                 <div class="history-card" [ngClass]="{'ignored-card': item.excludedFromTotals}">
                     <div class="card-header">
                         <span class="month-label">{{ item.month }}</span>
@@ -164,14 +168,6 @@
                             <span class="val">{{ item.savingsTotalAfterTransfer | currency:'USD':'symbol':'1.0-0' }}</span>
                         </span>
                     </div>
-<!--
-                    @if (isDeletableHistoryMonth(item.month)) {
-                        <button type="button" class="btn-revert" (click)="deleteHistoryMonth(item.month)">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor" aria-hidden="true"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
-                            Delete Month
-                        </button>
-                    } -->
-
                     <div class="card-grid">
                         <!-- Income & Expense Row -->
                         <div class="stat-group">
@@ -219,6 +215,7 @@
                         </div>
                     }
                 </div>
+                </app-swipe-action-card>
             }
         </div>
     </div>
