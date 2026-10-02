@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NoSwipeDirective } from '@SHARED/directives/no-swipe.directive';
 
@@ -9,6 +9,9 @@ export interface SwipeActionConfig {
   label: string;
   tone?: SwipeActionTone;
   undoDurationMs?: number;
+  showHint?: boolean;
+  hintDistancePx?: number;
+  hintDurationMs?: number;
 }
 
 @Component({
@@ -19,19 +22,56 @@ export interface SwipeActionConfig {
   styleUrl: './swipe-action-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SwipeActionCardComponent {
+export class SwipeActionCardComponent implements AfterViewInit, OnDestroy {
   @Input() leftAction: SwipeActionConfig | null = null;
   @Input() rightAction: SwipeActionConfig | null = null;
   @Input() threshold = 88;
+  @Input() hintOnInit = false;
   @Output() actionTriggered = new EventEmitter<SwipeActionConfig>();
 
   readonly offsetX = signal(0);
   readonly isDragging = signal(false);
+  readonly hintActive = signal(false);
 
+  private readonly host = inject(ElementRef<HTMLElement>);
   private pointerId: number | null = null;
+  private hintTimer: ReturnType<typeof setTimeout> | null = null;
+  private hintObserver: IntersectionObserver | null = null;
+  private hintStarted = false;
   private startX = 0;
   private startY = 0;
   private horizontalGesture = false;
+
+  ngAfterViewInit(): void {
+    const hintAction = this.leftAction?.showHint ? this.leftAction : this.rightAction?.showHint ? this.rightAction : null;
+    if (!this.hintOnInit || !hintAction) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      this.startHintWhenReady();
+      return;
+    }
+
+    this.hintObserver = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        this.startHintWhenReady();
+        this.hintObserver?.disconnect();
+      }
+    }, { threshold: 0.25 });
+    this.hintObserver.observe(this.host.nativeElement);
+  }
+
+  ngOnDestroy(): void {
+    if (this.hintTimer) clearTimeout(this.hintTimer);
+    this.hintObserver?.disconnect();
+  }
+
+  hintDistance(): number {
+    return this.hintAction()?.hintDistancePx ?? 26;
+  }
+
+  hintDuration(): number {
+    return this.hintAction()?.hintDurationMs ?? 900;
+  }
 
   onPointerDown(event: PointerEvent): void {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -80,8 +120,13 @@ export class SwipeActionCardComponent {
     this.resetGesture();
   }
 
+  onHintAnimationEnd(): void {
+    this.hintActive.set(false);
+  }
+
   actionOpacity(action: SwipeActionConfig | null): number {
     if (!action) return 0;
+    if (this.hintActive() && action.showHint) return 0.55;
     const distance = action === this.leftAction ? this.offsetX() : -this.offsetX();
     return Math.min(1, Math.max(0, distance / this.threshold));
   }
@@ -91,6 +136,17 @@ export class SwipeActionCardComponent {
     if (offset >= this.threshold) return this.leftAction;
     if (offset <= -this.threshold) return this.rightAction;
     return null;
+  }
+
+  private hintAction(): SwipeActionConfig | null {
+    return this.leftAction?.showHint ? this.leftAction : this.rightAction?.showHint ? this.rightAction : null;
+  }
+
+  private startHintWhenReady(): void {
+    if (this.hintStarted) return;
+
+    this.hintStarted = true;
+    this.hintTimer = setTimeout(() => this.hintActive.set(true), 350);
   }
 
   private resetGesture(): void {

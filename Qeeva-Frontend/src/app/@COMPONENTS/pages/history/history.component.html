@@ -133,10 +133,11 @@
                 </div>
             }
 
-            @for (item of reverseHistory(); track item.date) {
+            @for (item of reverseHistory(); track item.date; let first = $first) {
                 <app-swipe-action-card
                     [leftAction]="getSwipeLeftAction(item)"
                     [rightAction]="getSwipeRightAction(item)"
+                    [hintOnInit]="first"
                     (actionTriggered)="onSwipeAction($event, item)">
                 <div class="history-card" [ngClass]="{'ignored-card': item.excludedFromTotals}">
                     <div class="card-header">

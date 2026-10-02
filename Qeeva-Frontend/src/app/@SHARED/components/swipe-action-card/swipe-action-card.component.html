@@ -2,10 +2,14 @@
   class="swipe-action-card"
   noSwipe
   [class.is-dragging]="isDragging()"
+  [class.hint-active]="hintActive()"
+  [style.--swipe-hint-distance]="hintDistance() + 'px'"
+  [style.--swipe-hint-duration]="hintDuration() + 'ms'"
   (pointerdown)="onPointerDown($event)"
   (pointermove)="onPointerMove($event)"
   (pointerup)="onPointerUp($event)"
   (pointercancel)="onPointerCancel()"
+  (animationend)="onHintAnimationEnd()"
 >
   <div
     class="swipe-action swipe-action-left"

@@ -29,7 +29,7 @@ Implemented in this pass:
 - Historical archive, add, update, and remove flows now derive exclusion from effective emptiness.
 - Charts have an explicit show/hide excluded-month control.
 - Delete is exposed only when an excluded month has zero remaining items; all-ignored items must still be removed first.
-- No dedicated automated tests were added, per repository rules; manual QA remains.
+- No dedicated automated tests were added, per repository rules; browser QA was completed against the live frontend instance.
 
 ## Steps
 
@@ -40,7 +40,7 @@ Implemented in this pass:
 5. [x] Keep the dashboard toggle limited to empty past months.
 6. [x] Add history chart visibility and guarded deletion controls.
 7. [x] Run the frontend production build; lint remains blocked by pre-existing project-wide errors.
-8. [ ] Perform browser QA for reload, toggling, deletion, and chart appearance.
+8. [x] Perform browser QA for reload, toggling, deletion, and chart appearance on the live frontend instance.
 
 ## Relevant files
 

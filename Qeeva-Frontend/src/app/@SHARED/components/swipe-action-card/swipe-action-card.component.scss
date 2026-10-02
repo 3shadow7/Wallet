@@ -13,6 +13,14 @@
   transition: none;
 }
 
+.swipe-action-card.hint-active .swipe-action-content {
+  animation: swipe-action-hint var(--swipe-hint-duration) ease-in-out both;
+}
+
+.swipe-action-card.hint-active .swipe-action {
+  opacity: 0.55;
+}
+
 .swipe-action-content {
   position: relative;
   z-index: 1;
@@ -24,13 +32,13 @@
   inset: 0;
   display: flex;
   align-items: center;
-  width: 50%;
   padding: 0 1rem;
+  border-radius: var(--radius-lg);
   pointer-events: none;
   color: var(--text-inverse);
   font-size: 0.75rem;
   font-weight: 800;
-  text-transform: uppercase;
+  // text-transform: uppercase;
 }
 
 .swipe-action-left {
@@ -49,18 +57,44 @@
   background: color-mix(in srgb, currentColor 18%, transparent);
 }
 
-.tone-danger {
-  background: var(--danger-color);
+.tone-danger.swipe-action-left {
+  background: linear-gradient(to right, color-mix(in srgb, var(--danger-color) 100%, transparent 0%),  transparent 90%);
+}
+.tone-danger.swipe-action-right {
+  background: linear-gradient(to left, color-mix(in srgb, var(--danger-color) 100%, transparent 0%),  transparent 90%);
 }
 
-.tone-warning {
-  background: var(--warning-color);
+.tone-warning.swipe-action-left {
+  background: linear-gradient(to right, color-mix(in srgb, var(--warning-color) 100%, transparent 0%),  transparent 90%);
+}
+.tone-warning.swipe-action-right {
+  background: linear-gradient(to left, color-mix(in srgb, var(--warning-color) 100%, transparent 0%),  transparent 90%);
 }
 
-.tone-primary {
-  background: var(--primary-color);
+.tone-primary.swipe-action-left {
+  background: linear-gradient(to right, color-mix(in srgb, var(--primary-color) 100%, transparent 0%),  transparent 90%);
+}
+.tone-primary.swipe-action-right {
+  background: linear-gradient(to left, color-mix(in srgb, var(--primary-color) 100%, transparent 0%),  transparent 90%);
 }
 
-.tone-neutral {
-  background: var(--text-secondary);
+.tone-neutral.swipe-action-left {
+  background: linear-gradient(to right, color-mix(in srgb, var(--text-secondary) 100%, transparent 0%),  transparent 90%);
+}
+.tone-neutral.swipe-action-right {
+  background: linear-gradient(to left, color-mix(in srgb, var(--text-secondary) 100%, transparent 0%),  transparent 90%);
+}
+
+@keyframes swipe-action-hint {
+  0%, 100% { transform: translateX(0); }
+  22% { transform: translateX(calc(var(--swipe-hint-distance) * -1)); }
+  44% { transform: translateX(var(--swipe-hint-distance)); }
+  64% { transform: translateX(calc(var(--swipe-hint-distance) * -0.55)); }
+  82% { transform: translateX(calc(var(--swipe-hint-distance) * 0.55)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-action-card.hint-active .swipe-action-content {
+    animation: none;
+  }
 }

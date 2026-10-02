@@ -472,13 +472,13 @@ export class HistoryComponent implements AfterViewInit, OnDestroy {
 
   getSwipeLeftAction(item: MonthlyRecord): SwipeActionConfig {
       return item.excludedFromTotals
-          ? { id: 'include', label: 'Include', tone: 'primary', undoDurationMs: 6000 }
-          : { id: 'ignore', label: 'Ignore', tone: 'warning', undoDurationMs: 6000 };
+          ? { id: 'include', label: 'Include', tone: 'primary', undoDurationMs: 6000, showHint: true }
+          : { id: 'ignore', label: 'Ignore', tone: 'warning', undoDurationMs: 6000, showHint: true };
   }
 
   getSwipeRightAction(item: MonthlyRecord): SwipeActionConfig | null {
       return this.isDeletableHistoryMonth(item.month)
-          ? { id: 'delete', label: 'Delete', tone: 'danger', undoDurationMs: 8000 }
+          ? { id: 'delete', label: 'Delete', tone: 'danger', undoDurationMs: 8000, showHint: true }
           : null;
   }
 
