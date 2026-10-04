@@ -2,12 +2,13 @@ import { Component, ElementRef, viewChild, effect, inject, computed, AfterViewIn
 import { DashboardComponent } from "@COMPONENTS/pages/dashboard/dashboard.component";
 import { SettingsComponent } from "@COMPONENTS/pages/settings/settings.component";
 import { HistoryComponent } from "@COMPONENTS/pages/history/history.component";
+import { ItemConfigurationComponent } from "@COMPONENTS/pages/item-configuration/item-configuration.component";
 import { MobileViewService } from '@SERVICES/mobile-view.service';
 import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-mobile-view',
-  imports: [DashboardComponent, SettingsComponent, HistoryComponent],
+  imports: [DashboardComponent, SettingsComponent, HistoryComponent, ItemConfigurationComponent],
   templateUrl: './mobile-view.component.html',
   styleUrl: './mobile-view.component.scss',
 })
@@ -31,6 +32,7 @@ export class MobileViewComponent implements AfterViewInit {
   dashboardVisible = this.shouldRender(0);
   historyVisible = this.shouldRender(1);
   settingsVisible = this.shouldRender(2);
+  itemConfigurationVisible = this.shouldRender(3);
 
   constructor() {
     // Runs whenever the signal changes (e.g. header click) -> scroll to it

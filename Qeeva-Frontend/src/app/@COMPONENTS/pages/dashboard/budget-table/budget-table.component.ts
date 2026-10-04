@@ -18,6 +18,7 @@ import { ExpenseItem, PriorityLevel } from '@TYPES/models';
 import { ShowOnDirective } from '@SHARED/components/viewport/show-on.directive';
 // import { AddExpenseComponent } from './add-expense.component';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-budget-table',
@@ -32,6 +33,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 export class BudgetTableComponent {
   private budgetState = inject(BudgetStateService);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   public themeService = inject(ThemeService);
 
@@ -131,7 +133,7 @@ export class BudgetTableComponent {
   }
 
   openAllItemsExplorer(): void {
-    window.alert('All Items explorer is planned for the next feature step.');
+    this.router.navigate(['/item-configuration']);
   }
 
   onMobileQuantityChange(item: ExpenseItem, event: Event) {

@@ -18,6 +18,7 @@
     <ng-template #desktopNav>
       <nav class="main-nav">
         <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Dashboard</a>
+        <a routerLink="/item-configuration" routerLinkActive="active">Items</a>
         <a routerLink="/history" routerLinkActive="active">History</a>
         <a routerLink="/settings" routerLinkActive="active">Settings</a>
       </nav>
@@ -26,6 +27,7 @@
     <ng-template #mobileNav>
       <nav class="main-nav">
         <a (click)="goToPage(0)" [class.active]="currentPageIndex() === 0">Dashboard</a>
+        <a (click)="goToPage(3)" [class.active]="currentPageIndex() === 3">Items</a>
         <a (click)="goToPage(1)" [class.active]="currentPageIndex() === 1">History</a>
         <a (click)="goToPage(2)" [class.active]="currentPageIndex() === 2">Settings</a>
       </nav>

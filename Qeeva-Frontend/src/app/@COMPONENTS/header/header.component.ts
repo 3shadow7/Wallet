@@ -33,6 +33,9 @@ export class HeaderComponent {
           case 1:
             this.router.navigate(['/history']);
             break;
+          case 3:
+            this.router.navigate(['/item-configuration']);
+            break;
           case 2:
             this.router.navigate(['/settings']);
             break;
@@ -46,6 +49,9 @@ export class HeaderComponent {
             break;
           case '/history':
             this.mobileViewService.setPageIndex(1);
+            break;
+          case '/item-configuration':
+            this.mobileViewService.setPageIndex(3);
             break;
           case '/settings':
             this.mobileViewService.setPageIndex(2);

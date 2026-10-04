@@ -11,13 +11,15 @@ status: "proposed"
 
 Extend the Django finance API so monthly items can store saving targets, expose progress-safe data, and record an explicit conversion from Saving to Burn with the priority selected by the user. Keep the API compatible with the Angular dashboard and preserve an audit trail for the later reports feature.
 
-Item linking and shared targets are explicitly excluded. The backend must not add link tables, shared-target IDs, automatic name matching, or propagation rules in this phase.
+Explicit item merging is part of this phase, but automatic merging is not. The backend must preserve stable item identity and audit every confirmed merge.
 
 ## Scope
 
 ### In scope
 
 - A versioned, documented API contract for monthly item configuration.
+- Stable item identity independent of name, type, priority, or target.
+- Duplicate candidates and an explicit all-month merge operation.
 - Persisting an optional saving target for Saving items.
 - Returning item lifecycle fields needed by the frontend to display progress and completion state.
 - Validating month format, money precision, target constraints, type transitions, and priority values in serializers.
@@ -28,7 +30,8 @@ Item linking and shared targets are explicitly excluded. The backend must not ad
 
 ### Explicitly out of scope
 
-- Linking items or shared targets.
+- Automatic merging by name, type, priority, or target.
+- General-purpose linking or shared-target groups.
 - Target propagation or group-level calculations.
 - Automatic conversion when a target is reached.
 - Reports and analytics endpoints. The API only stores the facts required by a later reporting feature.
@@ -44,6 +47,7 @@ The exact field names must be finalized before implementation, but the contract 
 - `converted_from_type`: nullable value retained for audit when an item becomes Burn.
 - `conversion_priority`: nullable priority selected during conversion.
 - `month`: normalized `YYYY-MM` value.
+- `item_id`: stable identity shared by all monthly records for the same item.
 
 The existing `Expense` fields (`name`, `amount`, `unit_price`, `quantity`, `type`, `priority`, `month`, and `is_ignored`) remain compatible. Existing values such as `Burning` and `Must Have` must continue to be accepted or normalized at the API boundary while the frontend uses its current `Burn`, `Tax`, `Saving` and priority vocabulary.
 
@@ -56,6 +60,20 @@ Prefer extending the existing authenticated finance routes:
 - `GET /api/finance/expenses/?month=YYYY-MM`
 - `PATCH /api/finance/expenses/{id}/`
 - `POST /api/finance/expenses/{id}/convert-to-burn/`
+- `POST /api/finance/items/{surviving_id}/merge/`
+
+The merge request must include the older/source item IDs and the current-month target decision. The server must always keep the older item as the surviving identity.
+
+The merge operation must:
+
+- require explicit confirmation data;
+- reassign every historical and current-month record from the source IDs to the surviving ID;
+- apply the surviving item's name to all reassigned records;
+- apply the user-selected target only to the current month;
+- preserve historical target values for older months unless the user explicitly changes them through a separate operation;
+- run atomically across all affected months;
+- create an immutable merge audit record with source IDs, surviving ID, affected months, old names, and target decision;
+- return a complete merge summary for the frontend confirmation result.
 
 The conversion endpoint must:
 
@@ -70,12 +88,12 @@ Use serializer validation and a service/domain function for lifecycle rules. Do 
 
 ## Implementation steps
 
-1. Confirm the progress accumulation rule and lifecycle field names with the frontend plan.
+1. Confirm the progress, identity, and merge rules with the frontend plan.
 2. Inspect current expense views, permissions, URL prefixes, and compatibility normalization before changing models.
-3. Add the minimum model fields or a dedicated lifecycle model; keep user ownership and month isolation enforced by the database/queryset.
+3. Add the minimum item identity and merge-audit fields or dedicated models; keep user ownership and month isolation enforced by the database/queryset.
 4. Create and apply a non-destructive migration.
 5. Extend serializers with validation for money, target, month, type, and priority.
-6. Implement the conversion service and authenticated endpoint with transaction handling.
+6. Implement lifecycle conversion and all-month merge services with transaction handling.
 7. Update URL registration and `Swagger-local/openapi.json`.
 8. Add focused tests for permissions, invalid transitions, month isolation, conversion audit data, repeated conversion, legacy rows, and decimal values.
 9. Provide a small frontend-facing example payload in the API documentation.
@@ -102,6 +120,9 @@ Use serializer validation and a service/domain function for lifecycle rules. Do 
   - read it for the selected month;
   - verify progress inputs and decimal values;
   - convert it to Burn with a selected priority;
+  - merge two duplicate items and verify the older ID survives across every month;
+  - verify the current-month target decision and historical target preservation;
+  - verify the merge audit record and atomic rollback behavior;
   - verify the audit record and repeated-conversion behavior;
   - verify another user's item cannot be read or converted;
   - verify existing rows without new fields still serialize.
@@ -109,8 +130,9 @@ Use serializer validation and a service/domain function for lifecycle rules. Do 
 
 ## Decisions
 
-- No item links, shared target IDs, or group operations are part of this phase.
+- No general item links or shared target IDs are part of this phase.
 - Conversion is explicit, authenticated, atomic, and auditable.
+- Merge is explicit, authenticated, atomic, all-month, and auditable; the older item always survives.
 - The server owns validation and transition rules; the frontend only presents the workflow.
 - Existing API consumers must continue to work while legacy type and priority spellings are normalized.
 - The reports feature will be planned separately after lifecycle data has been used successfully in the monthly configuration page.

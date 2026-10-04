@@ -143,7 +143,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     if (Math.abs(diffX) < this.SWIPE_THRESHOLD) return;
 
-    const routes = ['/dashboard', '/history', '/settings'];
+    const routes = ['/dashboard', '/item-configuration', '/history', '/settings'];
     const currentIndex = routes.indexOf(currentUrl);
 
     if (currentIndex === -1) return;

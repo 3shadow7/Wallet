@@ -25,6 +25,11 @@ export const routes: Routes = [
     loadComponent: () => import('./@COMPONENTS/pages/history/history.component').then(m => m.HistoryComponent)
   },
   {
+    path: 'item-configuration',
+    canActivate: [authGuard],
+    loadComponent: () => import('./@COMPONENTS/pages/item-configuration/item-configuration.component').then(m => m.ItemConfigurationComponent)
+  },
+  {
     path: 'settings',
     canActivate: [deviceGuard(['watch', 'mobile', 'tablet' ], '/m-View'), authGuard],
     loadComponent: () => import('./@COMPONENTS/pages/settings/settings.component').then(m => m.SettingsComponent)
