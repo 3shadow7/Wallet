@@ -175,6 +175,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   showHeader(): boolean {
     const url = this.router.url;
-    return !url.includes('/login') && !url.includes('/register');
+    return !url.includes('/login') && !url.includes('/register') && !url.includes('/wait-list');
   }
 }

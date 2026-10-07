@@ -1,0 +1,97 @@
+<div class="auth-container">
+  <div class="auth-layout">
+    <!-- Left Side: Hero Brand (same as sign-up) -->
+    <div class="auth-content-side">
+      <div class="three-d-anchor">
+        <div class="mock-3d-object"
+             [style.transform]="'rotateY(' + mouseX() + 'deg) rotateX(' + -mouseY() + 'deg)'">
+          <div class="floating-wallet">
+            <div class="wallet-body">
+              <div class="credit-card"><div class="card-deco"></div></div>
+            </div>
+            <div class="floating-coins">
+              <div class="coin coin-1"></div>
+              <div class="coin coin-2"></div>
+              <div class="coin coin-3"></div>
+            </div>
+          </div>
+          <div class="data-particle p-1"></div><div class="data-particle p-2"></div><div class="data-particle p-3"></div><div class="data-particle p-4"></div>
+        </div>
+      </div>
+      <div class="brand">
+        <div class="logo-icon">
+          <img src="favicon.svg" alt="Qeeva logo" width="40" height="40">
+        </div>
+        <span class="brand-name">Qeeva</span>
+      </div>
+      <div class="hero-text">
+        <h2>Get in early.<br>Pay 80% less.</h2>
+        <p>Qeeva is opening to a small group first. Join the whitelist now and your discount is applied the day you sign up.</p>
+      </div>
+    </div>
+
+    <!-- Right Side: Form -->
+    <div class="auth-form-side">
+      <div class="auth-card fade-in">
+        @if (isDone()) {
+          <div class="auth-header">
+            <h1>You're on the list</h1>
+            <p class="subtitle">We'll email you when Qeeva opens. Your 80% discount is reserved under your username.</p>
+          </div>
+        } @else {
+          <div class="auth-header">
+            <h1>Join the whitelist</h1>
+            @if (errorMessage()) {
+              <p class="error-msg">{{ errorMessage() }}</p>
+            } @else {
+              <p class="subtitle">Reserve your username and lock in 80% off at launch.</p>
+            }
+          </div>
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+            <div class="form-group">
+              <label for="username">Username</label>
+              <div class="input-wrapper" [class.error]="isFieldInvalid('username')">
+                <span class="input-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </span>
+                <input type="text" id="username" formControlName="username"
+                       placeholder="Choose a username" autocomplete="username">
+              </div>
+              @if (isFieldInvalid('username')) {
+                <p class="field-hint">3-20 characters: letters, numbers and underscore.</p>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <div class="input-wrapper" [class.error]="isFieldInvalid('email')">
+                <span class="input-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <input type="email" id="email" formControlName="email"
+                       placeholder="you@example.com" autocomplete="email">
+              </div>
+            </div>
+
+            <!-- Honeypot: hidden from people, bots fill it -->
+            <div class="hp-field" aria-hidden="true">
+              <label for="website">Website</label>
+              <input type="text" id="website" formControlName="website" tabindex="-1" autocomplete="off">
+            </div>
+
+            <button type="submit" class="auth-submit" [disabled]="form.invalid || isLoading()">
+              <span class="btn-text">{{ isLoading() ? 'Joining...' : 'Join the whitelist' }}</span>
+              @if (!isLoading()) {
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              }
+            </button>
+          </form>
+
+          <div class="auth-footer">
+            <p>No password needed yet. We only email you about the launch.</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+/* Extras only. All other styles come from register.component.scss (see styleUrls). */
+
+/* Honeypot field: off-screen, not display:none (some bots skip display:none fields) */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.field-hint {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--danger-color);
+}

@@ -15,6 +15,10 @@ export const routes: Routes = [
     loadComponent: () => import('@COMPONENTS/auth/register/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'wait-list',
+    loadComponent: () => import('./@COMPONENTS/wait-list/wait-list.component').then(m => m.WaitListComponent)
+  },
+  {
     path: 'dashboard',
     canActivate: [deviceGuard(['watch', 'mobile', 'tablet' ], '/m-View'), authGuard],
     loadComponent: () => import('./@COMPONENTS/pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
