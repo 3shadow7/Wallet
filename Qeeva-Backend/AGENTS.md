@@ -36,15 +36,40 @@ what that means (free money, overspend, saving shortfall, hours of life per item
 
 ## 3. Source of truth and precedence
 
+Highest precedence first:
+
 1. `QEEVA_MASTER_CONTEXT_MD`, `ADDITIONAL_ENGINEERING_RULES`, `Collaborative_Discovery_Protocol`
    (the user's files; **not in Git**; ask him to upload them if a session does not have them).
-2. `Foundation Build Plan.docx`, then `description` (in the claude.ai Project "Qeeva").
-3. `docs/database/decision-log.md` (decisions with IDs) and `docs/database/schema-blueprint.md`.
+   He gave them in chat **after** the `plans/` folder, so they win over it.
+2. `docs/database/decision-log.md` and `docs/database/schema-blueprint.md` (what he approved
+   later in chat).
+3. Older material, written for the earlier frontend-first project: `Foundation Build Plan.docx`,
+   `description` (both in the claude.ai Project "Qeeva") and the **`plans/` folder at the
+   repository root** (see section 3b).
 
 On conflict, the higher item wins (D-001). The one deliberate override: **tests are required**
-even though `description` says "without testing files".
+even though `description` and the root `AGENTS.md` say "no test files". When an older document
+and a later decision disagree and the user may not know it, **ask him**; do not decide silently.
 
 Chat history is never the only record: write decisions to the decision log in the same commit.
+
+### 3b. The `plans/` folder (repo root)
+
+Read the relevant plans at the start of a session (they are short). Rules from
+`plans/rules/` that apply to the backend:
+
+* Backend plans go in `plans/plans-Backend/`, named `YYYYMMDD-short-title.md`, with frontmatter
+  (`title`, `author`, `date`, `status: draft|proposed|approved|done`) and the sections TL;DR,
+  Steps, Relevant files, Verification, Decisions (`plans/rules/Template-of-plans.md`).
+* The user allowed the AI to add and update `.md` files there (2026-11-14). Prefer adding a new
+  dated plan over rewriting an existing one that another tool wrote.
+* Frontend plans belong to `plans/plans-Frontend/`. Do not change frontend decisions without asking.
+* Code rule from `plans/rules/general-rules.md`: **comments that explain every step** (he is
+  learning the backend), and after code always say what it does, how it fits and how to test it.
+* The `plans/` folder says "no test files", "SimpleJWT" and "build endpoints for everything in
+  localStorage". Those are older than Master Context §6 (no API endpoints until he changes the
+  scope) and D-001, so the Master Context wins. The frontend has a **guest mode** (local only,
+  never calls the backend); our token check rejects Supabase anonymous users, which fits.
 
 ## 4. Hard rules
 
@@ -140,6 +165,18 @@ Next candidates, in this order, each needing his go-ahead:
    was added automatically (A) or to a month the user picks (B)?
 
 ## 9. Open items and known gaps
+
+* **Plans vs decisions (asked of the user 2026-11-14, answer pending):** the Item Explorer plan
+  (`plans/20260807-saving-goal-storage-plan.md`) wants manual links between differently named
+  items that share one target; D-060 postponed that. Not implemented in the frontend (no trace
+  in `src/`). Details in `decision-log.md`, "Open conflicts".
+* **Found in the frontend while reading the plans (ask before building `month_items`):**
+  `ExpenseItem.isReducible` (a per-card flag the savings-shortfall rule needs) has no column in
+  the approved `month_items`; `MonthlyRecord.manualAdded` shows the frontend stores manual savings
+  per month (input for the open D-083 question); `ExpenseItem.category` looks like a leftover.
+* **Outside my permission, outdated:** the root `AGENTS.md` (mentions SimpleJWT, "do not add test
+  files", legacy agents) and `swagger-local/openapi.json` (titled "Qeeva Frontend Storage
+  Vision": documents localStorage shapes, has no API paths). Ask before touching either.
 
 * **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
   `--durations` and a query-latency check before guessing.
