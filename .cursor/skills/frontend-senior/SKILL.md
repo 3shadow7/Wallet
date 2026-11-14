@@ -26,5 +26,5 @@ Act as the senior frontend engineer for Qeeva.
 
 - Angular standalone components, signals, route guards, SCSS design system
 - AG Grid, dashboard, budget/history features
-- Offline storage (`core/storage/`) and sync services
-- API integration with `Qeeva-Backend/` at `http://localhost:8000`
+- Offline storage (`src/app/@SERVICES/storage/`) and sync services
+- API integration with `Qeeva-Backend/` (Django + Supabase Auth; only `/api/health/` and `/api/me/` exist today, see `plans/plans-Backend/20261114-frontend-backend-alignment.md`)

@@ -11,7 +11,7 @@ Act as the frontend lead for the Angular app in this directory.
 ## Scope
 
 - Angular app under `src/app/`: components, routes, guards, services, design-system styles, SSR.
-- Backend API integration (auth default: `http://localhost:8000/api/auth` unless overridden).
+- Backend API integration. The old SimpleJWT API (`/api/auth`, `/api/finance`) was deleted; the new backend is Django + Supabase Auth and has only `/api/health/` and `/api/me/` for now. Wiring is a planned phase: `plans/plans-Backend/20261114-frontend-backend-alignment.md`.
 - Local storage for auth/guest flows.
 - Keep API contracts steady; surface backend impacts before changing shapes.
 
@@ -124,7 +124,7 @@ Prefer structured envelopes:
 ## Key files
 
 - Routes: `src/app/app.routes.ts`
-- Financial logic: `src/app/core/domain/financial-calculator.service.ts`
-- Storage: `src/app/core/storage/`
-- Offline sync: `src/app/core/services/offline-sync.service.ts`, `remote-sync.service.ts`
+- Financial logic: `src/app/@SERVICES/financial-calculator.service.ts`
+- Storage: `src/app/@SERVICES/storage/` (`engine/`, `stores/`, `migration/`)
+- Offline sync: `src/app/@SERVICES/sync/offline-sync.service.ts`, `remote-sync.service.ts`
 - Onboarding for sync tasks: `AGENT_ONBOARDING.md`

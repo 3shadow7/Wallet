@@ -5,7 +5,7 @@ Qeeva is a privacy-first, offline-capable personal financial planning applicatio
 
 ## Features
 - **Time-Value Calculation**: Instantly convert item prices into "hours of life" based on your hourly rate.
-- **Privacy First**: Zero data collection. All data is persisted locally in your browser using IndexedDB/localStorage. and we might use cloud in feature and that is only for user so he will not lose his data.
+- **Privacy First**: Zero data collection. All data is persisted locally in your browser using localStorage. and we might use cloud in feature and that is only for user so he will not lose his data.
 - **Reactive Financial Engine**: Real-time updates as you adjust income and expenses, powered by Angular Signals.
 - **Advanced Budget Grid**: High-performance data grid (AG Grid) for managing line items with sorting, filtering, and inline editing.
 - **Visual Dashboard**: Interactive charts to visualize expense breakdown and financial health.
@@ -45,7 +45,7 @@ This project follows a **Standalone Architecture** pattern, eliminating `NgModul
 - **Data Grid**: AG Grid Community
 - **Visualization**: ApexCharts (ng-apexcharts)
 - **Styling**: SCSS (Design Tokens, CSS Variables)
-- **Persistence**: IndexedDB (via wrapper service)
+- **Persistence**: `localStorage` (via the storage engine in `src/app/@SERVICES/storage/`)
 - **tooling**: ESLint, Prettier, Angular CLI
 
 ## Installation

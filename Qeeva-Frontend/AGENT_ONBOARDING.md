@@ -19,7 +19,7 @@ Top-level goals for the agent
 Client-side tasks (code locations & guidance)
 
 1) `OfflineSyncService` enhancements
-- File: `src/app/core/services/offline-sync.service.ts`
+- File: `src/app/@SERVICES/sync/offline-sync.service.ts`
 - What to add:
   - `async flush(baseUrl: string, authToken?: string)` : drains queue and POSTs ops to `/api/sync/batch` (or `/api/sync/op`).
   - Use `operationId` (UUID) in each op and send it with requests for idempotency.
@@ -28,7 +28,7 @@ Client-side tasks (code locations & guidance)
 - Important: use exponential backoff on failure; do small batches (e.g., 10 ops).
 
 2) New `RemoteSyncService` (client-side helper)
-- File: `src/app/core/services/remote-sync.service.ts` (create)
+- File: `src/app/@SERVICES/sync/remote-sync.service.ts`
 - Responsibility:
   - Provide `postBatch(ops)` and `postOp(op)` methods.
   - Include sample fetch code with headers: `Content-Type: application/json` and `Idempotency-Key` header from `op.id`.
@@ -100,9 +100,9 @@ Notes & tips
 - Log sync failures to provide debugging info in production (consider a telemetry endpoint).
 
 Files to open first (quick links)
-- `src/app/core/services/offline-sync.service.ts`
-- `src/app/core/storage/engine/storage-engine.service.ts`
-- `src/app/core/storage/stores/history-store.service.ts`
+- `src/app/@SERVICES/sync/offline-sync.service.ts`
+- `src/app/@SERVICES/storage/engine/storage-engine.service.ts`
+- `src/app/@SERVICES/storage/stores/history-store.service.ts`
 - `src/main.ts` (for wiring online listener)
 
 Contact

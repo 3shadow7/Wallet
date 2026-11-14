@@ -1,16 +1,19 @@
 ---
-description: Django REST API, auth, serializers, and database conventions
+description: Django REST API, Supabase Auth, database and security conventions
 globs: Qeeva-Backend/**/*
 alwaysApply: false
 ---
 
 # Backend scope
 
-You are working in the Qeeva Django backend. Follow `Qeeva-Backend/AGENTS.md` for full rules.
+You are working in the Qeeva Django backend. Read `Qeeva-Backend/AGENTS.md` first; it is the full manual.
 
 Key constraints:
-- Django REST + SimpleJWT; SQLite default
-- Serializers for validation; proper HTTP status codes
-- Add migrations when models change; never drop/reset DB without approval
-- Keep endpoints backward compatible with `Qeeva-Frontend/` frontend
-- Run from `Qeeva-Backend/`: `python manage.py migrate && python manage.py runserver`
+- Django 5.2 LTS + Django REST Framework; PostgreSQL on Supabase; Supabase Auth (Django only verifies the JWT, never creates users). No SimpleJWT, no SQLite.
+- Django owns the schema: models + migrations only (`RunSQL` for PostgreSQL-specific parts). No changes through the Supabase dashboard.
+- Read user data only through `Model.objects.for_user(principal)`; every model declares `OWNER_FIELD`; every table is locked down with `lock_down_table` in its migration.
+- Money is integer minor units (`bigint`), never floats.
+- No API endpoints beyond `/api/health/` and `/api/me/` until the product owner changes the scope.
+- Tests are required. Run from inside `Qeeva-Backend/` (database host `127.0.0.1`, not `localhost`): `docker compose up -d --wait`, set `QEEVA_TEST_DATABASE_URL`, then `python -m pytest`, `ruff check .`, `mypy .`.
+- Decisions live in `plans/decisions/decision-log.md`; write new ones in the same commit.
+- Never drop/reset a database or touch Supabase without explicit approval.

@@ -35,8 +35,8 @@ session found why the backend tests took 393 s on Windows: connecting through `l
    record what is stale (D-100, D-101).
 8. [x] Read a database host written as `localhost` as `127.0.0.1` in `parse_database_url`, with tests
    (D-102).
-9. [ ] The user re-runs the tests on Windows and reports the time.
-10. [ ] The user answers D-101 (fix the stale agent files outside `Qeeva-Backend/`).
+9. [x] The user re-ran the tests on Windows: 164 passed in 2.53 s (was 393 s).
+10. [x] The user answered D-101 (yes); done in patch 0012.
 
 ## Relevant files
 

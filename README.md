@@ -7,8 +7,8 @@ Personal money management app — offline-first Angular PWA with Django REST bac
 ```
 Qeeva/
 ├── Qeeva-Frontend/   # Angular 21 frontend (PWA)
-├── Qeeva-Backend/    # Django REST + SimpleJWT + db.PostgreSQL
-├── plans/            # Feature plans and refactor notes
+├── Qeeva-Backend/    # Django 5.2 + DRF, Supabase Auth, PostgreSQL on Supabase
+├── plans/            # Plans, rules and the decision log (see plans/README.md)
 ├── swagger-local/    # OpenAPI spec
 ├── AGENTS.md         # Project-wide agent instructions
 └── .cursor/          # Cursor rules and skills
@@ -49,9 +49,12 @@ npm start          # SSR server
 
 **Backend** (`Qeeva-Backend/`):
 ```bash
-python manage.py migrate
-python manage.py runserver   # :8000
+cd Qeeva-Backend
+docker compose up -d --wait   # PostgreSQL 17 for the tests
+python -m pytest             # set QEEVA_TEST_DATABASE_URL first, see Qeeva-Backend/README.md
 ```
+
+The backend has only `/api/health/` and `/api/me/` for now; see `Qeeva-Backend/AGENTS.md`.
 
 ## Copilot → Cursor mapping
 

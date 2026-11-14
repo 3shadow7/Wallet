@@ -10,7 +10,7 @@ You are working in the Qeeva Angular frontend. Follow `Qeeva-Frontend/AGENTS.md`
 
 Key constraints:
 - Signals-first state; OnPush; lazy routes
-- No direct `localStorage` — use storage abstraction services in `core/storage/`
-- Financial calculations live in `core/domain/` — keep UI decoupled
+- No direct `localStorage` — use storage abstraction services in `src/app/@SERVICES/storage/`
+- Financial calculations live in `src/app/@SERVICES/financial-calculator.service.ts` — keep UI decoupled
 - Preserve API contracts with `Qeeva-Backend/` unless explicitly asked to change them
 - Run from `Qeeva-Frontend/`: `npm start` (SSR) or `ng serve` (:4200)

@@ -173,9 +173,10 @@ Done and on GitHub (branch `build-django-as-what-db-schema-looks-like-cloude`):
 commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker test database,
 0006 agent manual + decision log + schema blueprint + Arabic guide, 0007 GitHub Actions workflow,
 0008-0009 plans alignment and decisions D-092..D-097.
-Windows run: 145 tests passed against PostgreSQL 17 (took 393 s; see open items).
+Windows run before 0011: 145 passed in 393 s; after 0011: 164 passed in 2.53 s.
 Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030; patch 0011
-makes `localhost` in a database URL mean `127.0.0.1` (D-102).
+makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes the stale agent and
+doc files (D-101).
 
 Next candidates, in this order, each needing his go-ahead:
 1. Account services: create profile on first login, change username (14-day wait, old name held
@@ -188,22 +189,14 @@ Next candidates, in this order, each needing his go-ahead:
 ## 9. Open items and known gaps
 
 * **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
-* **Waiting for the user's yes/no (proposals D-093, D-097, D-101):** manual savings (D-083) are
-  designed later together with debit/credit; the per-card `is_reducible` flag is not added to
-  `month_items` yet (the frontend only carries it, no logic uses it). Build the finance tables
-  without them. D-101 is the request to fix the stale agent files listed below.
-* **Stale agent files outside `Qeeva-Backend/` (found 2026-11-14, D-101, not changed yet):**
-  * Backend side: `.cursor/rules/backend-django.mdc` (applies to every backend file) and
-    `.cursor/skills/backend-senior/SKILL.md` still say "Django REST + SimpleJWT, SQLite",
-    `apps/authentication`, `apps/core_finance`; so do `.github/agents/backend-senior.agent.md`
-    (marked legacy) and the backend lines of the root `README.md`. The root `AGENTS.md` still
-    points at the old decision-log path (the pointer file keeps that link alive).
-  * Frontend side (paths only, no behaviour): `Qeeva-Frontend/AGENTS.md` ("Key files"),
-    `AGENT_ONBOARDING.md`, `README.md`, `.cursor/rules/frontend-angular.mdc` and
-    `.cursor/skills/frontend-senior/SKILL.md` name `core/...` folders. The frontend has none; the
-    real paths are under `src/app/@SERVICES/` (checked 2026-11-14). `Qeeva-Frontend/AGENTS.md`
-    and `.github/agents/frontend-senior.agent.md` give the auth API as
-    `http://localhost:8000/api/auth`.
+* **Approved by the user on 2026-11-15 (D-093, D-097):** manual savings (D-083) are designed
+  later together with debit/credit; the per-card `is_reducible` flag is not added to
+  `month_items` (the frontend only carries it, no logic uses it). The finance tables are built
+  without them.
+* **Stale agent and doc files outside `Qeeva-Backend/`: fixed in patch 0012 (D-101).** The
+  backend agent files, the root `README.md`/`AGENTS.md` and the frontend path mentions now match
+  reality. `.github/agents/frontend-senior.agent.md` still contains an aspirational `core/` folder
+  tree ("prefer this structure"); it was left as a wish, not a description.
 * **The frontend still calls the deleted legacy API** (checked 2026-11-14):
   `src/app/@SERVICES/auth/auth.service.ts` (`/api/auth`),
   `src/app/@API/pages/dashboard/dashboard.service.ts` (`/api/finance`) and
@@ -221,10 +214,8 @@ Next candidates, in this order, each needing his go-ahead:
   standing permission. `swagger-local/openapi.json` (documents localStorage shapes, no API
   paths) is still untouched; update it only when endpoints exist and the user approves.
 
-* **Slow tests on Windows (393 s vs ~1 s on Linux): cause found, fix in patch 0011 (D-102).**
-  Measured on the user's machine: a connection through `localhost` took 15,027 ms, through
-  `127.0.0.1` 19 ms; a query took 0.4 ms either way. Still to confirm: the user re-runs the suite
-  (expected: seconds). If it is still slow, diagnose with `--durations` before guessing.
+* **Slow tests on Windows: fixed (D-102).** `localhost` took 15 s per connection; `127.0.0.1`
+  takes 19 ms. The user's run after patch 0011: 164 passed in 2.53 s.
 * **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) live in
   `public` without RLS. Recommend the user turns **Data API off** in the Supabase dashboard
   (we never use it). Unverified for the project's current setting.

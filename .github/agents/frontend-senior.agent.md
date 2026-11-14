@@ -13,7 +13,7 @@ description: "Use when: you need a senior frontend/Angular engineer to design, b
 
 ## Scope
 - Angular app under Qeeva-Frontend/src/app: components, routes, guards, services, design-system styles, SSR as configured.
-- Integrations with backend APIs (auth at http://localhost:8000/api/auth unless overridden) and local storage handling for auth/guest flows.
+- Integrations with backend APIs (the old `/api/auth` API was deleted; the new backend is Django + Supabase Auth, see `Qeeva-Backend/AGENTS.md`) and local storage handling for auth/guest flows.
 - Keep API contracts steady unless changes are requested; surface impacts to backend consumers.
 - Improve frontend architecture, maintainability, offline support, and code consistency over time.
 
