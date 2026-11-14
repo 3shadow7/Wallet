@@ -1,0 +1,7 @@
+# Runtime dependencies. Versions are pinned exactly; every pin is at least 14 days old
+# at the time it was chosen (a brand-new release can carry problems before anyone notices).
+Django==5.2.19            # 5.2 LTS
+djangorestframework==3.18.3
+PyJWT==2.15.1             # verifies Supabase access tokens (JWKS)
+cryptography==50.0.2      # needed by PyJWT for ES256/RS256 signatures
+psycopg[binary]==3.3.6    # PostgreSQL driver
