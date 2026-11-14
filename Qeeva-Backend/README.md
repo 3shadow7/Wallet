@@ -41,22 +41,25 @@ mypy .                  # strict type checking
 ## Database tests
 
 Most of the safety rules live in the database (constraints, foreign keys, Row Level Security),
-so they are tested against a **real PostgreSQL**. Start any empty PostgreSQL 14+ server you can
-create databases on (nothing of yours is touched; Django makes and drops its own `test_...`
-database), then give the tests its address in the **real environment** (not in `.env`):
+so they are tested against a **real PostgreSQL**. `docker-compose.yml` starts one that matches
+Supabase (PostgreSQL 17) and keeps nothing on your disk. Django creates and drops its own
+`test_...` database inside it.
 
-```bash
-# Example with Docker (any PostgreSQL works):
-docker run --name qeeva-test-pg -e POSTGRES_PASSWORD=test -p 5433:5432 -d postgres:16
-
-# macOS/Linux:   export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
-# PowerShell:    $env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"
+```powershell
+docker compose up -d --wait
+$env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"   # PowerShell
+# macOS/Linux:  export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
 python -m pytest
+docker compose down
 ```
 
-Without `QEEVA_TEST_DATABASE_URL` those tests are reported as **skipped** (with the reason), never
-as passed. Do not point it at your Supabase project. The tests create a tiny stand-in for
-Supabase's `auth.users` table inside the throwaway test database only.
+Set the variable in the **real environment**, not in `.env`. Without it the database tests are
+reported as **skipped** (with the reason), never as passed. Do not point it at your Supabase
+project. The tests create a tiny stand-in for Supabase's `auth.users` table inside the throwaway
+test database only.
+
+To look at the tables, run `python -m pytest --reuse-db`, then open `test_postgres` on
+`localhost:5433` (user `postgres`, password `test`) in pgAdmin or DBeaver.
 
 ## Account tables (`apps/accounts`)
 

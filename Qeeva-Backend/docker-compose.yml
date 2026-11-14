@@ -1,0 +1,24 @@
+# A throwaway PostgreSQL for the automated tests (and for looking at the tables).
+# Same major version as the Supabase project (PostgreSQL 17).
+#
+#   docker compose up -d --wait     start it
+#   docker compose down             stop it and forget everything (data lives in memory only)
+#
+# Connect with any tool (pgAdmin, DBeaver, psql): host localhost, port 5433,
+# user postgres, password test. The port is 5433 so it never clashes with a PostgreSQL
+# you installed yourself on 5432. It is bound to 127.0.0.1, so only your own computer can reach it.
+services:
+  db:
+    image: postgres:17
+    container_name: qeeva-test-pg
+    environment:
+      POSTGRES_PASSWORD: test
+    ports:
+      - "127.0.0.1:5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
