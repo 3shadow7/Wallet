@@ -32,11 +32,41 @@ point to a reachable PostgreSQL database.
 ## Checks (run all of them before every commit)
 
 ```bash
-python -m pytest        # tests (they use fake values; no real database or Supabase needed)
+python -m pytest        # tests (see "Database tests" below: without PostgreSQL the database tests are skipped)
 ruff check .            # lint
 ruff format --check .   # formatting
 mypy .                  # strict type checking
 ```
+
+## Database tests
+
+Most of the safety rules live in the database (constraints, foreign keys, Row Level Security),
+so they are tested against a **real PostgreSQL**. Start any empty PostgreSQL 14+ server you can
+create databases on (nothing of yours is touched; Django makes and drops its own `test_...`
+database), then give the tests its address in the **real environment** (not in `.env`):
+
+```bash
+# Example with Docker (any PostgreSQL works):
+docker run --name qeeva-test-pg -e POSTGRES_PASSWORD=test -p 5433:5432 -d postgres:16
+
+# macOS/Linux:   export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
+# PowerShell:    $env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"
+python -m pytest
+```
+
+Without `QEEVA_TEST_DATABASE_URL` those tests are reported as **skipped** (with the reason), never
+as passed. Do not point it at your Supabase project. The tests create a tiny stand-in for
+Supabase's `auth.users` table inside the throwaway test database only.
+
+## Account tables (`apps/accounts`)
+
+`profiles`, `username_reservations` and `user_settings`. Migration `0002` ties
+`profiles.id` to Supabase's `auth.users` with a real foreign key, so **migrating needs the
+Supabase `auth` schema** (it exists in every Supabase project). Migration `0003` turns Row
+Level Security on for all three tables with **no policies** and revokes the browser-facing
+roles' privileges, so Supabase's public Data API can read nothing; only Django (the table
+owner role) can. Every future table must do the same with `common.db.lock_down_table`, and a
+test fails if one forgets. Read user data only through `Model.objects.for_user(principal)`.
 
 ## Configuration
 
