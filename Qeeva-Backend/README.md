@@ -38,6 +38,12 @@ ruff format --check .   # formatting
 mypy .                  # strict type checking
 ```
 
+## Documentation
+
+* `AGENTS.md`: operating manual for the AI that works on this project.
+* `docs/BACKEND_GUIDE.ar.md`: guide for the product owner (Arabic).
+* `docs/database/`: decision log and schema blueprint.
+
 ## Database tests
 
 Most of the safety rules live in the database (constraints, foreign keys, Row Level Security),
@@ -47,8 +53,8 @@ Supabase (PostgreSQL 17) and keeps nothing on your disk. Django creates and drop
 
 ```powershell
 docker compose up -d --wait
-$env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"   # PowerShell
-# macOS/Linux:  export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
+$env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@127.0.0.1:5433/postgres"   # PowerShell
+# macOS/Linux:  export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@127.0.0.1:5433/postgres
 python -m pytest
 docker compose down
 ```
@@ -59,7 +65,7 @@ project. The tests create a tiny stand-in for Supabase's `auth.users` table insi
 test database only.
 
 To look at the tables, run `python -m pytest --reuse-db`, then open `test_postgres` on
-`localhost:5433` (user `postgres`, password `test`) in pgAdmin or DBeaver.
+`127.0.0.1:5433` (user `postgres`, password `test`) in pgAdmin or DBeaver.
 
 ## Account tables (`apps/accounts`)
 
