@@ -12,31 +12,30 @@ status: "proposed"
 Build `apps/finance` from the design the user already approved (D-036 to D-081; columns in
 `Qeeva-Backend/docs/database/schema-blueprint.md`): `months`, `month_incomes`, `items`,
 `month_items`, `item_merge_dismissals`. Models and migrations only, with tests. No API endpoints
-(Master Context section 6). Reading the older plans and the Angular models surfaced questions that must be
-answered first; the first one decides whether another table is needed.
+(Master Context section 6). Reading the older plans and the Angular models surfaced questions; none of them blocks the
+approved tables (status below).
 
-## Questions to settle before building
+## Questions (status on 2026-11-14)
 
-1. **Item links (Item Explorer plan, `plans/20260807-saving-goal-storage-plan.md`).** The plan lets the
-   user link differently named items so they share one target. D-060 postponed this. Not built in the
-   frontend. Decide: build later (recommended; adding a link table later does not break the schema),
-   build now, or never. The plan's monthly/yearly `targetConfig` differs from today's single long-term target.
-2. **`is_reducible` on cards.** The frontend keeps `ExpenseItem.isReducible` (default true for Saving) and
-   the rule "the user picks which saving items shrink, at least one must stay reducible" needs it, but the
-   approved `month_items` has no such column. Proposal: `is_reducible boolean default true`, used for Saving cards only.
-3. **Manual savings (D-083).** The frontend stores a total plus `MonthlyRecord.manualAdded` per month and
-   charts it per month. Still open: does a hand-added amount belong to the month it was added (automatic) or
-   to a month the user picks?
-4. **`category`.** `ExpenseItem.category` is only passed through in the frontend; it looks like a leftover.
-   Proposal: do not store it.
+1. **Item links (Item Explorer plan).** Closed by D-092: postponed, no link table now.
+2. **`is_reducible` on cards.** Proposal D-097 (waiting for the user's yes): do not add now. The frontend
+   carries `ExpenseItem.isReducible` but no logic uses it yet, and the rule for choosing which saving items
+   shrink is still open (Master Context section 15 #13). A later migration can add it.
+3. **Manual savings (D-083).** Proposal D-093 (waiting for the user's yes): design later together with
+   debit/credit. Today the frontend adds a manual amount to the savings total at once and keeps one number
+   per month (`manualSavingsLog`, then `MonthlyRecord.manualAdded` when the month is archived). Detail for later:
+   an excluded month's manual amount is skipped in the running total.
+4. **`category`.** Closed by D-094: not stored.
 5. **Target conflict.** If the user enters a different long-term target for an existing item, the frontend
-   (`mergeItems`) keeps the existing target and flags a conflict. Decide the rule when the API exists.
+   (`mergeItems`) keeps the existing target and flags a conflict. Decide the rule when goals are designed.
 6. **Deleting a month.** The frontend allows it only for an excluded month with zero items. The server
-   should enforce the same rule later.
+   should enforce the same rule when the API exists.
+
+None of the open questions blocks the five approved tables.
 
 ## Steps
 
-1. [ ] Settle questions 1 to 4 with the user (one at a time).
+1. [ ] Get the user's yes on D-093 and D-097 (postpone both), then start.
 2. [ ] Models with CHECK constraints and composite foreign keys, so a card can never point at another user's month or item.
 3. [ ] Migrations; `lock_down_table` for every table; `OWNER_FIELD` on every model.
 4. [ ] Tests: every constraint, cross-user isolation, name-key uniqueness, cascade rules, RLS guard.
@@ -60,4 +59,4 @@ answered first; the first one decides whether another table is needed.
 
 ## Decisions
 
-Approved designs: D-036 to D-081, D-083. Open: the six questions above.
+Approved designs: D-036 to D-081. Closed: D-092, D-094. Waiting for a yes: D-093, D-097.

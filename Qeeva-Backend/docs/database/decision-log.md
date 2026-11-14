@@ -25,8 +25,14 @@ but their text could not be found. Do not reuse these numbers; add them here if 
 | D-087 | approved (user delegated the choice, 2026-11-14) | Option A for RLS: RLS on every table with no policies plus revoked privileges for `anon`/`authenticated`; Django connects as the owner and filters by owner through `for_user`. Per-request RLS (option B) may be added later by migration. Option C (frontend talks to Supabase data directly) rejected: it conflicts with D-085. |
 | D-088 | approved (2026-11-14) | Database tests run on PostgreSQL 17 (same major as Supabase) in Docker locally, and in GitHub Actions on every push. The workflow file lives at `.github/workflows/backend-ci.yml`, the only approved file outside `Qeeva-Backend/`. |
 | D-089 | AI choices, please review | Account tables: (a) deleting a Supabase user cascades to `profiles` and `user_settings` in SQL, but `username_reservations` rows survive with `previous_owner_id` cleared; (b) no unique constraint on a reserved name (the same name may be reserved again later; availability is decided in the username service); (c) time zone validity is checked in Python (IANA names), the database only forbids an empty value; (d) all choice columns are `text` with CHECK constraints. |
-| D-091 | approved (user statement, 2026-11-14) | Files the user gave in chat (Master Context, Engineering Rules, Discovery Protocol) come after the `plans/` folder and override it. The AI may add and update `.md` files in `plans/` and in `Qeeva-Backend/`. Backend plans follow the plan template in `plans/plans-Backend/`. |
 | D-090 | approved (restated by the user, 2026-11-14) | Qeeva is a money **log** for money management, not a payments or banking product. Consistent with D-032. |
+| D-091 | approved (user statement, 2026-11-14) | Files the user gave in chat (Master Context, Engineering Rules, Discovery Protocol) come after the `plans/` folder and override it. The AI may add and update `.md` files in `plans/` and in `Qeeva-Backend/`. Backend plans follow the plan template in `plans/plans-Backend/`. |
+| D-092 | approved (user, 2026-11-14) | Item links (Item Explorer plan): postponed as D-060 says. No link table now. The conflict with the older plan is closed. |
+| D-093 | proposal, waiting for the user's yes | Manual savings (D-083): do not build now. Design them later together with debit/credit (gifts, money from someone), because both are money moving outside the monthly cards. The user's idea: optional title, attached to a month, useful for analysis. Today's frontend stores one number per month (no title, no date). |
+| D-094 | approved (user's guess, 2026-11-14) | No `category` column. Never decided in any D-number; the frontend field is a pass-through leftover; "importance" (want/must/emergency/gift) is the only classification. Reversible. |
+| D-095 | approved (user, 2026-11-14) | One-time permission to update the root `AGENTS.md`. Done in patch 0009. Not a standing permission. |
+| D-096 | approved (user, 2026-11-14) | After the backend work there is a planned alignment phase between frontend and backend, done carefully so old work is not broken and production is not delayed. See `plans/plans-Backend/20261114-frontend-backend-alignment.md`. |
+| D-097 | proposal, waiting for the user's yes | Do not add `is_reducible` to `month_items` now. No frontend logic uses `isReducible` yet; the rule "which saving items shrink" is still open (Master Context section 15 #13). Adding the column later is a small migration. |
 
 ## Product
 
@@ -112,13 +118,13 @@ but their text could not be found. Do not reuse these numbers; add them here if 
 | D-079 | approved | Advanced users may turn off merge confirmations (name and importance); undo remains for everyone. |
 | D-080 | deferred | Admin features. |
 | D-081 | approved (design only) | Tables `items`, `month_items`, `item_merge_dismissals`, plus `skip_merge_confirm` in `user_settings`. |
-| D-083 | approved | Money the user adds by hand to savings is a separate list, shown in analysis, never changing month calculations. Which month it belongs to is still unanswered. |
+| D-083 | approved, design postponed (see D-093) | Money the user adds by hand to savings is a separate list, shown in analysis, never changing month calculations. Which month it belongs to is still unanswered. |
 
-## Open conflicts (older document vs a later decision; user asked 2026-11-14, answer pending)
+## Conflicts between an older document and a later decision
 
 | Topic | Older document says | Later decision says | Why it matters |
 |---|---|---|---|
-| Linking items | `plans/20260807-saving-goal-storage-plan.md` (Item Explorer): different names are different items; the user may link any number of items by hand and the group shares one target; no automatic merge by name. | D-055: same name + same type = same item automatically. D-060: linking differently named items is ignored for now, maybe never. Master Context §15 #11 still lists "shared savings-target relationships and cardinality" as open. | If links are wanted, the database needs a link/target-group table (and the target moves from `items.target_minor` to the group). The frontend has not built it (no `linkedItemIds`/`sharedTargetId` in `src/`). The plan's `targetConfig {monthly, yearly}` is also a different idea from the single long-term `targetTotal` the frontend uses today. |
+| Linking items (CLOSED by D-092: postponed) | `plans/20260807-saving-goal-storage-plan.md` (Item Explorer): different names are different items; the user may link any number of items by hand and the group shares one target; no automatic merge by name. | D-055: same name + same type = same item automatically. D-060: linking differently named items is ignored for now, maybe never. Master Context §15 #11 still lists "shared savings-target relationships and cardinality" as open. | If links are wanted, the database needs a link/target-group table (and the target moves from `items.target_minor` to the group). The frontend has not built it (no `linkedItemIds`/`sharedTargetId` in `src/`). The plan's `targetConfig {monthly, yearly}` is also a different idea from the single long-term `targetTotal` the frontend uses today. |
 
 Checked against the frontend (2026-11-14) and found consistent: excluded months (`excludedFromTotals`
 explicit-or-derived = `months.totals_mode`), same name + same type merge (`mergeItems`), money in

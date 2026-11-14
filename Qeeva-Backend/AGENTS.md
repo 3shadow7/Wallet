@@ -166,17 +166,17 @@ Next candidates, in this order, each needing his go-ahead:
 
 ## 9. Open items and known gaps
 
-* **Plans vs decisions (asked of the user 2026-11-14, answer pending):** the Item Explorer plan
-  (`plans/20260807-saving-goal-storage-plan.md`) wants manual links between differently named
-  items that share one target; D-060 postponed that. Not implemented in the frontend (no trace
-  in `src/`). Details in `decision-log.md`, "Open conflicts".
-* **Found in the frontend while reading the plans (ask before building `month_items`):**
-  `ExpenseItem.isReducible` (a per-card flag the savings-shortfall rule needs) has no column in
-  the approved `month_items`; `MonthlyRecord.manualAdded` shows the frontend stores manual savings
-  per month (input for the open D-083 question); `ExpenseItem.category` looks like a leftover.
-* **Outside my permission, outdated:** the root `AGENTS.md` (mentions SimpleJWT, "do not add test
-  files", legacy agents) and `swagger-local/openapi.json` (titled "Qeeva Frontend Storage
-  Vision": documents localStorage shapes, has no API paths). Ask before touching either.
+* **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
+* **Waiting for the user's yes/no (proposals D-093, D-097):** manual savings (D-083) are
+  designed later together with debit/credit; the per-card `is_reducible` flag is not added to
+  `month_items` yet (the frontend only carries it, no logic uses it). Build the finance tables
+  without them.
+* **Frontend/backend alignment is a planned phase after the backend work** (D-096); read
+  `plans/plans-Backend/20261114-frontend-backend-alignment.md` before writing any endpoint or
+  adapter. Backend and database are the source of truth; the frontend gets a mapping layer.
+* **Outside `Qeeva-Backend`:** the root `AGENTS.md` was updated once with the user's permission
+  (D-095). `swagger-local/openapi.json` (documents localStorage shapes, no API paths) is still
+  untouched; update it only when endpoints exist and the user approves.
 
 * **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
   `--durations` and a query-latency check before guessing.
