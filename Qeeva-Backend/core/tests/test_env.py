@@ -91,10 +91,47 @@ class TestParseDatabaseUrl:
         }
 
     def test_postgres_scheme_and_no_port_or_options(self) -> None:
-        config = parse_database_url("postgres://u:p@localhost/mydb")
-        assert config["HOST"] == "localhost"
+        config = parse_database_url("postgres://u:p@db.example.com/mydb")
+        assert config["HOST"] == "db.example.com"
         assert config["PORT"] == ""
         assert "OPTIONS" not in config
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "postgresql://u:p@localhost:5433/db",
+            "postgresql://u:p@LOCALHOST:5433/db",  # host names are case-insensitive
+            "postgres://u:p@LocalHost/db",
+        ],
+    )
+    def test_the_name_localhost_is_read_as_127_0_0_1(self, url: str) -> None:
+        # Decision D-102: on Windows, connecting through the name "localhost" took ~15 s per
+        # connection, through the address 127.0.0.1 ~19 ms.
+        assert parse_database_url(url)["HOST"] == "127.0.0.1"
+
+    def test_the_rest_of_the_url_is_untouched_when_localhost_is_replaced(self) -> None:
+        assert parse_database_url("postgresql://u:p%40w@localhost:5433/db?sslmode=disable") == {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "db",
+            "USER": "u",
+            "PASSWORD": "p@w",
+            "HOST": "127.0.0.1",
+            "PORT": "5433",
+            "OPTIONS": {"sslmode": "disable"},
+        }
+
+    @pytest.mark.parametrize(
+        ("url", "expected_host"),
+        [
+            ("postgresql://u:p@127.0.0.1:5433/db", "127.0.0.1"),
+            ("postgresql://u:p@[::1]:5433/db", "::1"),  # IPv6 written on purpose stays IPv6
+            ("postgresql://u:p@localhost.example.com/db", "localhost.example.com"),
+            ("postgresql://u:p@mylocalhost/db", "mylocalhost"),
+            ("postgresql://u:p@db.localhost/db", "db.localhost"),
+        ],
+    )
+    def test_every_other_host_is_kept_as_written(self, url: str, expected_host: str) -> None:
+        assert parse_database_url(url)["HOST"] == expected_host
 
     @pytest.mark.parametrize(
         "url",

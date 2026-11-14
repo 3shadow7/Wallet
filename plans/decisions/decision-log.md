@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe 
 decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
 Arabic; wording here is a faithful summary, not a new decision.
 
-**Numbers:** D-001 to D-101 are used. **Next free number: D-102.** Never reuse or renumber one.
+**Numbers:** D-001 to D-102 are used. **Next free number: D-103.** Never reuse or renumber one.
 
 **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
 (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
@@ -53,6 +53,7 @@ them says. Confirm them if one looks wrong.
 | D-099 | approved (user, 2026-11-14) | Permission to update the file in `.cursor/` that describes how plans are laid out: `.cursor/rules/00-monorepo.mdc`. It is the twin of the root `AGENTS.md`. Done in patch 0010: the plans anatomy was added, and the stale lines inside that same file ("SimpleJWT", "do not add test files") were aligned with the root `AGENTS.md`. This covers only that file; the other `.cursor` and `.github` files are listed under D-101. |
 | D-100 | approved (user, 2026-11-14) | When the user says "read all `.md` files", the AI reads **every** `.md` and `.mdc` file in the repository, including everything under `.cursor/` and `.github/`, and never answers that it did not read them. If it had not, it reads them then. Written into `Qeeva-Backend/AGENTS.md`. |
 | D-101 | proposal, waiting for the user's yes | Fix the agent and documentation files outside `Qeeva-Backend/` that describe things that no longer exist. **Backend side:** `.cursor/rules/backend-django.mdc`, `.cursor/skills/backend-senior/SKILL.md`, `.github/agents/backend-senior.agent.md` and the backend lines of the root `README.md` still say SimpleJWT, SQLite, `apps/authentication`, `apps/core_finance`; the root `AGENTS.md` still points at the old decision-log path. **Frontend side (paths only, no behaviour):** `Qeeva-Frontend/AGENTS.md`, `AGENT_ONBOARDING.md`, `README.md`, `.cursor/rules/frontend-angular.mdc` and `.cursor/skills/frontend-senior/SKILL.md` name `core/...` folders that do not exist (the real ones are under `src/app/@SERVICES/`), and two files give the auth API as `http://localhost:8000/api/auth`. A Cursor agent is told the wrong stack today. Nothing is changed until the user says yes. |
+| D-102 | AI choice, please review | A database host written as `localhost` is read as `127.0.0.1` (in `parse_database_url`). Measured on the user's Windows machine with Docker: connecting through `localhost` took 15,027 ms, through `127.0.0.1` 19 ms, per connection. The test suite opens many connections, so the 145 tests took 393 s instead of seconds. Probable cause (not proven): Windows tries IPv6 `::1` first and Docker publishes the port on IPv4 only. `[::1]` and every other host are left as written. |
 
 ## Product
 

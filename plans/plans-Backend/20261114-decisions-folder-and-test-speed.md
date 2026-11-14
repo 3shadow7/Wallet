@@ -33,7 +33,7 @@ session found why the backend tests took 393 s on Windows: connecting through `l
    root `AGENTS.md` (D-099).
 7. [x] Read every `.md` and `.mdc` file of the repository, including `.cursor/` and `.github/`, and
    record what is stale (D-100, D-101).
-8. [ ] Read a database host written as `localhost` as `127.0.0.1` in `parse_database_url`, with tests
+8. [x] Read a database host written as `localhost` as `127.0.0.1` in `parse_database_url`, with tests
    (D-102).
 9. [ ] The user re-runs the tests on Windows and reports the time.
 10. [ ] The user answers D-101 (fix the stale agent files outside `Qeeva-Backend/`).
@@ -55,6 +55,9 @@ session found why the backend tests took 393 s on Windows: connecting through `l
   --settings=core.settings_test`: all clean.
 - The guard test was proven by breaking the log six ways (lost row, duplicated row, wrong next-free
   number, unknown status, `superseded` pointing at a missing row, a typo in a reference).
+- Step 8: the old test that expected `localhost` was the only one that failed after the change; new
+  tests cover the name in three spellings, the rest of the URL staying intact, and five hosts that
+  must NOT change (`127.0.0.1`, `[::1]`, `localhost.example.com`, `mylocalhost`, `db.localhost`).
 - Every file path written in backticks in the changed documents was checked to exist; the ones that do
   not are URL routes, slash commands, names of deleted legacy code, or the future `apps/finance`.
 

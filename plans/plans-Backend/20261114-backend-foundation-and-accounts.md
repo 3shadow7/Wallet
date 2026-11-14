@@ -37,7 +37,7 @@ and `/api/me/` exist yet.
 ## Verification
 
 - `cd Qeeva-Backend`, `docker compose up -d --wait`, set `QEEVA_TEST_DATABASE_URL` (see `README.md`), then `python -m pytest`.
-- Result on the user's Windows machine (Python 3.14, PostgreSQL 17 in Docker): 145 passed (393 s; slowness under investigation).
+- Result on the user's Windows machine (Python 3.14, PostgreSQL 17 in Docker): 145 passed (393 s; the slowness was `localhost`, found and fixed in patch 0011, D-102).
 - `ruff check .`, `ruff format --check .`, `mypy .`, `python manage.py makemigrations --check --dry-run --settings=core.settings_test`.
 - Not yet verified: a real Supabase token against `/api/me/`; the migrations on a real Supabase database.
 

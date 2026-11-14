@@ -31,6 +31,10 @@ point to a reachable PostgreSQL database.
 
 ## Checks (run all of them before every commit)
 
+Run them from **inside `Qeeva-Backend/`**, not from the repository root: pytest looks for
+`pyproject.toml` in the folder you are in, and from the root it fails with "settings are not
+configured".
+
 ```bash
 python -m pytest        # tests (see "Database tests" below: without PostgreSQL the database tests are skipped)
 ruff check .            # lint
@@ -59,6 +63,11 @@ $env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@127.0.0.1:5433/postgr
 python -m pytest
 docker compose down
 ```
+
+Write the host as `127.0.0.1`, not `localhost`. On Windows, connecting through the name
+`localhost` took about 15 seconds per connection (the 145 tests needed 393 s instead of a few
+seconds; measured, D-102). The code now reads `localhost` as `127.0.0.1` by itself, but other
+tools (pgAdmin, DBeaver, `psql`) do not, so keep the habit.
 
 Set the variable in the **real environment**, not in `.env`. Without it the database tests are
 reported as **skipped** (with the reason), never as passed. Do not point it at your Supabase

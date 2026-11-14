@@ -140,7 +140,8 @@ The decision log is **not** here: it is `../plans/decisions/decision-log.md` (D-
 
 ## 6. Commands
 
-Run all of these before every commit; all must pass.
+Run all of these before every commit, **from inside `Qeeva-Backend/`** (from the repository
+root pytest finds no `pyproject.toml` and fails with "settings are not configured"); all must pass.
 
 ```bash
 docker compose up -d --wait        # PostgreSQL 17 on 127.0.0.1:5433 (data lives in memory)
@@ -150,6 +151,9 @@ ruff check . && ruff format --check .
 mypy .
 python manage.py makemigrations --check --dry-run --settings=core.settings_test
 ```
+
+Always write the database host as `127.0.0.1`, never `localhost` (D-102): on Windows the name cost
+about 15 s per connection. `parse_database_url` now reads `localhost` as `127.0.0.1` anyway.
 
 `core/settings_test.py` assigns its values unconditionally so a developer's `.env` cannot change
 test results. Run `pytest --reuse-db` to keep `test_postgres` for inspection in pgAdmin.
@@ -170,7 +174,8 @@ commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker t
 0006 agent manual + decision log + schema blueprint + Arabic guide, 0007 GitHub Actions workflow,
 0008-0009 plans alignment and decisions D-092..D-097.
 Windows run: 145 tests passed against PostgreSQL 17 (took 393 s; see open items).
-Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030.
+Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030; patch 0011
+makes `localhost` in a database URL mean `127.0.0.1` (D-102).
 
 Next candidates, in this order, each needing his go-ahead:
 1. Account services: create profile on first login, change username (14-day wait, old name held
@@ -216,8 +221,10 @@ Next candidates, in this order, each needing his go-ahead:
   standing permission. `swagger-local/openapi.json` (documents localStorage shapes, no API
   paths) is still untouched; update it only when endpoints exist and the user approves.
 
-* **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
-  `--durations` and a query-latency check before guessing.
+* **Slow tests on Windows (393 s vs ~1 s on Linux): cause found, fix in patch 0011 (D-102).**
+  Measured on the user's machine: a connection through `localhost` took 15,027 ms, through
+  `127.0.0.1` 19 ms; a query took 0.4 ms either way. Still to confirm: the user re-runs the suite
+  (expected: seconds). If it is still slow, diagnose with `--durations` before guessing.
 * **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) live in
   `public` without RLS. Recommend the user turns **Data API off** in the Supabase dashboard
   (we never use it). Unverified for the project's current setting.

@@ -16,6 +16,14 @@ from django.core.exceptions import ImproperlyConfigured
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _FALSE_VALUES = {"0", "false", "no", "off", ""}
 
+# The *name* ``localhost`` is read as the *address* 127.0.0.1 in database URLs (decision D-102).
+# Measured on Windows with a Docker database: a connection through ``localhost`` took about
+# 15 seconds, through 127.0.0.1 about 19 milliseconds (each query took the same 0.4 ms). The test
+# suite opens many connections, so it took 393 seconds instead of a few. The likely cause is that
+# Windows tries the IPv6 address ``::1`` first while Docker publishes the port on IPv4 only.
+_LOCALHOST_NAME = "localhost"
+_LOCALHOST_ADDRESS = "127.0.0.1"
+
 
 def load_env_file(path: Path) -> None:
     """Load KEY=VALUE lines from a local ``.env`` file into ``os.environ``.
@@ -79,7 +87,9 @@ def parse_database_url(url: str) -> dict[str, Any]:
     """Turn ``postgresql://user:pass@host:5432/dbname?sslmode=require`` into a Django config.
 
     Only PostgreSQL is supported. The user name and password are URL-decoded, so special
-    characters in a password must be percent-encoded (``@`` becomes ``%40``).
+    characters in a password must be percent-encoded (``@`` becomes ``%40``). A host written as
+    ``localhost`` is read as ``127.0.0.1`` (see ``_LOCALHOST_NAME``); every other host, including
+    the IPv6 address ``[::1]``, is kept exactly as written.
     """
     try:
         parts = urlsplit(url)
@@ -89,8 +99,12 @@ def parse_database_url(url: str) -> dict[str, Any]:
 
     if parts.scheme not in {"postgres", "postgresql"}:
         raise ImproperlyConfigured("DATABASE_URL must start with postgresql://")
-    if not parts.hostname:
+    host = parts.hostname
+    if not host:
         raise ImproperlyConfigured("DATABASE_URL has no host.")
+    # ``urlsplit`` already lower-cases the host, so "LocalHost" is caught here as well.
+    if host == _LOCALHOST_NAME:
+        host = _LOCALHOST_ADDRESS
     database_name = unquote(parts.path.lstrip("/"))
     if not database_name:
         raise ImproperlyConfigured("DATABASE_URL has no database name.")
@@ -100,7 +114,7 @@ def parse_database_url(url: str) -> dict[str, Any]:
         "NAME": database_name,
         "USER": unquote(parts.username or ""),
         "PASSWORD": unquote(parts.password or ""),
-        "HOST": parts.hostname,
+        "HOST": host,
         "PORT": str(port) if port else "",
     }
     options = dict(parse_qsl(parts.query))
