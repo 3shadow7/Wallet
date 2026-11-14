@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe 
 decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
 Arabic; wording here is a faithful summary, not a new decision.
 
-**Numbers:** D-001 to D-102 are used. **Next free number: D-103.** Never reuse or renumber one.
+**Numbers:** D-001 to D-107 are used. **Next free number: D-108.** Never reuse or renumber one.
 
 **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
 (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
@@ -54,6 +54,11 @@ them says. Confirm them if one looks wrong.
 | D-100 | approved (user, 2026-11-14) | When the user says "read all `.md` files", the AI reads **every** `.md` and `.mdc` file in the repository, including everything under `.cursor/` and `.github/`, and never answers that it did not read them. If it had not, it reads them then. Written into `Qeeva-Backend/AGENTS.md`. |
 | D-101 | approved (user, 2026-11-15) | Fix the agent and documentation files outside `Qeeva-Backend/` that describe things that no longer exist. **Backend side:** `.cursor/rules/backend-django.mdc`, `.cursor/skills/backend-senior/SKILL.md`, `.github/agents/backend-senior.agent.md` and the backend lines of the root `README.md` still say SimpleJWT, SQLite, `apps/authentication`, `apps/core_finance`; the root `AGENTS.md` still points at the old decision-log path. **Frontend side (paths only, no behaviour):** `Qeeva-Frontend/AGENTS.md`, `AGENT_ONBOARDING.md`, `README.md`, `.cursor/rules/frontend-angular.mdc` and `.cursor/skills/frontend-senior/SKILL.md` name `core/...` folders that do not exist (the real ones are under `src/app/@SERVICES/`), and two files give the auth API as `http://localhost:8000/api/auth`. A Cursor agent is told the wrong stack today. The user said "you can do it" on 2026-11-15; done in patch 0012. The frontend path fixes touch documentation only, never code. |
 | D-102 | approved (user, 2026-11-15) | A database host written as `localhost` is read as `127.0.0.1` (in `parse_database_url`). Measured on the user's Windows machine with Docker: connecting through `localhost` took 15,027 ms, through `127.0.0.1` 19 ms, per connection. The test suite opens many connections, so the 145 tests took 393 s instead of seconds. Probable cause (not proven): Windows tries IPv6 `::1` first and Docker publishes the port on IPv4 only. `[::1]` and every other host are left as written. Confirmed on the user's Windows machine after patch 0011: 164 tests passed in 2.53 s (before: 145 in 393 s). |
+| D-103 | AI choice, please review | Item name comparison (`items.name_key`) follows D-056 and D-057, not only "trim + lowercase" as the blueprint said: surrounding spaces and letter case are ignored, every alef form counts as one letter, teh marbuta = heh, alef maksura = yeh, diacritics and tatweel are dropped, Arabic-Indic and Persian digits equal 0-9 (the digit rule is the assumption D-057 already names). Django computes the key in `Item.save()` (the stored name is unchanged). The Angular `normalizeName` only trims and lowercases today; making it match is part of the alignment phase (D-096). |
+| D-104 | AI choice, please review | "No symbols" in item names (D-056) is checked in Python (`validate_item_name`: letters, digits, marks and single spaces) and **not** as a database CHECK, because PostgreSQL character classes depend on the server's locale and the rule would then behave differently per machine. The database still enforces length 1-40 and no leading, trailing or double spaces. |
+| D-105 | AI choice, please review | Delete rules of the finance tables: deleting a user (or profile) removes all of the user's finance rows; deleting a month removes its income lines and cards; deleting an item removes its merge dismissals; an item that still has cards **cannot** be deleted (the user merges or deletes the cards first; `NO ACTION` in the database, `RESTRICT` in Django). Every child row also keeps its own `user_id` foreign key to `profiles`, and every link to a month or item is a composite key `(id, user_id)`, so a card can never join another user's month or item. |
+| D-106 | AI choice, please review | A merge dismissal (D-053) is stored in one fixed order: `item_a_id` is the smaller id (CHECK `item_a_id < item_b_id`), so "A with B" and "B with A" are one row and an item cannot be dismissed against itself. `ItemMergeDismissal.ordered_pair` puts two ids in that order. |
+| D-107 | AI choice, please review | Small constraints the blueprint left open: `items.target_minor` only on saving items (database CHECK, D-073 defers a Tax goal); `month_items.unit_price_minor` is NULL or >= 0; a month has no cap on how many income lines it holds (D-041); `hours_per_day` is `numeric(4,2)`. Tables built with D-093 and D-097 as approved: no manual savings table, no `is_reducible` column. |
 
 ## Product
 
@@ -92,7 +97,7 @@ them says. Confirm them if one looks wrong.
 | D-034 | approved | `user_settings` has no sync fields; sync is a separate later topic. |
 | D-035 | approved | `user_settings` columns as built (plus `skip_merge_confirm`, see D-081). |
 
-## Finance (approved design, NOT built yet; see `schema-blueprint.md`)
+## Finance (approved design; the five tables are built in `apps/finance`, see `schema-blueprint.md`)
 
 | ID | Status | Decision |
 |---|---|---|

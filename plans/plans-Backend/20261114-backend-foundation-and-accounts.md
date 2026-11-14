@@ -12,8 +12,8 @@ status: "done"
 The legacy backend (SQLite, SimpleJWT, `core_finance`) was removed and replaced by a fresh Django 5.2
 project that verifies Supabase tokens and owns the PostgreSQL schema through migrations. The first
 three tables (`profiles`, `username_reservations`, `user_settings`) are built, closed to Supabase's
-public Data API, and covered by tests. No finance table and no API endpoint beyond `/api/health/`
-and `/api/me/` exist yet.
+public Data API, and covered by tests. The finance tables were added afterwards (see `20261114-finance-tables.md`). No API endpoint
+beyond `/api/health/` and `/api/me/` exists.
 
 ## Steps
 

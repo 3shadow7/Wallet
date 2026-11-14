@@ -25,6 +25,7 @@ Qeeva-Backend/
     ownership.py       القاعدة: "المستخدم يرى بياناته فقط" (for_user)
     db.py              دالة تقفل الجدول أمام Supabase Data API
   apps/accounts/     الحساب: models.py (الجداول) وmigrations/ (تاريخ تغييرات القاعدة)
+  apps/finance/      المال: الأشهر، الدخل، الأصناف، البطاقات (بدون API حتى الآن)
   conftest.py        إعدادات الاختبارات المشتركة
   docker-compose.yml قاعدة PostgreSQL مؤقتة للاختبار
   AGENTS.md          دليل للذكاء الاصطناعي الذي يعمل معك (ذاكرته بين الجلسات)

@@ -1,7 +1,7 @@
 # Schema blueprint
 
 The Django models and migrations are the real schema. This file is the human-readable map of it
-plus the approved-but-unbuilt tables. Decisions behind each rule: see `plans/decisions/decision-log.md`.
+plus the approved-but-unbuilt designs. Decisions behind each rule: see `plans/decisions/decision-log.md`.
 
 Conventions for every table: `uuid` ids, `timestamptz` (UTC) timestamps, money as `bigint` minor
 units (2 decimals, no currency, D-033), CHECK constraints for every fixed list, RLS on with no
@@ -31,10 +31,13 @@ policies (D-087), every model declares `OWNER_FIELD`.
 (default `regular`) · `timezone` text (IANA name, checked in Python, not empty) · `language`
 (`en`) · `skip_merge_confirm` boolean default false · `created_at`, `updated_at`.
 
-## Approved, not built: `apps/finance`
+## Built: `apps/finance` (migrations 0001-0003)
 
-All have `user_id` (the owner) so isolation checks are simple; composite constraints make sure a
-card can never point at another user's month or item.
+All have `user_id` (the owner) so isolation checks are simple; composite foreign keys
+`(month_id, user_id)` / `(item_id, user_id)` make sure a card can never point at another user's
+month or item (D-105). Delete rules: user -> everything goes; month -> its income lines and cards;
+item -> its merge dismissals; an item that still has cards cannot be deleted. Migration 0002 holds
+the foreign keys (SQL), 0003 closes the tables to the Data API.
 
 ### `months`
 `id`, `user_id`, `month_start` date (day must be 1), `totals_mode` `auto|included|excluded`
@@ -48,9 +51,9 @@ bigint > 0 (optional), timestamps. Computed, not stored: monthly hours = overrid
 `hours_per_day x days_per_week x 4`; hourly rate = manual rate, else `amount / monthly hours`.
 
 ### `items`
-`id`, `user_id`, `name` (1-40, no leading/trailing/double spaces), `name_key` (normalized for
-comparison, computed by Django), `type` `burn|tax|saving` (never changes, D-047),
-`target_minor` bigint > 0 (optional, saving only), timestamps. Unique `(user_id, name_key, type)`.
+`id`, `user_id`, `name` (1-40, no leading/trailing/double spaces; letters, digits and single spaces only, checked in Python, D-104), `name_key` (normalized for
+comparison: case, Arabic spelling variants, digits; computed by Django in `apps/finance/naming.py`, D-103), `type` `burn|tax|saving` (never changes, D-047),
+`target_minor` bigint > 0 (optional, saving only, database CHECK), timestamps. Unique `(user_id, name_key, type)`.
 
 ### `month_items` (the cards)
 `id`, `user_id`, `month_id`, `item_id`, `importance` `want|must|emergency|gift` (default
@@ -60,7 +63,7 @@ Unique `(month_id, item_id, importance)`. A "group" (same item, several importan
 not a table (D-075).
 
 ### `item_merge_dismissals`
-`id`, `user_id`, `item_a_id`, `item_b_id`, `created_at`. Unique on the pair (D-053).
+`id`, `user_id`, `item_a_id`, `item_b_id`, `created_at`. Unique on the pair (D-053); `item_a_id < item_b_id` (D-106).
 
 ## Not computed into storage (by design)
 Item groups, monthly hours, hourly rate, each month's result and the savings total are calculated.

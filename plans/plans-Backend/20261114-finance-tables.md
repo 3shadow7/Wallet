@@ -2,7 +2,7 @@
 title: "Finance tables (months, incomes, items, cards, merge dismissals)"
 author: "Claude"
 date: "2026-11-14"
-status: "proposed"
+status: "done"
 ---
 
 # Finance tables
@@ -15,13 +15,13 @@ Build `apps/finance` from the design the user already approved (D-036 to D-081; 
 (Master Context section 6). Reading the older plans and the Angular models surfaced questions; none of them blocks the
 approved tables (status below).
 
-## Questions (status on 2026-11-14)
+## Questions (status on 2026-11-15)
 
 1. **Item links (Item Explorer plan).** Closed by D-092: postponed, no link table now.
-2. **`is_reducible` on cards.** Proposal D-097 (waiting for the user's yes): do not add now. The frontend
+2. **`is_reducible` on cards.** D-097 (approved 2026-11-15): not added. The frontend
    carries `ExpenseItem.isReducible` but no logic uses it yet, and the rule for choosing which saving items
    shrink is still open (Master Context section 15 #13). A later migration can add it.
-3. **Manual savings (D-083).** Proposal D-093 (waiting for the user's yes): design later together with
+3. **Manual savings (D-083).** D-093 (approved 2026-11-15): design later together with
    debit/credit. Today the frontend adds a manual amount to the savings total at once and keeps one number
    per month (`manualSavingsLog`, then `MonthlyRecord.manualAdded` when the month is archived). Detail for later:
    an excluded month's manual amount is skipped in the running total.
@@ -35,12 +35,12 @@ None of the open questions blocks the five approved tables.
 
 ## Steps
 
-1. [ ] Get the user's yes on D-093 and D-097 (postpone both), then start.
-2. [ ] Models with CHECK constraints and composite foreign keys, so a card can never point at another user's month or item.
-3. [ ] Migrations; `lock_down_table` for every table; `OWNER_FIELD` on every model.
-4. [ ] Tests: every constraint, cross-user isolation, name-key uniqueness, cascade rules, RLS guard.
-5. [ ] Update `schema-blueprint.md` and `plans/decisions/decision-log.md` in the same commit.
-6. [ ] Deliver as a numbered patch with a completion report.
+1. [x] The user said yes on D-093 and D-097 (postpone both), 2026-11-15.
+2. [x] Models with CHECK constraints and composite foreign keys, so a card can never point at another user's month or item.
+3. [x] Migrations; `lock_down_table` for every table; `OWNER_FIELD` on every model.
+4. [x] Tests: every constraint, cross-user isolation, name-key uniqueness, cascade rules, RLS guard.
+5. [x] Update `schema-blueprint.md` and `plans/decisions/decision-log.md` in the same commit.
+6. [x] Delivered as patch 0013 with a completion report.
 
 ## Relevant files
 
@@ -59,4 +59,4 @@ None of the open questions blocks the five approved tables.
 
 ## Decisions
 
-Approved designs: D-036 to D-081. Closed: D-092, D-094. Waiting for a yes: D-093, D-097.
+Approved designs: D-036 to D-081. Closed: D-092, D-094. Approved on 2026-11-15: D-093, D-097. New AI choices to review: D-103 to D-107.

@@ -32,7 +32,7 @@ def principal_for(profile: Profile) -> SupabasePrincipal:
 
 class TestEveryModelDeclaresItsOwner:
     def test_there_are_project_models_to_check(self) -> None:
-        assert len(project_models()) >= 3
+        assert len(project_models()) >= 8
 
     @pytest.mark.parametrize("model", project_models(), ids=lambda m: m.__name__)
     def test_owner_field_is_declared_on_the_model_itself(self, model: type[models.Model]) -> None:

@@ -115,7 +115,7 @@ verifies tokens and never creates users). pytest, ruff, mypy strict. Exact pins 
 core/            settings (all from environment), urls
 common/          auth.py (Supabase JWT), ownership.py (for_user), db.py (lock_down_table), views
 apps/accounts/   profiles, username_reservations, user_settings
-apps/finance/    NOT BUILT YET (months, month_incomes, items, month_items, item_merge_dismissals)
+apps/finance/    months, month_incomes, items, month_items, item_merge_dismissals (+ naming.py)
 conftest.py      test wiring (auth.users stand-in; skips DB tests without PostgreSQL)
 docs/            schema blueprint, guide for the user (Arabic); decision-log.md is only a pointer
 ```
@@ -176,13 +176,14 @@ commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker t
 Windows run before 0011: 145 passed in 393 s; after 0011: 164 passed in 2.53 s.
 Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030; patch 0011
 makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes the stale agent and
-doc files (D-101).
+doc files (D-101); patch 0013 builds the five finance tables (models, migrations, 150 tests; D-103 to
+D-107). No finance endpoint exists.
 
 Next candidates, in this order, each needing his go-ahead:
 1. Account services: create profile on first login, change username (14-day wait, old name held
    30 days). Needs endpoints, so **scope approval first** (§4).
-2. Finance tables (see `docs/database/schema-blueprint.md`), then the calculation layer with
-   formula tests.
+2. The calculation layer (free money, overspend, shortfall ...) with formula tests, on the finance
+   tables (see `docs/database/schema-blueprint.md`). Pure Python first, no endpoint.
 3. Manual savings list (D-083): unanswered question: does a hand-added saving go to the time it
    was added automatically (A) or to a month the user picks (B)?
 
