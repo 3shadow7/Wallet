@@ -33,6 +33,12 @@ what that means (free money, overspend, saving shortfall, hours of life per item
 * When he says "you know better, pick": decide, explain why, and list the decisions you made so
   he can review them. Never present your own choice as his approval of something larger.
 * Never claim you read a file, ran a command, ran a test or pushed code unless you did.
+* **"Read all the `.md` files" means every one** (D-100): every `.md` and `.mdc` in the
+  repository, including `.cursor/` (Cursor rules and skills) and `.github/` (legacy Copilot
+  agents), plus the frontend docs. List them with `find`/`Glob`, read each, and say plainly which
+  ones you had not read before. Never answer that you did not read them; if you did not, read
+  them now. Some of those files are outdated (see section 9): read them anyway, and report what
+  is stale instead of trusting it.
 
 ## 3. Source of truth and precedence
 
@@ -41,28 +47,33 @@ Highest precedence first:
 1. `QEEVA_MASTER_CONTEXT_MD`, `ADDITIONAL_ENGINEERING_RULES`, `Collaborative_Discovery_Protocol`
    (the user's files; **not in Git**; ask him to upload them if a session does not have them).
    He gave them in chat **after** the `plans/` folder, so they win over it.
-2. `docs/database/decision-log.md` and `docs/database/schema-blueprint.md` (what he approved
-   later in chat).
+2. `plans/decisions/` (the decision log, D-098) and `docs/database/schema-blueprint.md` (what he
+   approved later in chat). The decisions folder is inside `plans/` but ranks above the rest of
+   `plans/`.
 3. Older material, written for the earlier frontend-first project: `Foundation Build Plan.docx`,
-   `description` (both in the claude.ai Project "Qeeva") and the **`plans/` folder at the
-   repository root** (see section 3b).
+   `description` (both in the claude.ai Project "Qeeva") and the rest of the **`plans/` folder at
+   the repository root** (see section 3b).
 
 On conflict, the higher item wins (D-001). The one deliberate override: **tests are required**
 even though `description` and the root `AGENTS.md` say "no test files". When an older document
 and a later decision disagree and the user may not know it, **ask him**; do not decide silently.
 
-Chat history is never the only record: write decisions to the decision log in the same commit.
+Chat history is never the only record: write decisions to `plans/decisions/decision-log.md` in
+the same commit (how: `plans/decisions/README.md`). A guard test fails on a duplicated or lost
+number. The old path `docs/database/decision-log.md` is only a pointer; never add rows there.
 
 ### 3b. The `plans/` folder (repo root)
 
-Read the relevant plans at the start of a session (they are short). Rules from
-`plans/rules/` that apply to the backend:
+`plans/README.md` is the map of the folder (its anatomy). Read the relevant plans at the start of
+a session (they are short). Rules from `plans/rules/` that apply to the backend:
 
 * Backend plans go in `plans/plans-Backend/`, named `YYYYMMDD-short-title.md`, with frontmatter
   (`title`, `author`, `date`, `status: draft|proposed|approved|done`) and the sections TL;DR,
-  Steps, Relevant files, Verification, Decisions (`plans/rules/Template-of-plans.md`).
+  Steps, Relevant files, Verification, Decisions (`plans/rules/Template-of-plans.md`). The
+  Decisions section lists D-numbers; it never copies their text.
 * The user allowed the AI to add and update `.md` files there (2026-11-14). Prefer adding a new
-  dated plan over rewriting an existing one that another tool wrote.
+  dated plan over rewriting an existing one that another tool wrote. Two older plans sit directly
+  under `plans/`; new plans never go there.
 * Frontend plans belong to `plans/plans-Frontend/`. Do not change frontend decisions without asking.
 * Code rule from `plans/rules/general-rules.md`: **comments that explain every step** (he is
   learning the backend), and after code always say what it does, how it fits and how to test it.
@@ -106,8 +117,10 @@ common/          auth.py (Supabase JWT), ownership.py (for_user), db.py (lock_do
 apps/accounts/   profiles, username_reservations, user_settings
 apps/finance/    NOT BUILT YET (months, month_incomes, items, month_items, item_merge_dismissals)
 conftest.py      test wiring (auth.users stand-in; skips DB tests without PostgreSQL)
-docs/            decision log, schema blueprint, guide for the user (Arabic)
+docs/            schema blueprint, guide for the user (Arabic); decision-log.md is only a pointer
 ```
+
+The decision log is **not** here: it is `../plans/decisions/decision-log.md` (D-098).
 
 ### Security model (decision D-087)
 
@@ -153,8 +166,11 @@ refer to this limitation; explain it, do not force a push.
 ## 8. Current state (2026-11-14)
 
 Done and on GitHub (branch `build-django-as-what-db-schema-looks-like-cloude`):
-commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker test database.
+commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker test database,
+0006 agent manual + decision log + schema blueprint + Arabic guide, 0007 GitHub Actions workflow,
+0008-0009 plans alignment and decisions D-092..D-097.
 Windows run: 145 tests passed against PostgreSQL 17 (took 393 s; see open items).
+Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030.
 
 Next candidates, in this order, each needing his go-ahead:
 1. Account services: create profile on first login, change username (14-day wait, old name held
@@ -167,16 +183,38 @@ Next candidates, in this order, each needing his go-ahead:
 ## 9. Open items and known gaps
 
 * **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
-* **Waiting for the user's yes/no (proposals D-093, D-097):** manual savings (D-083) are
+* **Waiting for the user's yes/no (proposals D-093, D-097, D-101):** manual savings (D-083) are
   designed later together with debit/credit; the per-card `is_reducible` flag is not added to
   `month_items` yet (the frontend only carries it, no logic uses it). Build the finance tables
-  without them.
+  without them. D-101 is the request to fix the stale agent files listed below.
+* **Stale agent files outside `Qeeva-Backend/` (found 2026-11-14, D-101, not changed yet):**
+  * Backend side: `.cursor/rules/backend-django.mdc` (applies to every backend file) and
+    `.cursor/skills/backend-senior/SKILL.md` still say "Django REST + SimpleJWT, SQLite",
+    `apps/authentication`, `apps/core_finance`; so do `.github/agents/backend-senior.agent.md`
+    (marked legacy) and the backend lines of the root `README.md`. The root `AGENTS.md` still
+    points at the old decision-log path (the pointer file keeps that link alive).
+  * Frontend side (paths only, no behaviour): `Qeeva-Frontend/AGENTS.md` ("Key files"),
+    `AGENT_ONBOARDING.md`, `README.md`, `.cursor/rules/frontend-angular.mdc` and
+    `.cursor/skills/frontend-senior/SKILL.md` name `core/...` folders. The frontend has none; the
+    real paths are under `src/app/@SERVICES/` (checked 2026-11-14). `Qeeva-Frontend/AGENTS.md`
+    and `.github/agents/frontend-senior.agent.md` give the auth API as
+    `http://localhost:8000/api/auth`.
+* **The frontend still calls the deleted legacy API** (checked 2026-11-14):
+  `src/app/@SERVICES/auth/auth.service.ts` (`/api/auth`),
+  `src/app/@API/pages/dashboard/dashboard.service.ts` (`/api/finance`) and
+  `src/app/@SERVICES/sync/backup.service.ts` (`/api`). The new backend has only `/api/health/` and
+  `/api/me/`, so a logged-in flow that uses them fails against it. Guest mode (local only) is not
+  affected. This belongs to the alignment phase (D-096); do not patch it ad hoc.
+* **`/admin/` is still routed** (the default Django scaffold; `django.contrib.admin` is
+  installed) although admin features are deferred (D-080). Django creates no admin account by
+  itself. Decide later whether to remove it or keep it closed in production. Not changed.
 * **Frontend/backend alignment is a planned phase after the backend work** (D-096); read
   `plans/plans-Backend/20261114-frontend-backend-alignment.md` before writing any endpoint or
   adapter. Backend and database are the source of truth; the frontend gets a mapping layer.
 * **Outside `Qeeva-Backend`:** the root `AGENTS.md` was updated once with the user's permission
-  (D-095). `swagger-local/openapi.json` (documents localStorage shapes, no API paths) is still
-  untouched; update it only when endpoints exist and the user approves.
+  (D-095) and `.cursor/rules/00-monorepo.mdc` once (D-099, the plans anatomy). Neither is a
+  standing permission. `swagger-local/openapi.json` (documents localStorage shapes, no API
+  paths) is still untouched; update it only when endpoints exist and the user approves.
 
 * **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
   `--durations` and a query-latency check before guessing.

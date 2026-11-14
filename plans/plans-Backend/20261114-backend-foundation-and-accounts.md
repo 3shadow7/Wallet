@@ -23,6 +23,7 @@ and `/api/me/` exist yet.
 4. [x] `apps/accounts`: three tables, constraints, database foreign keys, RLS lock-down, `for_user` ownership helper, 80 tests (patch 0004).
 5. [x] Docker PostgreSQL 17 for the database tests (patch 0005).
 6. [x] Agent manual, decision log, schema blueprint, Arabic guide (patch 0006); GitHub Actions workflow (patch 0007).
+   The decision log later moved to `plans/decisions/` (patch 0010, D-098).
 7. [ ] Verify the `qeeva-dev` JWT signing keys are asymmetric (Supabase dashboard, JWT Signing Keys).
 8. [ ] Turn the Supabase Data API off for `qeeva-dev` (Django's own tables live in `public` without RLS).
 9. [ ] Apply migrations to `qeeva-dev` (only after the user's explicit approval, D-084).
@@ -30,7 +31,7 @@ and `/api/me/` exist yet.
 ## Relevant files
 
 - `Qeeva-Backend/core/`, `Qeeva-Backend/common/`, `Qeeva-Backend/apps/accounts/`
-- `Qeeva-Backend/docs/database/decision-log.md`, `Qeeva-Backend/docs/database/schema-blueprint.md`
+- `plans/decisions/decision-log.md`, `Qeeva-Backend/docs/database/schema-blueprint.md`
 - `Qeeva-Backend/AGENTS.md`, `Qeeva-Backend/docker-compose.yml`, `.github/workflows/backend-ci.yml`
 
 ## Verification
@@ -42,6 +43,6 @@ and `/api/me/` exist yet.
 
 ## Decisions
 
-D-001, D-020 to D-028, D-033, D-034, D-084, D-085, D-087, D-088, D-089, D-090, D-091. See `decision-log.md`.
+D-001, D-020 to D-028, D-033, D-034, D-084, D-085, D-087, D-088, D-089, D-090, D-091. See `plans/decisions/decision-log.md`.
 The older `20260522-excluded-months-map.md` backend plan asked for a source-of-truth decision: it is now
 first-class tables (`months.totals_mode`, D-037/D-040), not a JSON backup envelope.

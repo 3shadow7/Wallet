@@ -39,13 +39,13 @@ None of the open questions blocks the five approved tables.
 2. [ ] Models with CHECK constraints and composite foreign keys, so a card can never point at another user's month or item.
 3. [ ] Migrations; `lock_down_table` for every table; `OWNER_FIELD` on every model.
 4. [ ] Tests: every constraint, cross-user isolation, name-key uniqueness, cascade rules, RLS guard.
-5. [ ] Update `schema-blueprint.md` and `decision-log.md` in the same commit.
+5. [ ] Update `schema-blueprint.md` and `plans/decisions/decision-log.md` in the same commit.
 6. [ ] Deliver as a numbered patch with a completion report.
 
 ## Relevant files
 
 - `Qeeva-Backend/apps/finance/` (new)
-- `Qeeva-Backend/docs/database/schema-blueprint.md`
+- `Qeeva-Backend/docs/database/schema-blueprint.md`, `plans/decisions/decision-log.md`
 - `Qeeva-Frontend/src/app/@TYPES/models.ts`
 - `Qeeva-Frontend/src/app/@SERVICES/storage/engine/saving-goal-storage.utils.ts`
 - `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts`

@@ -36,6 +36,7 @@ rewritten. Guest mode stays fully local and never calls the backend.
 | `isReducible`, `category` | carried in data, no logic | not stored (D-094, D-097) | adapter drops them (or keeps local only) |
 | Manual savings | one number per month (`manualSavingsLog`, `manualAdded`) | separate list, design postponed (D-083, D-093) | decide with debit/credit |
 | Calculations | `FinancialCalculatorService` in TypeScript | Python implementation with tests | both must give identical numbers for the same input |
+| Login and API calls | `@SERVICES/auth/auth.service.ts` calls `http://localhost:8000/api/auth`, `@API/pages/dashboard/dashboard.service.ts` calls `/api/finance`, `@SERVICES/sync/backup.service.ts` calls `/api` (the deleted SimpleJWT and `core_finance` API) | Supabase Auth issues the token; Django only verifies it; today only `/api/health/` and `/api/me/` exist | frontend change: replace those three services behind the adapters; guest mode stays local and is not affected |
 
 ## Steps
 
@@ -57,7 +58,7 @@ rewritten. Guest mode stays fully local and never calls the backend.
 - `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts`
 - `Qeeva-Frontend/src/app/@SERVICES/storage/engine/saving-goal-storage.utils.ts`
 - `Qeeva-Frontend/src/app/@SERVICES/sync/backup.service.ts`
-- `Qeeva-Backend/docs/database/schema-blueprint.md`, `Qeeva-Backend/docs/database/decision-log.md`
+- `Qeeva-Backend/docs/database/schema-blueprint.md`, `plans/decisions/decision-log.md`
 - `plans/project-idea/idea-v2.md`, `swagger-local/openapi.json`
 
 ## Verification

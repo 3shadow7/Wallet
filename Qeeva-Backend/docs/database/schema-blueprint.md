@@ -1,7 +1,7 @@
 # Schema blueprint
 
 The Django models and migrations are the real schema. This file is the human-readable map of it
-plus the approved-but-unbuilt tables. Decisions behind each rule: see `decision-log.md`.
+plus the approved-but-unbuilt tables. Decisions behind each rule: see `plans/decisions/decision-log.md`.
 
 Conventions for every table: `uuid` ids, `timestamptz` (UTC) timestamps, money as `bigint` minor
 units (2 decimals, no currency, D-033), CHECK constraints for every fixed list, RLS on with no

@@ -105,5 +105,6 @@ mypy .                             # فحص الأنواع
 
 ## 9) أين أجد القرارات؟
 
-- `docs/database/decision-log.md`: كل قرار برقمه وحالته.
+- `plans/decisions/decision-log.md` (في جذر المشروع، خارج `Qeeva-Backend`): كل قرار برقمه وحالته. وبجانبه `README.md` يشرح كيف يُكتب القرار.
+- `plans/README.md`: خريطة مجلد `plans` (أين تذهب الخطط وكيف تُسمّى).
 - `docs/database/schema-blueprint.md`: كل الجداول (المبنية والمعتمدة غير المبنية) والمعادلات.

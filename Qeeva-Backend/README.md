@@ -42,7 +42,8 @@ mypy .                  # strict type checking
 
 * `AGENTS.md`: operating manual for the AI that works on this project.
 * `docs/BACKEND_GUIDE.ar.md`: guide for the product owner (Arabic).
-* `docs/database/`: decision log and schema blueprint.
+* `docs/database/`: schema blueprint.
+* `../plans/decisions/`: the decision log (every D-number) and how decisions are written.
 
 ## Database tests
 
