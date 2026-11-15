@@ -1,0 +1,1242 @@
+From ca765a4d10070f424a64a47a06385df8ddcc1b45 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 14 Nov 2026 17:58:33 +0200
+Subject: [PATCH] feat(accounts): profiles, username_reservations,
+ user_settings with RLS lock-down
+
+- apps/accounts: three tables as approved (username rules, role/status, settings)
+- migrations: 0001 tables and CHECK constraints, 0002 database foreign keys
+  (auth.users -> profiles -> user_settings / username_reservations),
+  0003 Row Level Security on, no policies, public-role privileges revoked
+- common/ownership.py: for_user(principal) manager; common/db.py: lock_down_table
+- tests: 80 new tests incl. database cascade on Supabase user deletion and
+  guards that fail when a model forgets OWNER_FIELD or a table forgets RLS
+- database tests run when QEEVA_TEST_DATABASE_URL is set, else are skipped
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ Qeeva-Backend/README.md                       |  32 +-
+ Qeeva-Backend/apps/__init__.py                |   0
+ Qeeva-Backend/apps/accounts/__init__.py       |   0
+ Qeeva-Backend/apps/accounts/apps.py           |   7 +
+ .../apps/accounts/migrations/0001_initial.py  | 273 ++++++++++++++++++
+ .../migrations/0002_database_foreign_keys.py  |  41 +++
+ .../migrations/0003_row_level_security.py     |  15 +
+ .../apps/accounts/migrations/__init__.py      |   0
+ Qeeva-Backend/apps/accounts/models.py         | 238 +++++++++++++++
+ Qeeva-Backend/apps/accounts/tests/__init__.py |   0
+ Qeeva-Backend/apps/accounts/tests/helpers.py  |  29 ++
+ .../apps/accounts/tests/test_models.py        | 203 +++++++++++++
+ Qeeva-Backend/common/db.py                    |  38 +++
+ Qeeva-Backend/common/ownership.py             |  35 +++
+ Qeeva-Backend/common/tests/test_ownership.py  |  97 +++++++
+ Qeeva-Backend/conftest.py                     |  41 +++
+ Qeeva-Backend/core/settings.py                |   1 +
+ Qeeva-Backend/core/settings_test.py           |   6 +-
+ Qeeva-Backend/pyproject.toml                  |   2 +
+ 19 files changed, 1056 insertions(+), 2 deletions(-)
+ create mode 100644 Qeeva-Backend/apps/__init__.py
+ create mode 100644 Qeeva-Backend/apps/accounts/__init__.py
+ create mode 100644 Qeeva-Backend/apps/accounts/apps.py
+ create mode 100644 Qeeva-Backend/apps/accounts/migrations/0001_initial.py
+ create mode 100644 Qeeva-Backend/apps/accounts/migrations/0002_database_foreign_keys.py
+ create mode 100644 Qeeva-Backend/apps/accounts/migrations/0003_row_level_security.py
+ create mode 100644 Qeeva-Backend/apps/accounts/migrations/__init__.py
+ create mode 100644 Qeeva-Backend/apps/accounts/models.py
+ create mode 100644 Qeeva-Backend/apps/accounts/tests/__init__.py
+ create mode 100644 Qeeva-Backend/apps/accounts/tests/helpers.py
+ create mode 100644 Qeeva-Backend/apps/accounts/tests/test_models.py
+ create mode 100644 Qeeva-Backend/common/db.py
+ create mode 100644 Qeeva-Backend/common/ownership.py
+ create mode 100644 Qeeva-Backend/common/tests/test_ownership.py
+ create mode 100644 Qeeva-Backend/conftest.py
+
+diff --git a/Qeeva-Backend/README.md b/Qeeva-Backend/README.md
+index 258391e..fa9561a 100644
+--- a/Qeeva-Backend/README.md
++++ b/Qeeva-Backend/README.md
+@@ -32,12 +32,42 @@ point to a reachable PostgreSQL database.
+ ## Checks (run all of them before every commit)
+ 
+ ```bash
+-python -m pytest        # tests (they use fake values; no real database or Supabase needed)
++python -m pytest        # tests (see "Database tests" below: without PostgreSQL the database tests are skipped)
+ ruff check .            # lint
+ ruff format --check .   # formatting
+ mypy .                  # strict type checking
+ ```
+ 
++## Database tests
++
++Most of the safety rules live in the database (constraints, foreign keys, Row Level Security),
++so they are tested against a **real PostgreSQL**. Start any empty PostgreSQL 14+ server you can
++create databases on (nothing of yours is touched; Django makes and drops its own `test_...`
++database), then give the tests its address in the **real environment** (not in `.env`):
++
++```bash
++# Example with Docker (any PostgreSQL works):
++docker run --name qeeva-test-pg -e POSTGRES_PASSWORD=test -p 5433:5432 -d postgres:16
++
++# macOS/Linux:   export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
++# PowerShell:    $env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"
++python -m pytest
++```
++
++Without `QEEVA_TEST_DATABASE_URL` those tests are reported as **skipped** (with the reason), never
++as passed. Do not point it at your Supabase project. The tests create a tiny stand-in for
++Supabase's `auth.users` table inside the throwaway test database only.
++
++## Account tables (`apps/accounts`)
++
++`profiles`, `username_reservations` and `user_settings`. Migration `0002` ties
++`profiles.id` to Supabase's `auth.users` with a real foreign key, so **migrating needs the
++Supabase `auth` schema** (it exists in every Supabase project). Migration `0003` turns Row
++Level Security on for all three tables with **no policies** and revokes the browser-facing
++roles' privileges, so Supabase's public Data API can read nothing; only Django (the table
++owner role) can. Every future table must do the same with `common.db.lock_down_table`, and a
++test fails if one forgets. Read user data only through `Model.objects.for_user(principal)`.
++
+ ## Configuration
+ 
+ Everything comes from environment variables. See `.env.example` for the full list.
+diff --git a/Qeeva-Backend/apps/__init__.py b/Qeeva-Backend/apps/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Qeeva-Backend/apps/accounts/__init__.py b/Qeeva-Backend/apps/accounts/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Qeeva-Backend/apps/accounts/apps.py b/Qeeva-Backend/apps/accounts/apps.py
+new file mode 100644
+index 0000000..e25c506
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/apps.py
+@@ -0,0 +1,7 @@
++from django.apps import AppConfig
++
++
++class AccountsConfig(AppConfig):
++    name = "apps.accounts"
++    label = "accounts"
++    default_auto_field = "django.db.models.BigAutoField"
+diff --git a/Qeeva-Backend/apps/accounts/migrations/0001_initial.py b/Qeeva-Backend/apps/accounts/migrations/0001_initial.py
+new file mode 100644
+index 0000000..5644305
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/migrations/0001_initial.py
+@@ -0,0 +1,273 @@
++# Generated by Django 5.2.19 on 2026-11-14 15:56
++
++import apps.accounts.models
++import django.core.validators
++import django.db.models.deletion
++import django.db.models.functions.datetime
++import django.db.models.functions.text
++import django.db.models.lookups
++import uuid
++from django.db import migrations, models
++
++
++class Migration(migrations.Migration):
++
++    initial = True
++
++    dependencies = []
++
++    operations = [
++        migrations.CreateModel(
++            name="Profile",
++            fields=[
++                (
++                    "id",
++                    models.UUIDField(editable=False, primary_key=True, serialize=False),
++                ),
++                (
++                    "username",
++                    models.TextField(
++                        validators=[
++                            django.core.validators.RegexValidator(
++                                "^[A-Za-z0-9_]{3,20}\\Z",
++                                message="Username must be 3-20 characters: English letters, numbers or underscore.",
++                            )
++                        ]
++                    ),
++                ),
++                (
++                    "display_name",
++                    models.TextField(
++                        blank=True,
++                        null=True,
++                        validators=[
++                            django.core.validators.MinLengthValidator(1),
++                            django.core.validators.MaxLengthValidator(30),
++                        ],
++                    ),
++                ),
++                (
++                    "role",
++                    models.TextField(
++                        choices=[("user", "User"), ("admin", "Admin")],
++                        db_default="user",
++                        default="user",
++                    ),
++                ),
++                (
++                    "status",
++                    models.TextField(
++                        choices=[
++                            ("active", "Active"),
++                            ("suspended", "Suspended"),
++                            ("pending_deletion", "Pending Deletion"),
++                        ],
++                        db_default="active",
++                        default="active",
++                    ),
++                ),
++                ("username_changed_at", models.DateTimeField(blank=True, null=True)),
++                (
++                    "created_at",
++                    models.DateTimeField(
++                        auto_now_add=True,
++                        db_default=django.db.models.functions.datetime.Now(),
++                    ),
++                ),
++                (
++                    "updated_at",
++                    models.DateTimeField(
++                        auto_now=True,
++                        db_default=django.db.models.functions.datetime.Now(),
++                    ),
++                ),
++                ("deleted_at", models.DateTimeField(blank=True, null=True)),
++            ],
++            options={
++                "db_table": "profiles",
++            },
++        ),
++        migrations.CreateModel(
++            name="UsernameReservation",
++            fields=[
++                (
++                    "id",
++                    models.UUIDField(
++                        default=uuid.uuid4,
++                        editable=False,
++                        primary_key=True,
++                        serialize=False,
++                    ),
++                ),
++                (
++                    "username",
++                    models.TextField(
++                        validators=[
++                            django.core.validators.RegexValidator(
++                                "^[A-Za-z0-9_]{3,20}\\Z",
++                                message="Username must be 3-20 characters: English letters, numbers or underscore.",
++                            )
++                        ]
++                    ),
++                ),
++                ("reserved_until", models.DateTimeField()),
++            ],
++            options={
++                "db_table": "username_reservations",
++            },
++        ),
++        migrations.CreateModel(
++            name="UserSettings",
++            fields=[
++                (
++                    "user",
++                    models.OneToOneField(
++                        db_column="user_id",
++                        db_constraint=False,
++                        on_delete=django.db.models.deletion.CASCADE,
++                        primary_key=True,
++                        related_name="settings",
++                        serialize=False,
++                        to="accounts.profile",
++                    ),
++                ),
++                (
++                    "experience_mode",
++                    models.TextField(
++                        choices=[("regular", "Regular"), ("advanced", "Advanced")],
++                        db_default="regular",
++                        default="regular",
++                    ),
++                ),
++                (
++                    "timezone",
++                    models.TextField(
++                        validators=[apps.accounts.models.validate_timezone]
++                    ),
++                ),
++                (
++                    "language",
++                    models.TextField(
++                        choices=[("en", "English")], db_default="en", default="en"
++                    ),
++                ),
++                (
++                    "skip_merge_confirm",
++                    models.BooleanField(db_default=False, default=False),
++                ),
++                (
++                    "created_at",
++                    models.DateTimeField(
++                        auto_now_add=True,
++                        db_default=django.db.models.functions.datetime.Now(),
++                    ),
++                ),
++                (
++                    "updated_at",
++                    models.DateTimeField(
++                        auto_now=True,
++                        db_default=django.db.models.functions.datetime.Now(),
++                    ),
++                ),
++            ],
++            options={
++                "verbose_name_plural": "user settings",
++                "db_table": "user_settings",
++            },
++        ),
++        migrations.AddConstraint(
++            model_name="profile",
++            constraint=models.UniqueConstraint(
++                django.db.models.functions.text.Lower("username"),
++                name="profiles_username_ci_unique",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="profile",
++            constraint=models.CheckConstraint(
++                condition=models.Q(("username__regex", "^[A-Za-z0-9_]{3,20}\\Z")),
++                name="profiles_username_format",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="profile",
++            constraint=models.CheckConstraint(
++                condition=models.Q(
++                    ("display_name__isnull", True),
++                    models.Q(
++                        django.db.models.lookups.GreaterThanOrEqual(
++                            django.db.models.functions.text.Length("display_name"), 1
++                        ),
++                        django.db.models.lookups.LessThanOrEqual(
++                            django.db.models.functions.text.Length("display_name"), 30
++                        ),
++                    ),
++                    _connector="OR",
++                ),
++                name="profiles_display_name_length",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="profile",
++            constraint=models.CheckConstraint(
++                condition=models.Q(("role__in", ["user", "admin"])),
++                name="profiles_role_valid",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="profile",
++            constraint=models.CheckConstraint(
++                condition=models.Q(
++                    ("status__in", ["active", "suspended", "pending_deletion"])
++                ),
++                name="profiles_status_valid",
++            ),
++        ),
++        migrations.AddField(
++            model_name="usernamereservation",
++            name="previous_owner",
++            field=models.ForeignKey(
++                db_constraint=False,
++                null=True,
++                on_delete=django.db.models.deletion.SET_NULL,
++                related_name="released_usernames",
++                to="accounts.profile",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="usersettings",
++            constraint=models.CheckConstraint(
++                condition=models.Q(("experience_mode__in", ["regular", "advanced"])),
++                name="user_settings_experience_mode_valid",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="usersettings",
++            constraint=models.CheckConstraint(
++                condition=models.Q(("language__in", ["en"])),
++                name="user_settings_language_valid",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="usersettings",
++            constraint=models.CheckConstraint(
++                condition=models.Q(("timezone", ""), _negated=True),
++                name="user_settings_timezone_not_empty",
++            ),
++        ),
++        migrations.AddIndex(
++            model_name="usernamereservation",
++            index=models.Index(
++                django.db.models.functions.text.Lower("username"),
++                models.F("reserved_until"),
++                name="username_reservations_lookup",
++            ),
++        ),
++        migrations.AddConstraint(
++            model_name="usernamereservation",
++            constraint=models.CheckConstraint(
++                condition=models.Q(("username__regex", "^[A-Za-z0-9_]{3,20}\\Z")),
++                name="username_reservations_username_format",
++            ),
++        ),
++    ]
+diff --git a/Qeeva-Backend/apps/accounts/migrations/0002_database_foreign_keys.py b/Qeeva-Backend/apps/accounts/migrations/0002_database_foreign_keys.py
+new file mode 100644
+index 0000000..7edbf6d
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/migrations/0002_database_foreign_keys.py
+@@ -0,0 +1,41 @@
++"""Foreign keys whose delete rules must live in the database itself.
++
++When a user is deleted in Supabase Auth, PostgreSQL removes the matching ``profiles`` row
++without Django being involved. So the rules below are enforced by the database:
++
++* ``auth.users`` -> ``profiles``: delete the profile.
++* ``profiles`` -> ``user_settings``: delete the settings.
++* ``profiles`` -> ``username_reservations``: keep the reservation, clear the old owner.
++
++The first one needs Supabase's ``auth`` schema; the tests create a minimal stand-in for it
++(see ``conftest.py``).
++"""
++
++from django.db import migrations
++
++
++class Migration(migrations.Migration):
++    dependencies = [("accounts", "0001_initial")]
++
++    operations = [
++        migrations.RunSQL(
++            sql="""
++                ALTER TABLE "profiles"
++                    ADD CONSTRAINT "profiles_id_auth_users_fk"
++                    FOREIGN KEY ("id") REFERENCES "auth"."users" ("id") ON DELETE CASCADE;
++                ALTER TABLE "user_settings"
++                    ADD CONSTRAINT "user_settings_user_id_profiles_fk"
++                    FOREIGN KEY ("user_id") REFERENCES "profiles" ("id") ON DELETE CASCADE;
++                ALTER TABLE "username_reservations"
++                    ADD CONSTRAINT "username_reservations_previous_owner_profiles_fk"
++                    FOREIGN KEY ("previous_owner_id") REFERENCES "profiles" ("id")
++                    ON DELETE SET NULL;
++            """,
++            reverse_sql="""
++                ALTER TABLE "username_reservations"
++                    DROP CONSTRAINT "username_reservations_previous_owner_profiles_fk";
++                ALTER TABLE "user_settings" DROP CONSTRAINT "user_settings_user_id_profiles_fk";
++                ALTER TABLE "profiles" DROP CONSTRAINT "profiles_id_auth_users_fk";
++            """,
++        )
++    ]
+diff --git a/Qeeva-Backend/apps/accounts/migrations/0003_row_level_security.py b/Qeeva-Backend/apps/accounts/migrations/0003_row_level_security.py
+new file mode 100644
+index 0000000..5e471f9
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/migrations/0003_row_level_security.py
+@@ -0,0 +1,15 @@
++"""Close the account tables to Supabase's public Data API (RLS on, no policies)."""
++
++from django.db import migrations
++
++from common.db import lock_down_table
++
++
++class Migration(migrations.Migration):
++    dependencies = [("accounts", "0002_database_foreign_keys")]
++
++    operations = [
++        lock_down_table("profiles"),
++        lock_down_table("username_reservations"),
++        lock_down_table("user_settings"),
++    ]
+diff --git a/Qeeva-Backend/apps/accounts/migrations/__init__.py b/Qeeva-Backend/apps/accounts/migrations/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Qeeva-Backend/apps/accounts/models.py b/Qeeva-Backend/apps/accounts/models.py
+new file mode 100644
+index 0000000..2e3ddde
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/models.py
+@@ -0,0 +1,238 @@
++"""Who the user is: profile, reserved old usernames, and personal settings.
++
++These tables follow the design approved in the project. The user's login
++(email, password, tokens) lives in Supabase Auth; ``profiles.id`` is the same uuid as
++``auth.users.id`` and is tied to it by a database foreign key (see migration 0002).
++"""
++
++from __future__ import annotations
++
++import uuid
++from zoneinfo import ZoneInfo
++
++from django.core.exceptions import ValidationError
++from django.core.validators import MaxLengthValidator, MinLengthValidator, RegexValidator
++from django.db import models
++from django.db.models import Q
++from django.db.models.functions import Length, Lower, Now
++from django.db.models.lookups import GreaterThanOrEqual, LessThanOrEqual
++
++from common.ownership import OwnedManager
++
++# English letters, digits and underscore only, 3 to 20 characters.
++USERNAME_PATTERN = r"^[A-Za-z0-9_]{3,20}\Z"  # \Z, not $: "abc\n" must not match
++DISPLAY_NAME_MIN = 1
++DISPLAY_NAME_MAX = 30
++
++username_validator = RegexValidator(
++    USERNAME_PATTERN,
++    message="Username must be 3-20 characters: English letters, numbers or underscore.",
++)
++
++
++def validate_timezone(value: str) -> None:
++    """Accept only real IANA names such as ``Africa/Tripoli``."""
++    try:
++        ZoneInfo(value)
++    except (ValueError, OSError):
++        # ZoneInfoNotFoundError is a KeyError subclass in some versions; ValueError covers
++        # malformed keys, OSError covers keys that point at a folder or a non-zone file.
++        raise ValidationError(f"'{value}' is not a valid time zone name.") from None
++    except KeyError:
++        raise ValidationError(f"'{value}' is not a valid time zone name.") from None
++
++
++class ProfileRole(models.TextChoices):
++    USER = "user"
++    ADMIN = "admin"
++
++
++class ProfileStatus(models.TextChoices):
++    ACTIVE = "active"
++    SUSPENDED = "suspended"
++    PENDING_DELETION = "pending_deletion"
++
++
++class ExperienceMode(models.TextChoices):
++    REGULAR = "regular"
++    ADVANCED = "advanced"
++
++
++class Language(models.TextChoices):
++    ENGLISH = "en"
++
++
++class ProfileManager(OwnedManager["Profile"]):
++    """Typed manager: lets mypy know which model ``for_user`` returns."""
++
++
++class Profile(models.Model):
++    """One row per person. The primary key is the Supabase user id."""
++
++    # A user's own rows are the ones whose primary key equals their Supabase id.
++    OWNER_FIELD = "id"
++
++    id = models.UUIDField(primary_key=True, editable=False)
++    username = models.TextField(validators=[username_validator])
++    # NULL means "not set"; an empty string is forbidden by a database check (see Meta).
++    display_name = models.TextField(  # noqa: DJ001
++        null=True,
++        blank=True,
++        validators=[
++            MinLengthValidator(DISPLAY_NAME_MIN),
++            MaxLengthValidator(DISPLAY_NAME_MAX),
++        ],
++    )
++    role = models.TextField(
++        choices=ProfileRole.choices, default=ProfileRole.USER, db_default=ProfileRole.USER
++    )
++    status = models.TextField(
++        choices=ProfileStatus.choices,
++        default=ProfileStatus.ACTIVE,
++        db_default=ProfileStatus.ACTIVE,
++    )
++    # Start of the 14-day wait before the next username change. Null = never changed.
++    username_changed_at = models.DateTimeField(null=True, blank=True)
++    created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
++    updated_at = models.DateTimeField(auto_now=True, db_default=Now())
++    # When the user asked to delete the account. Not the time of the real deletion.
++    deleted_at = models.DateTimeField(null=True, blank=True)
++
++    objects = ProfileManager()
++
++    class Meta:
++        db_table = "profiles"
++        constraints = [
++            # "Bob" and "bob" are the same name, so uniqueness ignores letter case.
++            models.UniqueConstraint(Lower("username"), name="profiles_username_ci_unique"),
++            models.CheckConstraint(
++                condition=Q(username__regex=USERNAME_PATTERN),
++                name="profiles_username_format",
++            ),
++            models.CheckConstraint(
++                condition=Q(display_name__isnull=True)
++                | Q(
++                    GreaterThanOrEqual(Length("display_name"), DISPLAY_NAME_MIN),
++                    LessThanOrEqual(Length("display_name"), DISPLAY_NAME_MAX),
++                ),
++                name="profiles_display_name_length",
++            ),
++            models.CheckConstraint(
++                condition=Q(role__in=ProfileRole.values), name="profiles_role_valid"
++            ),
++            models.CheckConstraint(
++                condition=Q(status__in=ProfileStatus.values), name="profiles_status_valid"
++            ),
++        ]
++
++    def __str__(self) -> str:
++        return self.username
++
++
++class UsernameReservationManager(OwnedManager["UsernameReservation"]):
++    """Typed manager: lets mypy know which model ``for_user`` returns."""
++
++
++class UsernameReservation(models.Model):
++    """An old username that nobody else may take until ``reserved_until`` (30 days).
++
++    This is an internal table: it is never read on behalf of a user, so it has no owner.
++    Whether a name is free is decided by the username service, not by a unique constraint,
++    because the same name can legitimately be reserved again in the future.
++    """
++
++    OWNER_FIELD = None
++
++    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
++    username = models.TextField(validators=[username_validator])
++    # If the old owner deletes the account the reservation must survive, so we keep the row
++    # and clear the link instead of cascading the delete.
++    previous_owner = models.ForeignKey(
++        Profile,
++        null=True,
++        on_delete=models.SET_NULL,
++        # The foreign key itself is created in migration 0002 so that the database (not only
++        # Django) knows the delete rule: deleting a Supabase user deletes the profile in SQL.
++        db_constraint=False,
++        related_name="released_usernames",
++    )
++    reserved_until = models.DateTimeField()
++
++    objects = UsernameReservationManager()
++
++    class Meta:
++        db_table = "username_reservations"
++        constraints = [
++            models.CheckConstraint(
++                condition=Q(username__regex=USERNAME_PATTERN),
++                name="username_reservations_username_format",
++            ),
++        ]
++        indexes = [
++            # The username service asks "is this name reserved right now?" (case-insensitive).
++            models.Index(
++                Lower("username"),
++                "reserved_until",
++                name="username_reservations_lookup",
++            ),
++        ]
++
++    def __str__(self) -> str:
++        return self.username
++
++
++class UserSettingsManager(OwnedManager["UserSettings"]):
++    """Typed manager: lets mypy know which model ``for_user`` returns."""
++
++
++class UserSettings(models.Model):
++    """Personal preferences. Exactly one row per user (the user id is the primary key)."""
++
++    OWNER_FIELD = "user_id"
++
++    user = models.OneToOneField(
++        Profile,
++        primary_key=True,
++        on_delete=models.CASCADE,
++        db_constraint=False,  # created in migration 0002 with ON DELETE CASCADE
++        related_name="settings",
++        db_column="user_id",
++    )
++    experience_mode = models.TextField(
++        choices=ExperienceMode.choices,
++        default=ExperienceMode.REGULAR,
++        db_default=ExperienceMode.REGULAR,
++    )
++    # Taken from the device at sign-up. Checked against the IANA list in Python because a
++    # database CHECK cannot look inside PostgreSQL's time-zone table.
++    timezone = models.TextField(validators=[validate_timezone])
++    language = models.TextField(
++        choices=Language.choices, default=Language.ENGLISH, db_default=Language.ENGLISH
++    )
++    # Advanced mode only: merge same-named items without asking.
++    skip_merge_confirm = models.BooleanField(default=False, db_default=False)
++    created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
++    updated_at = models.DateTimeField(auto_now=True, db_default=Now())
++
++    objects = UserSettingsManager()
++
++    class Meta:
++        db_table = "user_settings"
++        verbose_name_plural = "user settings"
++        constraints = [
++            models.CheckConstraint(
++                condition=Q(experience_mode__in=ExperienceMode.values),
++                name="user_settings_experience_mode_valid",
++            ),
++            models.CheckConstraint(
++                condition=Q(language__in=Language.values),
++                name="user_settings_language_valid",
++            ),
++            # Django would otherwise store "" when no time zone is given.
++            models.CheckConstraint(
++                condition=~Q(timezone=""), name="user_settings_timezone_not_empty"
++            ),
++        ]
++
++    def __str__(self) -> str:
++        return f"settings of {self.user_id}"
+diff --git a/Qeeva-Backend/apps/accounts/tests/__init__.py b/Qeeva-Backend/apps/accounts/tests/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/Qeeva-Backend/apps/accounts/tests/helpers.py b/Qeeva-Backend/apps/accounts/tests/helpers.py
+new file mode 100644
+index 0000000..b7c1beb
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/tests/helpers.py
+@@ -0,0 +1,29 @@
++"""Small builders used by the account tests."""
++
++from __future__ import annotations
++
++import uuid
++from typing import Any
++
++from django.db import connection
++
++from apps.accounts.models import Profile, UserSettings
++
++
++def create_auth_user() -> uuid.UUID:
++    """Insert a row into Supabase's ``auth.users`` (a stand-in table in the tests)."""
++    user_id = uuid.uuid4()
++    with connection.cursor() as cursor:
++        cursor.execute("INSERT INTO auth.users (id) VALUES (%s)", [user_id])
++    return user_id
++
++
++def create_profile(username: str = "alice", **fields: Any) -> Profile:
++    # ``objects`` is untyped (Any) with the pinned django-stubs, so the result is annotated here.
++    profile: Profile = Profile.objects.create(id=create_auth_user(), username=username, **fields)
++    return profile
++
++
++def create_settings(profile: Profile, timezone: str = "Africa/Tripoli") -> UserSettings:
++    settings: UserSettings = UserSettings.objects.create(user=profile, timezone=timezone)
++    return settings
+diff --git a/Qeeva-Backend/apps/accounts/tests/test_models.py b/Qeeva-Backend/apps/accounts/tests/test_models.py
+new file mode 100644
+index 0000000..8f406fc
+--- /dev/null
++++ b/Qeeva-Backend/apps/accounts/tests/test_models.py
+@@ -0,0 +1,203 @@
++"""Database rules of the account tables (run against a real PostgreSQL)."""
++
++from __future__ import annotations
++
++import uuid
++from datetime import timedelta
++
++import pytest
++from django.core.exceptions import ValidationError
++from django.db import IntegrityError, connection, transaction
++from django.utils import timezone
++
++from apps.accounts.models import Profile, UsernameReservation, UserSettings
++from apps.accounts.tests.helpers import create_auth_user, create_profile, create_settings
++
++pytestmark = pytest.mark.django_db
++
++VALID_USERNAMES = ["abc", "A_1", "a" * 20, "Abc_123", "___"]
++INVALID_USERNAMES = [
++    "ab",  # too short
++    "a" * 21,  # too long
++    "bad name",
++    "bad-name",
++    "name!",
++    "نام_عربي",  # not English letters
++    "Ünder",
++    "abc\n",  # a trailing newline must not slip through
++    "",
++]
++
++
++class TestProfile:
++    def test_defaults(self) -> None:
++        profile = create_profile()
++        profile.refresh_from_db()
++        assert profile.role == Profile.objects.model._meta.get_field("role").default
++        assert profile.role == "user"
++        assert profile.status == "active"
++        assert profile.display_name is None
++        assert profile.username_changed_at is None
++        assert profile.deleted_at is None
++        assert profile.created_at is not None
++        assert profile.updated_at >= profile.created_at
++
++    def test_str_is_the_username(self) -> None:
++        assert str(create_profile("Zed_9")) == "Zed_9"
++
++    @pytest.mark.parametrize("username", VALID_USERNAMES)
++    def test_valid_usernames_pass_python_and_database(self, username: str) -> None:
++        Profile(id=uuid.uuid4(), username=username).full_clean(exclude=["id"])
++        assert create_profile(username).username == username
++
++    @pytest.mark.parametrize("username", INVALID_USERNAMES)
++    def test_invalid_usernames_rejected_by_python_validation(self, username: str) -> None:
++        with pytest.raises(ValidationError) as error:
++            Profile(id=uuid.uuid4(), username=username).full_clean(exclude=["id"])
++        assert "username" in error.value.message_dict
++
++    @pytest.mark.parametrize("username", INVALID_USERNAMES)
++    def test_invalid_usernames_rejected_by_the_database(self, username: str) -> None:
++        # Bypasses Python validation on purpose: the database is the last wall.
++        with pytest.raises(IntegrityError), transaction.atomic():
++            create_profile(username)
++
++    def test_username_unique_ignoring_letter_case(self) -> None:
++        create_profile("Bob")
++        with pytest.raises(IntegrityError), transaction.atomic():
++            create_profile("bOB")
++
++    @pytest.mark.parametrize("name", [None, "A", "x" * 30, "محمد علي", "Anna Maria"])
++    def test_display_name_allowed(self, name: str | None) -> None:
++        assert create_profile(display_name=name).display_name == name
++
++    @pytest.mark.parametrize("name", ["", "x" * 31])
++    def test_display_name_length_rejected_by_database(self, name: str) -> None:
++        with pytest.raises(IntegrityError), transaction.atomic():
++            create_profile(display_name=name)
++
++    def test_display_name_too_long_rejected_by_python_validation(self) -> None:
++        with pytest.raises(ValidationError) as error:
++            Profile(id=uuid.uuid4(), username="abc", display_name="x" * 31).full_clean(
++                exclude=["id"]
++            )
++        assert "display_name" in error.value.message_dict
++
++    @pytest.mark.parametrize("role", ["user", "admin"])
++    def test_valid_roles(self, role: str) -> None:
++        assert create_profile(role=role).role == role
++
++    @pytest.mark.parametrize("status", ["active", "suspended", "pending_deletion"])
++    def test_valid_statuses(self, status: str) -> None:
++        assert create_profile(status=status).status == status
++
++    @pytest.mark.parametrize(
++        ("field", "value"), [("role", "owner"), ("status", "banned"), ("role", "")]
++    )
++    def test_invalid_role_or_status_rejected_by_database(self, field: str, value: str) -> None:
++        with pytest.raises(IntegrityError), transaction.atomic():
++            create_profile(**{field: value})
++
++    def test_profile_must_belong_to_a_supabase_user(self) -> None:
++        with pytest.raises(IntegrityError), transaction.atomic():
++            Profile.objects.create(id=uuid.uuid4(), username="ghost")
++
++
++class TestUsernameReservation:
++    def test_same_name_can_be_reserved_more_than_once_over_time(self) -> None:
++        owner = create_profile("newname")
++        until = timezone.now() + timedelta(days=30)
++        UsernameReservation.objects.create(
++            username="old_one", previous_owner=owner, reserved_until=until
++        )
++        UsernameReservation.objects.create(
++            username="old_one", previous_owner=owner, reserved_until=until
++        )
++        assert UsernameReservation.objects.filter(username="old_one").count() == 2
++
++    @pytest.mark.parametrize("username", ["ab", "bad name", "abc\n", ""])
++    def test_username_format_enforced_by_database(self, username: str) -> None:
++        with pytest.raises(IntegrityError), transaction.atomic():
++            UsernameReservation.objects.create(
++                username=username, reserved_until=timezone.now() + timedelta(days=30)
++            )
++
++    def test_reserved_until_is_required(self) -> None:
++        with pytest.raises(IntegrityError), transaction.atomic():
++            UsernameReservation.objects.create(username="old_one", reserved_until=None)
++
++    def test_lookup_index_exists(self) -> None:
++        with connection.cursor() as cursor:
++            cursor.execute(
++                "SELECT 1 FROM pg_indexes WHERE tablename = 'username_reservations' "
++                "AND indexname = 'username_reservations_lookup'"
++            )
++            assert cursor.fetchone() is not None
++
++
++class TestUserSettings:
++    def test_defaults(self) -> None:
++        settings = create_settings(create_profile())
++        settings.refresh_from_db()
++        assert settings.experience_mode == "regular"
++        assert settings.language == "en"
++        assert settings.skip_merge_confirm is False
++        assert settings.timezone == "Africa/Tripoli"
++
++    def test_only_one_row_per_user(self) -> None:
++        profile = create_profile()
++        create_settings(profile)
++        with pytest.raises(IntegrityError), transaction.atomic():
++            create_settings(profile)
++
++    @pytest.mark.parametrize("mode", ["regular", "advanced"])
++    def test_valid_modes(self, mode: str) -> None:
++        profile = create_profile()
++        assert UserSettings.objects.create(user=profile, timezone="UTC", experience_mode=mode)
++
++    @pytest.mark.parametrize(
++        ("field", "value"), [("experience_mode", "expert"), ("language", "ar"), ("language", "")]
++    )
++    def test_invalid_values_rejected_by_database(self, field: str, value: str) -> None:
++        profile = create_profile()
++        with pytest.raises(IntegrityError), transaction.atomic():
++            UserSettings.objects.create(user=profile, timezone="UTC", **{field: value})
++
++    def test_empty_timezone_rejected_by_database(self) -> None:
++        with pytest.raises(IntegrityError), transaction.atomic():
++            UserSettings.objects.create(user=create_profile(), timezone="")
++
++    @pytest.mark.parametrize("name", ["UTC", "Africa/Tripoli", "America/Argentina/Buenos_Aires"])
++    def test_valid_timezones(self, name: str) -> None:
++        UserSettings(user=create_profile(), timezone=name).full_clean(exclude=["user"])
++
++    @pytest.mark.parametrize("name", ["Mars/Base", "", "../etc/passwd", "Africa", "UTC+2 please"])
++    def test_invalid_timezones_rejected_by_python_validation(self, name: str) -> None:
++        with pytest.raises(ValidationError) as error:
++            UserSettings(user=create_profile(), timezone=name).full_clean(exclude=["user"])
++        assert "timezone" in error.value.message_dict
++
++
++class TestDeletingASupabaseUser:
++    """Supabase deletes users inside PostgreSQL, so the database itself must cascade."""
++
++    def test_profile_and_settings_are_removed_and_reservations_survive(self) -> None:
++        profile = create_profile("leaving")
++        create_settings(profile)
++        reservation = UsernameReservation.objects.create(
++            username="old_name",
++            previous_owner=profile,
++            reserved_until=timezone.now() + timedelta(days=30),
++        )
++
++        with connection.cursor() as cursor:
++            cursor.execute("DELETE FROM auth.users WHERE id = %s", [profile.id])
++
++        assert not Profile.objects.filter(pk=profile.pk).exists()
++        assert not UserSettings.objects.filter(pk=profile.pk).exists()
++        reservation.refresh_from_db()
++        assert reservation.previous_owner_id is None  # the old name stays reserved
++
++    def test_foreign_key_unused_user_id_helper(self) -> None:
++        # Guards the helper itself: two calls give two different users.
++        assert create_auth_user() != create_auth_user()
+diff --git a/Qeeva-Backend/common/db.py b/Qeeva-Backend/common/db.py
+new file mode 100644
+index 0000000..32bd6ad
+--- /dev/null
++++ b/Qeeva-Backend/common/db.py
+@@ -0,0 +1,38 @@
++"""Helpers for migrations that touch PostgreSQL / Supabase specifics."""
++
++from __future__ import annotations
++
++from django.db import migrations
++
++
++def lock_down_table(table: str) -> migrations.RunSQL:
++    """Close a table to Supabase's public Data API.
++
++    * Row Level Security is switched on and **no policy is created**, so every request that
++      arrives as ``anon`` or ``authenticated`` (the browser-facing roles) sees nothing.
++    * Their table privileges are revoked as a second wall. This only runs when those roles
++      exist, so the same migration also works on a plain local PostgreSQL used by the tests.
++
++    Django itself connects with the owner role, which is how our API reads and writes data.
++    ``table`` is always a constant written in a migration, never user input.
++    """
++    quoted = f'"{table}"'
++    return migrations.RunSQL(
++        sql=[
++            f"ALTER TABLE {quoted} ENABLE ROW LEVEL SECURITY;",
++            f"""
++            DO $$
++            BEGIN
++                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
++                    EXECUTE 'REVOKE ALL ON TABLE {quoted} FROM anon';
++                END IF;
++                IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
++                    EXECUTE 'REVOKE ALL ON TABLE {quoted} FROM authenticated';
++                END IF;
++            END
++            $$;
++            """,  # noqa: S608 - ``table`` is a constant from a migration, never user input
++        ],
++        # Reversing only turns RLS off; it does not hand privileges back to public roles.
++        reverse_sql=f"ALTER TABLE {quoted} DISABLE ROW LEVEL SECURITY;",
++    )
+diff --git a/Qeeva-Backend/common/ownership.py b/Qeeva-Backend/common/ownership.py
+new file mode 100644
+index 0000000..bda749b
+--- /dev/null
++++ b/Qeeva-Backend/common/ownership.py
+@@ -0,0 +1,35 @@
++"""One shared rule for "a user only ever sees their own rows".
++
++Django connects to the database with a powerful role, so PostgreSQL
++Row Level Security cannot protect one user's rows from another user's request: our own
++code has to. To make that rule hard to forget, every model in ``apps/`` declares an
++``OWNER_FIELD`` and reads user data only through ``Model.objects.for_user(principal)``.
++``common/tests/test_ownership.py`` fails the build when a model forgets to declare it.
++"""
++
++from __future__ import annotations
++
++from typing import TypeVar, cast
++
++from django.core.exceptions import ImproperlyConfigured
++from django.db import models
++
++from common.auth import SupabasePrincipal
++
++_M = TypeVar("_M", bound=models.Model)
++
++
++class OwnedManager(models.Manager[_M]):
++    """Manager whose ``for_user`` returns only the rows that belong to the verified caller."""
++
++    def for_user(self, principal: SupabasePrincipal) -> models.QuerySet[_M]:
++        # The argument must be the verified principal (built from the signed token), never a
++        # raw id taken from a URL or request body, so a client cannot pick someone else's rows.
++        owner_field = getattr(self.model, "OWNER_FIELD", None)
++        if not isinstance(owner_field, str):
++            raise ImproperlyConfigured(
++                f"{self.model.__name__} has no OWNER_FIELD, so it is not scoped to a user. "
++                "Internal tables must never be read on behalf of a user."
++            )
++        queryset = self.get_queryset().filter(models.Q(**{owner_field: principal.id}))
++        return cast("models.QuerySet[_M]", queryset)
+diff --git a/Qeeva-Backend/common/tests/test_ownership.py b/Qeeva-Backend/common/tests/test_ownership.py
+new file mode 100644
+index 0000000..2cfd072
+--- /dev/null
++++ b/Qeeva-Backend/common/tests/test_ownership.py
+@@ -0,0 +1,97 @@
++"""Guards that keep "a user only sees their own rows" from being forgotten."""
++
++from __future__ import annotations
++
++import uuid
++from datetime import timedelta
++
++import pytest
++from django.apps import apps
++from django.core.exceptions import ImproperlyConfigured
++from django.db import connection, models
++from django.utils import timezone
++
++from apps.accounts.models import Profile, UsernameReservation, UserSettings
++from apps.accounts.tests.helpers import create_profile, create_settings
++from common.auth import SupabasePrincipal
++
++
++def project_models() -> list[type[models.Model]]:
++    """Every model that lives in one of our own apps (``apps/<name>``)."""
++    return [
++        model
++        for config in apps.get_app_configs()
++        if config.name.startswith("apps.")
++        for model in config.get_models()
++    ]
++
++
++def principal_for(profile: Profile) -> SupabasePrincipal:
++    return SupabasePrincipal(id=profile.id, claims={})
++
++
++class TestEveryModelDeclaresItsOwner:
++    def test_there_are_project_models_to_check(self) -> None:
++        assert len(project_models()) >= 3
++
++    @pytest.mark.parametrize("model", project_models(), ids=lambda m: m.__name__)
++    def test_owner_field_is_declared_on_the_model_itself(self, model: type[models.Model]) -> None:
++        # Inheriting it by accident does not count: each model must make the choice.
++        assert "OWNER_FIELD" in vars(model), f"{model.__name__} must declare OWNER_FIELD"
++        owner_field = vars(model)["OWNER_FIELD"]
++        if owner_field is not None:  # None = internal table, never read for a user
++            assert isinstance(owner_field, str)
++            model._meta.get_field(owner_field.removesuffix("_id"))
++
++    @pytest.mark.parametrize("model", project_models(), ids=lambda m: m.__name__)
++    def test_default_manager_offers_for_user(self, model: type[models.Model]) -> None:
++        assert hasattr(model._default_manager, "for_user")
++
++
++@pytest.mark.django_db
++class TestForUser:
++    def test_profile_returns_only_the_callers_row(self) -> None:
++        mine, other = create_profile("mine_1"), create_profile("other_1")
++        assert list(Profile.objects.for_user(principal_for(mine))) == [mine]
++        assert list(Profile.objects.for_user(principal_for(other))) == [other]
++
++    def test_settings_return_only_the_callers_row(self) -> None:
++        mine, other = create_profile("mine_1"), create_profile("other_1")
++        my_settings, _ = create_settings(mine), create_settings(other)
++        assert list(UserSettings.objects.for_user(principal_for(mine))) == [my_settings]
++
++    def test_unknown_caller_sees_nothing(self) -> None:
++        create_profile("someone")
++        stranger = SupabasePrincipal(id=uuid.uuid4(), claims={})
++        assert not Profile.objects.for_user(stranger).exists()
++        assert not UserSettings.objects.for_user(stranger).exists()
++
++    def test_internal_tables_refuse_to_be_read_for_a_user(self) -> None:
++        owner = create_profile("owner_1")
++        UsernameReservation.objects.create(
++            username="old_one",
++            previous_owner=owner,
++            reserved_until=timezone.now() + timedelta(days=30),
++        )
++        with pytest.raises(ImproperlyConfigured):
++            UsernameReservation.objects.for_user(principal_for(owner))
++
++
++@pytest.mark.django_db
++class TestDatabaseIsClosedToThePublicDataApi:
++    """Every table in our apps must have Row Level Security on and no policy (see common/db.py)."""
++
++    def test_rls_enabled_and_no_policies(self) -> None:
++        tables = sorted(model._meta.db_table for model in project_models())
++        assert tables, "no tables found"
++        with connection.cursor() as cursor:
++            cursor.execute(
++                "SELECT relname, relrowsecurity FROM pg_class "
++                "WHERE relname = ANY(%s) AND relkind = 'r'",
++                [tables],
++            )
++            rls = dict(cursor.fetchall())
++            cursor.execute("SELECT tablename FROM pg_policies WHERE tablename = ANY(%s)", [tables])
++            policies = cursor.fetchall()
++        assert rls == dict.fromkeys(tables, True)
++        assert policies == []
+diff --git a/Qeeva-Backend/conftest.py b/Qeeva-Backend/conftest.py
+new file mode 100644
+index 0000000..a3c45e8
+--- /dev/null
++++ b/Qeeva-Backend/conftest.py
+@@ -0,0 +1,41 @@
++"""Test-suite wiring shared by every app.
++
++* Supabase provides the ``auth.users`` table; a plain PostgreSQL does not. Before the
++  migrations run on the throwaway test database we create a minimal stand-in so that the
++  real foreign key ``profiles.id -> auth.users.id`` can be created and tested.
++* Tests that need a database run only when ``QEEVA_TEST_DATABASE_URL`` points at a
++  PostgreSQL server the user can create databases on. Without it they are skipped with a
++  clear reason (never silently "passed").
++"""
++
++from __future__ import annotations
++
++import os
++from typing import Any
++
++import pytest
++from django.db.models.signals import pre_migrate
++
++DB_URL_VARIABLE = "QEEVA_TEST_DATABASE_URL"
++
++
++def _create_supabase_auth_stand_in(using: str, **_: Any) -> None:
++    from django.db import connections
++
++    with connections[using].cursor() as cursor:
++        cursor.execute("CREATE SCHEMA IF NOT EXISTS auth")
++        cursor.execute("CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY)")
++
++
++pre_migrate.connect(_create_supabase_auth_stand_in, dispatch_uid="qeeva-auth-stand-in")
++
++
++def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
++    if os.environ.get(DB_URL_VARIABLE):
++        return
++    skip = pytest.mark.skip(
++        reason=f"needs PostgreSQL: set {DB_URL_VARIABLE} (see README, 'Database tests')"
++    )
++    for item in items:
++        if item.get_closest_marker("django_db") is not None:
++            item.add_marker(skip)
+diff --git a/Qeeva-Backend/core/settings.py b/Qeeva-Backend/core/settings.py
+index e2f940b..c19c1c1 100644
+--- a/Qeeva-Backend/core/settings.py
++++ b/Qeeva-Backend/core/settings.py
+@@ -53,6 +53,7 @@ INSTALLED_APPS = [
+     "django.contrib.messages",
+     "django.contrib.staticfiles",
+     "rest_framework",
++    "apps.accounts",
+ ]
+ 
+ MIDDLEWARE = [
+diff --git a/Qeeva-Backend/core/settings_test.py b/Qeeva-Backend/core/settings_test.py
+index c7a4f3c..ece4e2b 100644
+--- a/Qeeva-Backend/core/settings_test.py
++++ b/Qeeva-Backend/core/settings_test.py
+@@ -10,7 +10,11 @@ import os
+ os.environ["DJANGO_SECRET_KEY"] = "test-only-secret-key-never-used-outside-tests-0123456789"
+ os.environ["DJANGO_DEBUG"] = "false"
+ os.environ["DJANGO_ALLOWED_HOSTS"] = "testserver,localhost"
+-os.environ["DATABASE_URL"] = "postgresql://test:test@localhost:5432/test"
++# Database tests need a real PostgreSQL (see README). They run only when this variable is set in
++# the real environment; otherwise a placeholder is used and those tests are skipped.
++os.environ["DATABASE_URL"] = os.environ.get(
++    "QEEVA_TEST_DATABASE_URL", "postgresql://test:test@localhost:5432/test"
++)
+ os.environ["SUPABASE_URL"] = "https://testproject.supabase.co"
+ os.environ["DB_CONN_MAX_AGE"] = "0"
+ os.environ["DB_DISABLE_SERVER_SIDE_CURSORS"] = "false"
+diff --git a/Qeeva-Backend/pyproject.toml b/Qeeva-Backend/pyproject.toml
+index 2e5e943..dbe8c21 100644
+--- a/Qeeva-Backend/pyproject.toml
++++ b/Qeeva-Backend/pyproject.toml
+@@ -15,6 +15,8 @@ select = ["E", "W", "F", "I", "UP", "B", "S", "DJ", "C4", "SIM", "RUF"]
+ # Tests may use assert and hard-coded throwaway secrets.
+ "**/tests/**" = ["S101", "S105", "S106"]
+ "core/settings_test.py" = ["S105", "F403"]
++# Django's Meta.constraints / Meta.indexes are plain lists by design.
++"**/models.py" = ["RUF012"]
+ 
+ [tool.mypy]
+ python_version = "3.10"
+-- 
+2.43.0
+

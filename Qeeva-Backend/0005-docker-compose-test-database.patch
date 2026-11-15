@@ -1,0 +1,93 @@
+From d4ddb3bee97f8cc3a24fd7eeaf0897bc1e85df56 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 14 Nov 2026 18:10:50 +0200
+Subject: [PATCH] chore(backend): docker-compose PostgreSQL 17 for the database
+ tests
+
+- docker-compose.yml: throwaway PostgreSQL 17 (same major as Supabase) on 127.0.0.1:5433
+- README: how to run the full test suite and how to look at the tables
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ Qeeva-Backend/README.md          | 29 ++++++++++++++++-------------
+ Qeeva-Backend/docker-compose.yml | 24 ++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+), 13 deletions(-)
+ create mode 100644 Qeeva-Backend/docker-compose.yml
+
+diff --git a/Qeeva-Backend/README.md b/Qeeva-Backend/README.md
+index fa9561a..e31d21e 100644
+--- a/Qeeva-Backend/README.md
++++ b/Qeeva-Backend/README.md
+@@ -41,22 +41,25 @@ mypy .                  # strict type checking
+ ## Database tests
+ 
+ Most of the safety rules live in the database (constraints, foreign keys, Row Level Security),
+-so they are tested against a **real PostgreSQL**. Start any empty PostgreSQL 14+ server you can
+-create databases on (nothing of yours is touched; Django makes and drops its own `test_...`
+-database), then give the tests its address in the **real environment** (not in `.env`):
+-
+-```bash
+-# Example with Docker (any PostgreSQL works):
+-docker run --name qeeva-test-pg -e POSTGRES_PASSWORD=test -p 5433:5432 -d postgres:16
+-
+-# macOS/Linux:   export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
+-# PowerShell:    $env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"
++so they are tested against a **real PostgreSQL**. `docker-compose.yml` starts one that matches
++Supabase (PostgreSQL 17) and keeps nothing on your disk. Django creates and drops its own
++`test_...` database inside it.
++
++```powershell
++docker compose up -d --wait
++$env:QEEVA_TEST_DATABASE_URL = "postgresql://postgres:test@localhost:5433/postgres"   # PowerShell
++# macOS/Linux:  export QEEVA_TEST_DATABASE_URL=postgresql://postgres:test@localhost:5433/postgres
+ python -m pytest
++docker compose down
+ ```
+ 
+-Without `QEEVA_TEST_DATABASE_URL` those tests are reported as **skipped** (with the reason), never
+-as passed. Do not point it at your Supabase project. The tests create a tiny stand-in for
+-Supabase's `auth.users` table inside the throwaway test database only.
++Set the variable in the **real environment**, not in `.env`. Without it the database tests are
++reported as **skipped** (with the reason), never as passed. Do not point it at your Supabase
++project. The tests create a tiny stand-in for Supabase's `auth.users` table inside the throwaway
++test database only.
++
++To look at the tables, run `python -m pytest --reuse-db`, then open `test_postgres` on
++`localhost:5433` (user `postgres`, password `test`) in pgAdmin or DBeaver.
+ 
+ ## Account tables (`apps/accounts`)
+ 
+diff --git a/Qeeva-Backend/docker-compose.yml b/Qeeva-Backend/docker-compose.yml
+new file mode 100644
+index 0000000..f7b47f0
+--- /dev/null
++++ b/Qeeva-Backend/docker-compose.yml
+@@ -0,0 +1,24 @@
++# A throwaway PostgreSQL for the automated tests (and for looking at the tables).
++# Same major version as the Supabase project (PostgreSQL 17).
++#
++#   docker compose up -d --wait     start it
++#   docker compose down             stop it and forget everything (data lives in memory only)
++#
++# Connect with any tool (pgAdmin, DBeaver, psql): host localhost, port 5433,
++# user postgres, password test. The port is 5433 so it never clashes with a PostgreSQL
++# you installed yourself on 5432. It is bound to 127.0.0.1, so only your own computer can reach it.
++services:
++  db:
++    image: postgres:17
++    container_name: qeeva-test-pg
++    environment:
++      POSTGRES_PASSWORD: test
++    ports:
++      - "127.0.0.1:5433:5432"
++    tmpfs:
++      - /var/lib/postgresql/data
++    healthcheck:
++      test: ["CMD-SHELL", "pg_isready -U postgres"]
++      interval: 2s
++      timeout: 3s
++      retries: 30
+-- 
+2.43.0
+

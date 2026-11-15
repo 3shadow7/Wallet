@@ -1,0 +1,289 @@
+From 90a70a189a54973491fac6735869d26fa30536e7 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 14 Nov 2026 19:59:46 +0200
+Subject: [PATCH 11/11] fix(backend): read "localhost" in a database URL as
+ 127.0.0.1
+
+Measured on the product owner's Windows machine with a Docker database:
+connecting through the name localhost took 15,027 ms, through 127.0.0.1
+19 ms, and a query took 0.4 ms either way. The 145 tests open many
+connections, so they needed 393 s instead of a few seconds.
+
+parse_database_url now maps the host name localhost to 127.0.0.1. Every
+other host, including the IPv6 address [::1], is kept as written (D-102).
+
+- core/env.py and core/tests/test_env.py (9 new tests, 1 updated).
+- README, AGENTS.md and the Arabic guide: write 127.0.0.1, and run pytest
+  from inside Qeeva-Backend/ (from the repository root it cannot find
+  pyproject.toml and fails with "settings are not configured").
+- Decision log: D-102. Plans updated.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ Qeeva-Backend/AGENTS.md                       | 15 +++++--
+ Qeeva-Backend/README.md                       |  9 ++++
+ Qeeva-Backend/core/env.py                     | 20 +++++++--
+ Qeeva-Backend/core/tests/test_env.py          | 41 ++++++++++++++++++-
+ Qeeva-Backend/docs/BACKEND_GUIDE.ar.md        |  3 +-
+ plans/decisions/decision-log.md               |  3 +-
+ ...0261114-backend-foundation-and-accounts.md |  2 +-
+ ...0261114-decisions-folder-and-test-speed.md |  5 ++-
+ 8 files changed, 85 insertions(+), 13 deletions(-)
+
+diff --git a/Qeeva-Backend/AGENTS.md b/Qeeva-Backend/AGENTS.md
+index fd6f86f..89c3b72 100644
+--- a/Qeeva-Backend/AGENTS.md
++++ b/Qeeva-Backend/AGENTS.md
+@@ -140,7 +140,8 @@ The decision log is **not** here: it is `../plans/decisions/decision-log.md` (D-
+ 
+ ## 6. Commands
+ 
+-Run all of these before every commit; all must pass.
++Run all of these before every commit, **from inside `Qeeva-Backend/`** (from the repository
++root pytest finds no `pyproject.toml` and fails with "settings are not configured"); all must pass.
+ 
+ ```bash
+ docker compose up -d --wait        # PostgreSQL 17 on 127.0.0.1:5433 (data lives in memory)
+@@ -151,6 +152,9 @@ mypy .
+ python manage.py makemigrations --check --dry-run --settings=core.settings_test
+ ```
+ 
++Always write the database host as `127.0.0.1`, never `localhost` (D-102): on Windows the name cost
++about 15 s per connection. `parse_database_url` now reads `localhost` as `127.0.0.1` anyway.
++
+ `core/settings_test.py` assigns its values unconditionally so a developer's `.env` cannot change
+ test results. Run `pytest --reuse-db` to keep `test_postgres` for inspection in pgAdmin.
+ 
+@@ -170,7 +174,8 @@ commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker t
+ 0006 agent manual + decision log + schema blueprint + Arabic guide, 0007 GitHub Actions workflow,
+ 0008-0009 plans alignment and decisions D-092..D-097.
+ Windows run: 145 tests passed against PostgreSQL 17 (took 393 s; see open items).
+-Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030.
++Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030; patch 0011
++makes `localhost` in a database URL mean `127.0.0.1` (D-102).
+ 
+ Next candidates, in this order, each needing his go-ahead:
+ 1. Account services: create profile on first login, change username (14-day wait, old name held
+@@ -216,8 +221,10 @@ Next candidates, in this order, each needing his go-ahead:
+   standing permission. `swagger-local/openapi.json` (documents localStorage shapes, no API
+   paths) is still untouched; update it only when endpoints exist and the user approves.
+ 
+-* **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
+-  `--durations` and a query-latency check before guessing.
++* **Slow tests on Windows (393 s vs ~1 s on Linux): cause found, fix in patch 0011 (D-102).**
++  Measured on the user's machine: a connection through `localhost` took 15,027 ms, through
++  `127.0.0.1` 19 ms; a query took 0.4 ms either way. Still to confirm: the user re-runs the suite
++  (expected: seconds). If it is still slow, diagnose with `--durations` before guessing.
+ * **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) live in
+   `public` without RLS. Recommend the user turns **Data API off** in the Supabase dashboard
+   (we never use it). Unverified for the project's current setting.
+diff --git a/Qeeva-Backend/README.md b/Qeeva-Backend/README.md
+index 4874a75..4ccad6a 100644
+--- a/Qeeva-Backend/README.md
++++ b/Qeeva-Backend/README.md
+@@ -31,6 +31,10 @@ point to a reachable PostgreSQL database.
+ 
+ ## Checks (run all of them before every commit)
+ 
++Run them from **inside `Qeeva-Backend/`**, not from the repository root: pytest looks for
++`pyproject.toml` in the folder you are in, and from the root it fails with "settings are not
++configured".
++
+ ```bash
+ python -m pytest        # tests (see "Database tests" below: without PostgreSQL the database tests are skipped)
+ ruff check .            # lint
+@@ -60,6 +64,11 @@ python -m pytest
+ docker compose down
+ ```
+ 
++Write the host as `127.0.0.1`, not `localhost`. On Windows, connecting through the name
++`localhost` took about 15 seconds per connection (the 145 tests needed 393 s instead of a few
++seconds; measured, D-102). The code now reads `localhost` as `127.0.0.1` by itself, but other
++tools (pgAdmin, DBeaver, `psql`) do not, so keep the habit.
++
+ Set the variable in the **real environment**, not in `.env`. Without it the database tests are
+ reported as **skipped** (with the reason), never as passed. Do not point it at your Supabase
+ project. The tests create a tiny stand-in for Supabase's `auth.users` table inside the throwaway
+diff --git a/Qeeva-Backend/core/env.py b/Qeeva-Backend/core/env.py
+index 9ddc889..8026ab0 100644
+--- a/Qeeva-Backend/core/env.py
++++ b/Qeeva-Backend/core/env.py
+@@ -16,6 +16,14 @@ from django.core.exceptions import ImproperlyConfigured
+ _TRUE_VALUES = {"1", "true", "yes", "on"}
+ _FALSE_VALUES = {"0", "false", "no", "off", ""}
+ 
++# The *name* ``localhost`` is read as the *address* 127.0.0.1 in database URLs (decision D-102).
++# Measured on Windows with a Docker database: a connection through ``localhost`` took about
++# 15 seconds, through 127.0.0.1 about 19 milliseconds (each query took the same 0.4 ms). The test
++# suite opens many connections, so it took 393 seconds instead of a few. The likely cause is that
++# Windows tries the IPv6 address ``::1`` first while Docker publishes the port on IPv4 only.
++_LOCALHOST_NAME = "localhost"
++_LOCALHOST_ADDRESS = "127.0.0.1"
++
+ 
+ def load_env_file(path: Path) -> None:
+     """Load KEY=VALUE lines from a local ``.env`` file into ``os.environ``.
+@@ -79,7 +87,9 @@ def parse_database_url(url: str) -> dict[str, Any]:
+     """Turn ``postgresql://user:pass@host:5432/dbname?sslmode=require`` into a Django config.
+ 
+     Only PostgreSQL is supported. The user name and password are URL-decoded, so special
+-    characters in a password must be percent-encoded (``@`` becomes ``%40``).
++    characters in a password must be percent-encoded (``@`` becomes ``%40``). A host written as
++    ``localhost`` is read as ``127.0.0.1`` (see ``_LOCALHOST_NAME``); every other host, including
++    the IPv6 address ``[::1]``, is kept exactly as written.
+     """
+     try:
+         parts = urlsplit(url)
+@@ -89,8 +99,12 @@ def parse_database_url(url: str) -> dict[str, Any]:
+ 
+     if parts.scheme not in {"postgres", "postgresql"}:
+         raise ImproperlyConfigured("DATABASE_URL must start with postgresql://")
+-    if not parts.hostname:
++    host = parts.hostname
++    if not host:
+         raise ImproperlyConfigured("DATABASE_URL has no host.")
++    # ``urlsplit`` already lower-cases the host, so "LocalHost" is caught here as well.
++    if host == _LOCALHOST_NAME:
++        host = _LOCALHOST_ADDRESS
+     database_name = unquote(parts.path.lstrip("/"))
+     if not database_name:
+         raise ImproperlyConfigured("DATABASE_URL has no database name.")
+@@ -100,7 +114,7 @@ def parse_database_url(url: str) -> dict[str, Any]:
+         "NAME": database_name,
+         "USER": unquote(parts.username or ""),
+         "PASSWORD": unquote(parts.password or ""),
+-        "HOST": parts.hostname,
++        "HOST": host,
+         "PORT": str(port) if port else "",
+     }
+     options = dict(parse_qsl(parts.query))
+diff --git a/Qeeva-Backend/core/tests/test_env.py b/Qeeva-Backend/core/tests/test_env.py
+index 9ff5bce..9e83b1f 100644
+--- a/Qeeva-Backend/core/tests/test_env.py
++++ b/Qeeva-Backend/core/tests/test_env.py
+@@ -91,11 +91,48 @@ class TestParseDatabaseUrl:
+         }
+ 
+     def test_postgres_scheme_and_no_port_or_options(self) -> None:
+-        config = parse_database_url("postgres://u:p@localhost/mydb")
+-        assert config["HOST"] == "localhost"
++        config = parse_database_url("postgres://u:p@db.example.com/mydb")
++        assert config["HOST"] == "db.example.com"
+         assert config["PORT"] == ""
+         assert "OPTIONS" not in config
+ 
++    @pytest.mark.parametrize(
++        "url",
++        [
++            "postgresql://u:p@localhost:5433/db",
++            "postgresql://u:p@LOCALHOST:5433/db",  # host names are case-insensitive
++            "postgres://u:p@LocalHost/db",
++        ],
++    )
++    def test_the_name_localhost_is_read_as_127_0_0_1(self, url: str) -> None:
++        # Decision D-102: on Windows, connecting through the name "localhost" took ~15 s per
++        # connection, through the address 127.0.0.1 ~19 ms.
++        assert parse_database_url(url)["HOST"] == "127.0.0.1"
++
++    def test_the_rest_of_the_url_is_untouched_when_localhost_is_replaced(self) -> None:
++        assert parse_database_url("postgresql://u:p%40w@localhost:5433/db?sslmode=disable") == {
++            "ENGINE": "django.db.backends.postgresql",
++            "NAME": "db",
++            "USER": "u",
++            "PASSWORD": "p@w",
++            "HOST": "127.0.0.1",
++            "PORT": "5433",
++            "OPTIONS": {"sslmode": "disable"},
++        }
++
++    @pytest.mark.parametrize(
++        ("url", "expected_host"),
++        [
++            ("postgresql://u:p@127.0.0.1:5433/db", "127.0.0.1"),
++            ("postgresql://u:p@[::1]:5433/db", "::1"),  # IPv6 written on purpose stays IPv6
++            ("postgresql://u:p@localhost.example.com/db", "localhost.example.com"),
++            ("postgresql://u:p@mylocalhost/db", "mylocalhost"),
++            ("postgresql://u:p@db.localhost/db", "db.localhost"),
++        ],
++    )
++    def test_every_other_host_is_kept_as_written(self, url: str, expected_host: str) -> None:
++        assert parse_database_url(url)["HOST"] == expected_host
++
+     @pytest.mark.parametrize(
+         "url",
+         [
+diff --git a/Qeeva-Backend/docs/BACKEND_GUIDE.ar.md b/Qeeva-Backend/docs/BACKEND_GUIDE.ar.md
+index 06fc145..0918d30 100644
+--- a/Qeeva-Backend/docs/BACKEND_GUIDE.ar.md
++++ b/Qeeva-Backend/docs/BACKEND_GUIDE.ar.md
+@@ -93,7 +93,8 @@ mypy .                             # فحص الأنواع
+ | `73 skipped` | لم تضع `QEEVA_TEST_DATABASE_URL`. هذا ليس نجاحًا، فاتبع أمر Docker أعلاه. |
+ | الاتصال بـ `127.0.0.1:5433` مرفوض | Docker Desktop مغلق أو الحاوية متوقفة: `docker compose up -d --wait`. |
+ | `port is already allocated` | شيء آخر يستعمل 5433. غيّر الرقم في `docker-compose.yml` وفي المتغير. |
+-| الاختبارات بطيئة جدًا | جرّب `--reuse-db`، وأخبرنا بالزمن (يوجد بحث جارٍ عن السبب). |
++| الاختبارات بطيئة جدًا (دقائق) | السبب الذي وجدناه بالقياس: الاتصال عبر الاسم `localhost` يأخذ حوالي 15 ثانية لكل اتصال على ويندوز، وعبر `127.0.0.1` حوالي 0.02 ثانية. الكود صار يحوّل `localhost` تلقائيًا، لكن اكتب `127.0.0.1` دائمًا. إن بقيت بطيئة: `python -m pytest --durations=5 -q` وأرسل لنا النتيجة. |
++| `settings are not configured` أو `ImproperlyConfigured` عند `pytest` | أنت في المجلد الخطأ (جذر المشروع). ادخل أولًا `cd Qeeva-Backend` ثم شغّل `python -m pytest`. |
+ | فشل اختبار عندك ولا يفشل عندي | أرسل لنا الخطأ كاملًا. لا تعدّل الاختبار. |
+ 
+ ## 8) قواعد لا نكسرها
+diff --git a/plans/decisions/decision-log.md b/plans/decisions/decision-log.md
+index 8bd3f2d..a20a4b6 100644
+--- a/plans/decisions/decision-log.md
++++ b/plans/decisions/decision-log.md
+@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe
+ decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
+ Arabic; wording here is a faithful summary, not a new decision.
+ 
+-**Numbers:** D-001 to D-101 are used. **Next free number: D-102.** Never reuse or renumber one.
++**Numbers:** D-001 to D-102 are used. **Next free number: D-103.** Never reuse or renumber one.
+ 
+ **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
+ (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
+@@ -53,6 +53,7 @@ them says. Confirm them if one looks wrong.
+ | D-099 | approved (user, 2026-11-14) | Permission to update the file in `.cursor/` that describes how plans are laid out: `.cursor/rules/00-monorepo.mdc`. It is the twin of the root `AGENTS.md`. Done in patch 0010: the plans anatomy was added, and the stale lines inside that same file ("SimpleJWT", "do not add test files") were aligned with the root `AGENTS.md`. This covers only that file; the other `.cursor` and `.github` files are listed under D-101. |
+ | D-100 | approved (user, 2026-11-14) | When the user says "read all `.md` files", the AI reads **every** `.md` and `.mdc` file in the repository, including everything under `.cursor/` and `.github/`, and never answers that it did not read them. If it had not, it reads them then. Written into `Qeeva-Backend/AGENTS.md`. |
+ | D-101 | proposal, waiting for the user's yes | Fix the agent and documentation files outside `Qeeva-Backend/` that describe things that no longer exist. **Backend side:** `.cursor/rules/backend-django.mdc`, `.cursor/skills/backend-senior/SKILL.md`, `.github/agents/backend-senior.agent.md` and the backend lines of the root `README.md` still say SimpleJWT, SQLite, `apps/authentication`, `apps/core_finance`; the root `AGENTS.md` still points at the old decision-log path. **Frontend side (paths only, no behaviour):** `Qeeva-Frontend/AGENTS.md`, `AGENT_ONBOARDING.md`, `README.md`, `.cursor/rules/frontend-angular.mdc` and `.cursor/skills/frontend-senior/SKILL.md` name `core/...` folders that do not exist (the real ones are under `src/app/@SERVICES/`), and two files give the auth API as `http://localhost:8000/api/auth`. A Cursor agent is told the wrong stack today. Nothing is changed until the user says yes. |
++| D-102 | AI choice, please review | A database host written as `localhost` is read as `127.0.0.1` (in `parse_database_url`). Measured on the user's Windows machine with Docker: connecting through `localhost` took 15,027 ms, through `127.0.0.1` 19 ms, per connection. The test suite opens many connections, so the 145 tests took 393 s instead of seconds. Probable cause (not proven): Windows tries IPv6 `::1` first and Docker publishes the port on IPv4 only. `[::1]` and every other host are left as written. |
+ 
+ ## Product
+ 
+diff --git a/plans/plans-Backend/20261114-backend-foundation-and-accounts.md b/plans/plans-Backend/20261114-backend-foundation-and-accounts.md
+index 38de187..7b0bdcd 100644
+--- a/plans/plans-Backend/20261114-backend-foundation-and-accounts.md
++++ b/plans/plans-Backend/20261114-backend-foundation-and-accounts.md
+@@ -37,7 +37,7 @@ and `/api/me/` exist yet.
+ ## Verification
+ 
+ - `cd Qeeva-Backend`, `docker compose up -d --wait`, set `QEEVA_TEST_DATABASE_URL` (see `README.md`), then `python -m pytest`.
+-- Result on the user's Windows machine (Python 3.14, PostgreSQL 17 in Docker): 145 passed (393 s; slowness under investigation).
++- Result on the user's Windows machine (Python 3.14, PostgreSQL 17 in Docker): 145 passed (393 s; the slowness was `localhost`, found and fixed in patch 0011, D-102).
+ - `ruff check .`, `ruff format --check .`, `mypy .`, `python manage.py makemigrations --check --dry-run --settings=core.settings_test`.
+ - Not yet verified: a real Supabase token against `/api/me/`; the migrations on a real Supabase database.
+ 
+diff --git a/plans/plans-Backend/20261114-decisions-folder-and-test-speed.md b/plans/plans-Backend/20261114-decisions-folder-and-test-speed.md
+index 5af4848..cf7aa2b 100644
+--- a/plans/plans-Backend/20261114-decisions-folder-and-test-speed.md
++++ b/plans/plans-Backend/20261114-decisions-folder-and-test-speed.md
+@@ -33,7 +33,7 @@ session found why the backend tests took 393 s on Windows: connecting through `l
+    root `AGENTS.md` (D-099).
+ 7. [x] Read every `.md` and `.mdc` file of the repository, including `.cursor/` and `.github/`, and
+    record what is stale (D-100, D-101).
+-8. [ ] Read a database host written as `localhost` as `127.0.0.1` in `parse_database_url`, with tests
++8. [x] Read a database host written as `localhost` as `127.0.0.1` in `parse_database_url`, with tests
+    (D-102).
+ 9. [ ] The user re-runs the tests on Windows and reports the time.
+ 10. [ ] The user answers D-101 (fix the stale agent files outside `Qeeva-Backend/`).
+@@ -55,6 +55,9 @@ session found why the backend tests took 393 s on Windows: connecting through `l
+   --settings=core.settings_test`: all clean.
+ - The guard test was proven by breaking the log six ways (lost row, duplicated row, wrong next-free
+   number, unknown status, `superseded` pointing at a missing row, a typo in a reference).
++- Step 8: the old test that expected `localhost` was the only one that failed after the change; new
++  tests cover the name in three spellings, the rest of the URL staying intact, and five hosts that
++  must NOT change (`127.0.0.1`, `[::1]`, `localhost.example.com`, `mylocalhost`, `db.localhost`).
+ - Every file path written in backticks in the changed documents was checked to exist; the ones that do
+   not are URL routes, slash commands, names of deleted legacy code, or the future `apps/finance`.
+ 
+-- 
+2.43.0
+

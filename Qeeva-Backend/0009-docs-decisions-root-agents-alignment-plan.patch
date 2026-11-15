@@ -1,0 +1,282 @@
+From ffdb578cd7ffa7c49c37960efba2e6da67d7a931 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 14 Nov 2026 19:24:04 +0200
+Subject: [PATCH] docs: record decisions D-092..D-097, update root AGENTS.md,
+ add alignment plan
+
+- root AGENTS.md updated once with the owner's permission (D-095): current backend stack, tests rule, precedence
+- decision log: item links postponed (D-092), category not stored (D-094), proposals D-093 and D-097
+- plans/plans-Backend: finance-tables questions updated; frontend-backend-alignment plan (draft)
+- Qeeva-Backend/AGENTS.md open items refreshed
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ AGENTS.md                                     | 19 +++--
+ Qeeva-Backend/AGENTS.md                       | 22 +++---
+ Qeeva-Backend/docs/database/decision-log.md   | 14 +++-
+ .../plans-Backend/20261114-finance-tables.md  | 41 +++++------
+ .../20261114-frontend-backend-alignment.md    | 73 +++++++++++++++++++
+ 5 files changed, 126 insertions(+), 43 deletions(-)
+ create mode 100644 plans/plans-Backend/20261114-frontend-backend-alignment.md
+
+diff --git a/AGENTS.md b/AGENTS.md
+index 2cc1faa..6fad801 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -7,12 +7,12 @@ alwaysApply: true
+ 
+ ## Layout
+ 
+-- **general rules:** `/plans/rules/general-rules.md` — rules (see `/plans/project-idea/general-rules.md`)
+-- **Project Idea & scope** `/plans/project-idea` — version 1 idea (see `/plans/project-idea/idea-v1.md`)
++- **general rules:** `/plans/rules/general-rules.md` — rules
++- **Project Idea & scope** `/plans/project-idea` — version 1 and 2 ideas (see `/plans/project-idea/idea-v1.md`, `idea-v2.md`)
+ - **Frontend:** `Qeeva-Frontend/` — Angular 21 PWA (see `Qeeva-Frontend/AGENTS.md`)
+-- **Backend:** `Qeeva-Backend/` — Django REST + SimpleJWT (see `Qeeva-Backend/AGENTS.md`)
++- **Backend:** `Qeeva-Backend/` — Django 5.2 + Django REST Framework, Supabase Auth (Django only verifies the token), PostgreSQL on Supabase; Django owns the schema (see `Qeeva-Backend/AGENTS.md`, read it first)
+ - **Plans:** `plans/` — new plan for any ask (see `plans/rules/Template-of-plans.md`)
+-- **API spec:** `swagger-local/openapi.json`
++- **API spec:** `swagger-local/openapi.json` — today it documents the frontend's localStorage shapes (no API paths yet)
+ 
+ ## Quick start
+ 
+@@ -21,9 +21,11 @@ Frontend:
+ cd Qeeva-Frontend && npm install && npm run build && npm start
+ ```
+ 
+-Backend:
++Backend (needs a `.env`; database tests need Docker, see `Qeeva-Backend/README.md`):
+ ```bash
+-cd Qeeva-Backend && python manage.py migrate && python manage.py runserver
++cd Qeeva-Backend
++docker compose up -d --wait          # PostgreSQL 17 for the tests
++python -m pytest                     # set QEEVA_TEST_DATABASE_URL first, see the README
+ ```
+ 
+ ## Agent behavior
+@@ -31,7 +33,10 @@ cd Qeeva-Backend && python manage.py migrate && python manage.py runserver
+ - Treat the user as project manager; implement features incrementally.
+ - Read nested `AGENTS.md` in the directory you are editing.
+ - After code changes: summary, run commands, manual QA steps.
+-- Do not add test files, reset databases, or expand scope unless asked.
++- Precedence on conflict: the Master Context and Engineering Rules (given by the user in chat, not in Git) > `Qeeva-Backend/docs/database/decision-log.md` > the `plans/` folder.
++- Backend: tests are required. Frontend: keep the existing rule (no test files unless asked) until the product owner decides otherwise.
++- Backend: no new API endpoints until the product owner changes the scope.
++- Do not reset databases or expand scope unless asked.
+ - Legacy Copilot agents live in `.github/agents/` — Cursor uses `AGENTS.md` and `.cursor/` instead.
+ 
+ ## Invoke specialist mode
+diff --git a/Qeeva-Backend/AGENTS.md b/Qeeva-Backend/AGENTS.md
+index 7a5bfaa..d12b3c9 100644
+--- a/Qeeva-Backend/AGENTS.md
++++ b/Qeeva-Backend/AGENTS.md
+@@ -166,17 +166,17 @@ Next candidates, in this order, each needing his go-ahead:
+ 
+ ## 9. Open items and known gaps
+ 
+-* **Plans vs decisions (asked of the user 2026-11-14, answer pending):** the Item Explorer plan
+-  (`plans/20260807-saving-goal-storage-plan.md`) wants manual links between differently named
+-  items that share one target; D-060 postponed that. Not implemented in the frontend (no trace
+-  in `src/`). Details in `decision-log.md`, "Open conflicts".
+-* **Found in the frontend while reading the plans (ask before building `month_items`):**
+-  `ExpenseItem.isReducible` (a per-card flag the savings-shortfall rule needs) has no column in
+-  the approved `month_items`; `MonthlyRecord.manualAdded` shows the frontend stores manual savings
+-  per month (input for the open D-083 question); `ExpenseItem.category` looks like a leftover.
+-* **Outside my permission, outdated:** the root `AGENTS.md` (mentions SimpleJWT, "do not add test
+-  files", legacy agents) and `swagger-local/openapi.json` (titled "Qeeva Frontend Storage
+-  Vision": documents localStorage shapes, has no API paths). Ask before touching either.
++* **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
++* **Waiting for the user's yes/no (proposals D-093, D-097):** manual savings (D-083) are
++  designed later together with debit/credit; the per-card `is_reducible` flag is not added to
++  `month_items` yet (the frontend only carries it, no logic uses it). Build the finance tables
++  without them.
++* **Frontend/backend alignment is a planned phase after the backend work** (D-096); read
++  `plans/plans-Backend/20261114-frontend-backend-alignment.md` before writing any endpoint or
++  adapter. Backend and database are the source of truth; the frontend gets a mapping layer.
++* **Outside `Qeeva-Backend`:** the root `AGENTS.md` was updated once with the user's permission
++  (D-095). `swagger-local/openapi.json` (documents localStorage shapes, no API paths) is still
++  untouched; update it only when endpoints exist and the user approves.
+ 
+ * **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
+   `--durations` and a query-latency check before guessing.
+diff --git a/Qeeva-Backend/docs/database/decision-log.md b/Qeeva-Backend/docs/database/decision-log.md
+index afc1699..ff59fd4 100644
+--- a/Qeeva-Backend/docs/database/decision-log.md
++++ b/Qeeva-Backend/docs/database/decision-log.md
+@@ -25,8 +25,14 @@ but their text could not be found. Do not reuse these numbers; add them here if
+ | D-087 | approved (user delegated the choice, 2026-11-14) | Option A for RLS: RLS on every table with no policies plus revoked privileges for `anon`/`authenticated`; Django connects as the owner and filters by owner through `for_user`. Per-request RLS (option B) may be added later by migration. Option C (frontend talks to Supabase data directly) rejected: it conflicts with D-085. |
+ | D-088 | approved (2026-11-14) | Database tests run on PostgreSQL 17 (same major as Supabase) in Docker locally, and in GitHub Actions on every push. The workflow file lives at `.github/workflows/backend-ci.yml`, the only approved file outside `Qeeva-Backend/`. |
+ | D-089 | AI choices, please review | Account tables: (a) deleting a Supabase user cascades to `profiles` and `user_settings` in SQL, but `username_reservations` rows survive with `previous_owner_id` cleared; (b) no unique constraint on a reserved name (the same name may be reserved again later; availability is decided in the username service); (c) time zone validity is checked in Python (IANA names), the database only forbids an empty value; (d) all choice columns are `text` with CHECK constraints. |
+-| D-091 | approved (user statement, 2026-11-14) | Files the user gave in chat (Master Context, Engineering Rules, Discovery Protocol) come after the `plans/` folder and override it. The AI may add and update `.md` files in `plans/` and in `Qeeva-Backend/`. Backend plans follow the plan template in `plans/plans-Backend/`. |
+ | D-090 | approved (restated by the user, 2026-11-14) | Qeeva is a money **log** for money management, not a payments or banking product. Consistent with D-032. |
++| D-091 | approved (user statement, 2026-11-14) | Files the user gave in chat (Master Context, Engineering Rules, Discovery Protocol) come after the `plans/` folder and override it. The AI may add and update `.md` files in `plans/` and in `Qeeva-Backend/`. Backend plans follow the plan template in `plans/plans-Backend/`. |
++| D-092 | approved (user, 2026-11-14) | Item links (Item Explorer plan): postponed as D-060 says. No link table now. The conflict with the older plan is closed. |
++| D-093 | proposal, waiting for the user's yes | Manual savings (D-083): do not build now. Design them later together with debit/credit (gifts, money from someone), because both are money moving outside the monthly cards. The user's idea: optional title, attached to a month, useful for analysis. Today's frontend stores one number per month (no title, no date). |
++| D-094 | approved (user's guess, 2026-11-14) | No `category` column. Never decided in any D-number; the frontend field is a pass-through leftover; "importance" (want/must/emergency/gift) is the only classification. Reversible. |
++| D-095 | approved (user, 2026-11-14) | One-time permission to update the root `AGENTS.md`. Done in patch 0009. Not a standing permission. |
++| D-096 | approved (user, 2026-11-14) | After the backend work there is a planned alignment phase between frontend and backend, done carefully so old work is not broken and production is not delayed. See `plans/plans-Backend/20261114-frontend-backend-alignment.md`. |
++| D-097 | proposal, waiting for the user's yes | Do not add `is_reducible` to `month_items` now. No frontend logic uses `isReducible` yet; the rule "which saving items shrink" is still open (Master Context section 15 #13). Adding the column later is a small migration. |
+ 
+ ## Product
+ 
+@@ -112,13 +118,13 @@ but their text could not be found. Do not reuse these numbers; add them here if
+ | D-079 | approved | Advanced users may turn off merge confirmations (name and importance); undo remains for everyone. |
+ | D-080 | deferred | Admin features. |
+ | D-081 | approved (design only) | Tables `items`, `month_items`, `item_merge_dismissals`, plus `skip_merge_confirm` in `user_settings`. |
+-| D-083 | approved | Money the user adds by hand to savings is a separate list, shown in analysis, never changing month calculations. Which month it belongs to is still unanswered. |
++| D-083 | approved, design postponed (see D-093) | Money the user adds by hand to savings is a separate list, shown in analysis, never changing month calculations. Which month it belongs to is still unanswered. |
+ 
+-## Open conflicts (older document vs a later decision; user asked 2026-11-14, answer pending)
++## Conflicts between an older document and a later decision
+ 
+ | Topic | Older document says | Later decision says | Why it matters |
+ |---|---|---|---|
+-| Linking items | `plans/20260807-saving-goal-storage-plan.md` (Item Explorer): different names are different items; the user may link any number of items by hand and the group shares one target; no automatic merge by name. | D-055: same name + same type = same item automatically. D-060: linking differently named items is ignored for now, maybe never. Master Context §15 #11 still lists "shared savings-target relationships and cardinality" as open. | If links are wanted, the database needs a link/target-group table (and the target moves from `items.target_minor` to the group). The frontend has not built it (no `linkedItemIds`/`sharedTargetId` in `src/`). The plan's `targetConfig {monthly, yearly}` is also a different idea from the single long-term `targetTotal` the frontend uses today. |
++| Linking items (CLOSED by D-092: postponed) | `plans/20260807-saving-goal-storage-plan.md` (Item Explorer): different names are different items; the user may link any number of items by hand and the group shares one target; no automatic merge by name. | D-055: same name + same type = same item automatically. D-060: linking differently named items is ignored for now, maybe never. Master Context §15 #11 still lists "shared savings-target relationships and cardinality" as open. | If links are wanted, the database needs a link/target-group table (and the target moves from `items.target_minor` to the group). The frontend has not built it (no `linkedItemIds`/`sharedTargetId` in `src/`). The plan's `targetConfig {monthly, yearly}` is also a different idea from the single long-term `targetTotal` the frontend uses today. |
+ 
+ Checked against the frontend (2026-11-14) and found consistent: excluded months (`excludedFromTotals`
+ explicit-or-derived = `months.totals_mode`), same name + same type merge (`mergeItems`), money in
+diff --git a/plans/plans-Backend/20261114-finance-tables.md b/plans/plans-Backend/20261114-finance-tables.md
+index f548b13..801bb05 100644
+--- a/plans/plans-Backend/20261114-finance-tables.md
++++ b/plans/plans-Backend/20261114-finance-tables.md
+@@ -12,31 +12,30 @@ status: "proposed"
+ Build `apps/finance` from the design the user already approved (D-036 to D-081; columns in
+ `Qeeva-Backend/docs/database/schema-blueprint.md`): `months`, `month_incomes`, `items`,
+ `month_items`, `item_merge_dismissals`. Models and migrations only, with tests. No API endpoints
+-(Master Context section 6). Reading the older plans and the Angular models surfaced questions that must be
+-answered first; the first one decides whether another table is needed.
+-
+-## Questions to settle before building
+-
+-1. **Item links (Item Explorer plan, `plans/20260807-saving-goal-storage-plan.md`).** The plan lets the
+-   user link differently named items so they share one target. D-060 postponed this. Not built in the
+-   frontend. Decide: build later (recommended; adding a link table later does not break the schema),
+-   build now, or never. The plan's monthly/yearly `targetConfig` differs from today's single long-term target.
+-2. **`is_reducible` on cards.** The frontend keeps `ExpenseItem.isReducible` (default true for Saving) and
+-   the rule "the user picks which saving items shrink, at least one must stay reducible" needs it, but the
+-   approved `month_items` has no such column. Proposal: `is_reducible boolean default true`, used for Saving cards only.
+-3. **Manual savings (D-083).** The frontend stores a total plus `MonthlyRecord.manualAdded` per month and
+-   charts it per month. Still open: does a hand-added amount belong to the month it was added (automatic) or
+-   to a month the user picks?
+-4. **`category`.** `ExpenseItem.category` is only passed through in the frontend; it looks like a leftover.
+-   Proposal: do not store it.
++(Master Context section 6). Reading the older plans and the Angular models surfaced questions; none of them blocks the
++approved tables (status below).
++
++## Questions (status on 2026-11-14)
++
++1. **Item links (Item Explorer plan).** Closed by D-092: postponed, no link table now.
++2. **`is_reducible` on cards.** Proposal D-097 (waiting for the user's yes): do not add now. The frontend
++   carries `ExpenseItem.isReducible` but no logic uses it yet, and the rule for choosing which saving items
++   shrink is still open (Master Context section 15 #13). A later migration can add it.
++3. **Manual savings (D-083).** Proposal D-093 (waiting for the user's yes): design later together with
++   debit/credit. Today the frontend adds a manual amount to the savings total at once and keeps one number
++   per month (`manualSavingsLog`, then `MonthlyRecord.manualAdded` when the month is archived). Detail for later:
++   an excluded month's manual amount is skipped in the running total.
++4. **`category`.** Closed by D-094: not stored.
+ 5. **Target conflict.** If the user enters a different long-term target for an existing item, the frontend
+-   (`mergeItems`) keeps the existing target and flags a conflict. Decide the rule when the API exists.
++   (`mergeItems`) keeps the existing target and flags a conflict. Decide the rule when goals are designed.
+ 6. **Deleting a month.** The frontend allows it only for an excluded month with zero items. The server
+-   should enforce the same rule later.
++   should enforce the same rule when the API exists.
++
++None of the open questions blocks the five approved tables.
+ 
+ ## Steps
+ 
+-1. [ ] Settle questions 1 to 4 with the user (one at a time).
++1. [ ] Get the user's yes on D-093 and D-097 (postpone both), then start.
+ 2. [ ] Models with CHECK constraints and composite foreign keys, so a card can never point at another user's month or item.
+ 3. [ ] Migrations; `lock_down_table` for every table; `OWNER_FIELD` on every model.
+ 4. [ ] Tests: every constraint, cross-user isolation, name-key uniqueness, cascade rules, RLS guard.
+@@ -60,4 +59,4 @@ answered first; the first one decides whether another table is needed.
+ 
+ ## Decisions
+ 
+-Approved designs: D-036 to D-081, D-083. Open: the six questions above.
++Approved designs: D-036 to D-081. Closed: D-092, D-094. Waiting for a yes: D-093, D-097.
+diff --git a/plans/plans-Backend/20261114-frontend-backend-alignment.md b/plans/plans-Backend/20261114-frontend-backend-alignment.md
+new file mode 100644
+index 0000000..343390f
+--- /dev/null
++++ b/plans/plans-Backend/20261114-frontend-backend-alignment.md
+@@ -0,0 +1,73 @@
++---
++title: "Frontend and backend alignment (after the backend work)"
++author: "Claude"
++date: "2026-11-14"
++status: "draft"
++---
++
++# Frontend and backend alignment
++
++## TL;DR
++
++The Angular app stores everything in the browser and was built before the database design. The backend
++and database are now designed differently in several places (decisions D-020 to D-097). After the
++backend tables and calculation layer are finished, both sides must be brought together without
++breaking the working frontend and without a long delay to production (D-096).
++
++Recommended approach: **the database and backend are the source of truth; the frontend keeps working
++and gets a thin mapping layer** (adapters) between its current local shapes and the API. Neither side is
++rewritten. Guest mode stays fully local and never calls the backend.
++
++## Differences found so far (verified in the code on 2026-11-14)
++
++| Topic | Angular today | Backend design | Resolution to decide |
++|---|---|---|---|
++| Money | plain decimal `number`, rounded in `FinancialCalculatorService.round`; the word "cents" appears nowhere in `src/` (the 20260807 plan says cents) | `bigint` minor units, 2 decimals | adapter converts at the boundary |
++| Item type | `'Burn' \| 'Tax' \| 'Saving'` | `burn`, `tax`, `saving` | adapter |
++| Importance | `priority: 'Must' \| 'Want' \| 'Emergency' \| 'Gift'` | `importance` lowercase | adapter |
++| Item id | string `item-<name>-<type>-<time>-<random>` | uuid | adapter keeps a map during import |
++| Month | `'YYYY-MM'` string | `month_start` date (day 1) | adapter |
++| Excluded month | `excludedFromTotals?: boolean` (unset = derive) | `totals_mode` `auto`, `included`, `excluded` | unset = `auto`, true = `excluded`, false = `included` |
++| Income | one `incomeConfig` per month plus `sources` | `month_incomes` lines with hours fields | adapter splits and merges |
++| Long-term target | `targetTotal` on the card | `items.target_minor` on the item | decide which card wins when several cards of one item differ (the frontend keeps the existing one and flags a conflict) |
++| Name comparison | `normalizeName` = trim + lowercase only | D-056/D-057: Arabic spelling variants equal, single spaces, no symbols | the backend computes `name_key`; the frontend must show the same suggestions, so share the rule |
++| Same item, other importance | `mergeItems` keeps one priority and adds amounts | D-075: two cards in one group | frontend change needed (newer decision wins) |
++| Undo timer | 6 seconds in the old plan | D-077: 5 seconds | frontend setting |
++| `isReducible`, `category` | carried in data, no logic | not stored (D-094, D-097) | adapter drops them (or keeps local only) |
++| Manual savings | one number per month (`manualSavingsLog`, `manualAdded`) | separate list, design postponed (D-083, D-093) | decide with debit/credit |
++| Calculations | `FinancialCalculatorService` in TypeScript | Python implementation with tests | both must give identical numbers for the same input |
++
++## Steps
++
++1. [ ] Finish the finance tables and a Python calculation layer. Write shared test vectors (inputs and
++   expected outputs for every formula and edge case) in a neutral file, and run the **same vectors** against
++   the Python code and the Angular `FinancialCalculatorService`. Disagreements show up before any UI work.
++2. [ ] With the user's approval of the scope (Master Context section 6), design the API contract first
++   (OpenAPI), generated from Django. Adding `drf-spectacular` needs a dependency check and approval.
++3. [ ] Build the Angular adapters and the sync flow behind the existing "Sync Now" and `offline_sync_queue_v1`;
++   keep every current screen working.
++4. [ ] One-time import of an existing local account's data into the database (with a dry run and a report).
++5. [ ] Update `swagger-local/openapi.json` (or replace it with the generated contract), with the user's approval.
++6. [ ] Change the frontend only where a newer decision differs (rows marked "frontend change"), each as its own small plan in `plans/plans-Frontend/`.
++
++## Relevant files
++
++- `Qeeva-Frontend/src/app/@TYPES/models.ts`
++- `Qeeva-Frontend/src/app/@SERVICES/financial-calculator.service.ts`
++- `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts`
++- `Qeeva-Frontend/src/app/@SERVICES/storage/engine/saving-goal-storage.utils.ts`
++- `Qeeva-Frontend/src/app/@SERVICES/sync/backup.service.ts`
++- `Qeeva-Backend/docs/database/schema-blueprint.md`, `Qeeva-Backend/docs/database/decision-log.md`
++- `plans/project-idea/idea-v2.md`, `swagger-local/openapi.json`
++
++## Verification
++
++- The shared test vectors pass on both the Python and the TypeScript calculators.
++- A round trip (local data, then API, then local data) returns the same numbers for a set of sample months.
++- Guest mode works with the backend switched off.
++
++## Decisions
++
++D-096 (this phase), D-085 (Django owns the schema), D-001 and Master Context section 6 (no endpoints before the
++scope changes). `plans/project-idea/idea-v2.md` ("an endpoint for everything in localStorage") is older and
++is replaced by the approach above.
+-- 
+2.43.0
+

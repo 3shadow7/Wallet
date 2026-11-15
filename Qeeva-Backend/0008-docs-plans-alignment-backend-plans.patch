@@ -1,0 +1,243 @@
+From bec4fa3511686a04808e67a22bc56224b78f36df Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 14 Nov 2026 18:55:27 +0200
+Subject: [PATCH] docs: align the agent manual with the plans folder; add two
+ backend plans
+
+- AGENTS.md: precedence (chat files beat plans/), plans folder rules, open items found while
+  reading the plans and the Angular models
+- decision-log: D-091 and an "Open conflicts" table (Item Explorer links vs D-060)
+- plans/plans-Backend: foundation-and-accounts (done), finance-tables (proposed, with open questions)
+- only new plan files were added; no existing plan was edited
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ Qeeva-Backend/AGENTS.md                       | 43 ++++++++++++-
+ Qeeva-Backend/docs/database/decision-log.md   | 12 ++++
+ ...0261114-backend-foundation-and-accounts.md | 47 ++++++++++++++
+ .../plans-Backend/20261114-finance-tables.md  | 63 +++++++++++++++++++
+ 4 files changed, 162 insertions(+), 3 deletions(-)
+ create mode 100644 plans/plans-Backend/20261114-backend-foundation-and-accounts.md
+ create mode 100644 plans/plans-Backend/20261114-finance-tables.md
+
+diff --git a/Qeeva-Backend/AGENTS.md b/Qeeva-Backend/AGENTS.md
+index 70039b9..7a5bfaa 100644
+--- a/Qeeva-Backend/AGENTS.md
++++ b/Qeeva-Backend/AGENTS.md
+@@ -36,16 +36,41 @@ what that means (free money, overspend, saving shortfall, hours of life per item
+ 
+ ## 3. Source of truth and precedence
+ 
++Highest precedence first:
++
+ 1. `QEEVA_MASTER_CONTEXT_MD`, `ADDITIONAL_ENGINEERING_RULES`, `Collaborative_Discovery_Protocol`
+    (the user's files; **not in Git**; ask him to upload them if a session does not have them).
+-2. `Foundation Build Plan.docx`, then `description` (in the claude.ai Project "Qeeva").
+-3. `docs/database/decision-log.md` (decisions with IDs) and `docs/database/schema-blueprint.md`.
++   He gave them in chat **after** the `plans/` folder, so they win over it.
++2. `docs/database/decision-log.md` and `docs/database/schema-blueprint.md` (what he approved
++   later in chat).
++3. Older material, written for the earlier frontend-first project: `Foundation Build Plan.docx`,
++   `description` (both in the claude.ai Project "Qeeva") and the **`plans/` folder at the
++   repository root** (see section 3b).
+ 
+ On conflict, the higher item wins (D-001). The one deliberate override: **tests are required**
+-even though `description` says "without testing files".
++even though `description` and the root `AGENTS.md` say "no test files". When an older document
++and a later decision disagree and the user may not know it, **ask him**; do not decide silently.
+ 
+ Chat history is never the only record: write decisions to the decision log in the same commit.
+ 
++### 3b. The `plans/` folder (repo root)
++
++Read the relevant plans at the start of a session (they are short). Rules from
++`plans/rules/` that apply to the backend:
++
++* Backend plans go in `plans/plans-Backend/`, named `YYYYMMDD-short-title.md`, with frontmatter
++  (`title`, `author`, `date`, `status: draft|proposed|approved|done`) and the sections TL;DR,
++  Steps, Relevant files, Verification, Decisions (`plans/rules/Template-of-plans.md`).
++* The user allowed the AI to add and update `.md` files there (2026-11-14). Prefer adding a new
++  dated plan over rewriting an existing one that another tool wrote.
++* Frontend plans belong to `plans/plans-Frontend/`. Do not change frontend decisions without asking.
++* Code rule from `plans/rules/general-rules.md`: **comments that explain every step** (he is
++  learning the backend), and after code always say what it does, how it fits and how to test it.
++* The `plans/` folder says "no test files", "SimpleJWT" and "build endpoints for everything in
++  localStorage". Those are older than Master Context §6 (no API endpoints until he changes the
++  scope) and D-001, so the Master Context wins. The frontend has a **guest mode** (local only,
++  never calls the backend); our token check rejects Supabase anonymous users, which fits.
++
+ ## 4. Hard rules
+ 
+ * **Django owns the schema** (D-085). Tables, constraints, RLS and triggers all come from Django
+@@ -141,6 +166,18 @@ Next candidates, in this order, each needing his go-ahead:
+ 
+ ## 9. Open items and known gaps
+ 
++* **Plans vs decisions (asked of the user 2026-11-14, answer pending):** the Item Explorer plan
++  (`plans/20260807-saving-goal-storage-plan.md`) wants manual links between differently named
++  items that share one target; D-060 postponed that. Not implemented in the frontend (no trace
++  in `src/`). Details in `decision-log.md`, "Open conflicts".
++* **Found in the frontend while reading the plans (ask before building `month_items`):**
++  `ExpenseItem.isReducible` (a per-card flag the savings-shortfall rule needs) has no column in
++  the approved `month_items`; `MonthlyRecord.manualAdded` shows the frontend stores manual savings
++  per month (input for the open D-083 question); `ExpenseItem.category` looks like a leftover.
++* **Outside my permission, outdated:** the root `AGENTS.md` (mentions SimpleJWT, "do not add test
++  files", legacy agents) and `swagger-local/openapi.json` (titled "Qeeva Frontend Storage
++  Vision": documents localStorage shapes, has no API paths). Ask before touching either.
++
+ * **Slow tests on Windows** (393 s vs ~1 s on Linux). Cause not yet found. Diagnose with
+   `--durations` and a query-latency check before guessing.
+ * **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) live in
+diff --git a/Qeeva-Backend/docs/database/decision-log.md b/Qeeva-Backend/docs/database/decision-log.md
+index 34a764e..afc1699 100644
+--- a/Qeeva-Backend/docs/database/decision-log.md
++++ b/Qeeva-Backend/docs/database/decision-log.md
+@@ -25,6 +25,7 @@ but their text could not be found. Do not reuse these numbers; add them here if
+ | D-087 | approved (user delegated the choice, 2026-11-14) | Option A for RLS: RLS on every table with no policies plus revoked privileges for `anon`/`authenticated`; Django connects as the owner and filters by owner through `for_user`. Per-request RLS (option B) may be added later by migration. Option C (frontend talks to Supabase data directly) rejected: it conflicts with D-085. |
+ | D-088 | approved (2026-11-14) | Database tests run on PostgreSQL 17 (same major as Supabase) in Docker locally, and in GitHub Actions on every push. The workflow file lives at `.github/workflows/backend-ci.yml`, the only approved file outside `Qeeva-Backend/`. |
+ | D-089 | AI choices, please review | Account tables: (a) deleting a Supabase user cascades to `profiles` and `user_settings` in SQL, but `username_reservations` rows survive with `previous_owner_id` cleared; (b) no unique constraint on a reserved name (the same name may be reserved again later; availability is decided in the username service); (c) time zone validity is checked in Python (IANA names), the database only forbids an empty value; (d) all choice columns are `text` with CHECK constraints. |
++| D-091 | approved (user statement, 2026-11-14) | Files the user gave in chat (Master Context, Engineering Rules, Discovery Protocol) come after the `plans/` folder and override it. The AI may add and update `.md` files in `plans/` and in `Qeeva-Backend/`. Backend plans follow the plan template in `plans/plans-Backend/`. |
+ | D-090 | approved (restated by the user, 2026-11-14) | Qeeva is a money **log** for money management, not a payments or banking product. Consistent with D-032. |
+ 
+ ## Product
+@@ -112,3 +113,14 @@ but their text could not be found. Do not reuse these numbers; add them here if
+ | D-080 | deferred | Admin features. |
+ | D-081 | approved (design only) | Tables `items`, `month_items`, `item_merge_dismissals`, plus `skip_merge_confirm` in `user_settings`. |
+ | D-083 | approved | Money the user adds by hand to savings is a separate list, shown in analysis, never changing month calculations. Which month it belongs to is still unanswered. |
++
++## Open conflicts (older document vs a later decision; user asked 2026-11-14, answer pending)
++
++| Topic | Older document says | Later decision says | Why it matters |
++|---|---|---|---|
++| Linking items | `plans/20260807-saving-goal-storage-plan.md` (Item Explorer): different names are different items; the user may link any number of items by hand and the group shares one target; no automatic merge by name. | D-055: same name + same type = same item automatically. D-060: linking differently named items is ignored for now, maybe never. Master Context §15 #11 still lists "shared savings-target relationships and cardinality" as open. | If links are wanted, the database needs a link/target-group table (and the target moves from `items.target_minor` to the group). The frontend has not built it (no `linkedItemIds`/`sharedTargetId` in `src/`). The plan's `targetConfig {monthly, yearly}` is also a different idea from the single long-term `targetTotal` the frontend uses today. |
++
++Checked against the frontend (2026-11-14) and found consistent: excluded months (`excludedFromTotals`
++explicit-or-derived = `months.totals_mode`), same name + same type merge (`mergeItems`), money in
++cents, stable item ids, Regular/Advanced toggle, credits/debits and Telegram bot deferred.
++Undo timer: the plans say 6 s, D-077 says 5 s (already decided).
+diff --git a/plans/plans-Backend/20261114-backend-foundation-and-accounts.md b/plans/plans-Backend/20261114-backend-foundation-and-accounts.md
+new file mode 100644
+index 0000000..a2e5d4a
+--- /dev/null
++++ b/plans/plans-Backend/20261114-backend-foundation-and-accounts.md
+@@ -0,0 +1,47 @@
++---
++title: "Backend foundation and account tables"
++author: "Claude"
++date: "2026-11-14"
++status: "done"
++---
++
++# Backend foundation and account tables
++
++## TL;DR
++
++The legacy backend (SQLite, SimpleJWT, `core_finance`) was removed and replaced by a fresh Django 5.2
++project that verifies Supabase tokens and owns the PostgreSQL schema through migrations. The first
++three tables (`profiles`, `username_reservations`, `user_settings`) are built, closed to Supabase's
++public Data API, and covered by tests. No finance table and no API endpoint beyond `/api/health/`
++and `/api/me/` exist yet.
++
++## Steps
++
++1. [x] Remove the legacy backend; start a fresh Django project (commit 1).
++2. [x] Environment-driven settings, Supabase JWT verification (ES256/RS256, JWKS), API closed by default, tests (commit 2).
++3. [x] Make test settings ignore a local `.env` (patch 0003).
++4. [x] `apps/accounts`: three tables, constraints, database foreign keys, RLS lock-down, `for_user` ownership helper, 80 tests (patch 0004).
++5. [x] Docker PostgreSQL 17 for the database tests (patch 0005).
++6. [x] Agent manual, decision log, schema blueprint, Arabic guide (patch 0006); GitHub Actions workflow (patch 0007).
++7. [ ] Verify the `qeeva-dev` JWT signing keys are asymmetric (Supabase dashboard, JWT Signing Keys).
++8. [ ] Turn the Supabase Data API off for `qeeva-dev` (Django's own tables live in `public` without RLS).
++9. [ ] Apply migrations to `qeeva-dev` (only after the user's explicit approval, D-084).
++
++## Relevant files
++
++- `Qeeva-Backend/core/`, `Qeeva-Backend/common/`, `Qeeva-Backend/apps/accounts/`
++- `Qeeva-Backend/docs/database/decision-log.md`, `Qeeva-Backend/docs/database/schema-blueprint.md`
++- `Qeeva-Backend/AGENTS.md`, `Qeeva-Backend/docker-compose.yml`, `.github/workflows/backend-ci.yml`
++
++## Verification
++
++- `cd Qeeva-Backend`, `docker compose up -d --wait`, set `QEEVA_TEST_DATABASE_URL` (see `README.md`), then `python -m pytest`.
++- Result on the user's Windows machine (Python 3.14, PostgreSQL 17 in Docker): 145 passed (393 s; slowness under investigation).
++- `ruff check .`, `ruff format --check .`, `mypy .`, `python manage.py makemigrations --check --dry-run --settings=core.settings_test`.
++- Not yet verified: a real Supabase token against `/api/me/`; the migrations on a real Supabase database.
++
++## Decisions
++
++D-001, D-020 to D-028, D-033, D-034, D-084, D-085, D-087, D-088, D-089, D-090, D-091. See `decision-log.md`.
++The older `20260522-excluded-months-map.md` backend plan asked for a source-of-truth decision: it is now
++first-class tables (`months.totals_mode`, D-037/D-040), not a JSON backup envelope.
+diff --git a/plans/plans-Backend/20261114-finance-tables.md b/plans/plans-Backend/20261114-finance-tables.md
+new file mode 100644
+index 0000000..f548b13
+--- /dev/null
++++ b/plans/plans-Backend/20261114-finance-tables.md
+@@ -0,0 +1,63 @@
++---
++title: "Finance tables (months, incomes, items, cards, merge dismissals)"
++author: "Claude"
++date: "2026-11-14"
++status: "proposed"
++---
++
++# Finance tables
++
++## TL;DR
++
++Build `apps/finance` from the design the user already approved (D-036 to D-081; columns in
++`Qeeva-Backend/docs/database/schema-blueprint.md`): `months`, `month_incomes`, `items`,
++`month_items`, `item_merge_dismissals`. Models and migrations only, with tests. No API endpoints
++(Master Context section 6). Reading the older plans and the Angular models surfaced questions that must be
++answered first; the first one decides whether another table is needed.
++
++## Questions to settle before building
++
++1. **Item links (Item Explorer plan, `plans/20260807-saving-goal-storage-plan.md`).** The plan lets the
++   user link differently named items so they share one target. D-060 postponed this. Not built in the
++   frontend. Decide: build later (recommended; adding a link table later does not break the schema),
++   build now, or never. The plan's monthly/yearly `targetConfig` differs from today's single long-term target.
++2. **`is_reducible` on cards.** The frontend keeps `ExpenseItem.isReducible` (default true for Saving) and
++   the rule "the user picks which saving items shrink, at least one must stay reducible" needs it, but the
++   approved `month_items` has no such column. Proposal: `is_reducible boolean default true`, used for Saving cards only.
++3. **Manual savings (D-083).** The frontend stores a total plus `MonthlyRecord.manualAdded` per month and
++   charts it per month. Still open: does a hand-added amount belong to the month it was added (automatic) or
++   to a month the user picks?
++4. **`category`.** `ExpenseItem.category` is only passed through in the frontend; it looks like a leftover.
++   Proposal: do not store it.
++5. **Target conflict.** If the user enters a different long-term target for an existing item, the frontend
++   (`mergeItems`) keeps the existing target and flags a conflict. Decide the rule when the API exists.
++6. **Deleting a month.** The frontend allows it only for an excluded month with zero items. The server
++   should enforce the same rule later.
++
++## Steps
++
++1. [ ] Settle questions 1 to 4 with the user (one at a time).
++2. [ ] Models with CHECK constraints and composite foreign keys, so a card can never point at another user's month or item.
++3. [ ] Migrations; `lock_down_table` for every table; `OWNER_FIELD` on every model.
++4. [ ] Tests: every constraint, cross-user isolation, name-key uniqueness, cascade rules, RLS guard.
++5. [ ] Update `schema-blueprint.md` and `decision-log.md` in the same commit.
++6. [ ] Deliver as a numbered patch with a completion report.
++
++## Relevant files
++
++- `Qeeva-Backend/apps/finance/` (new)
++- `Qeeva-Backend/docs/database/schema-blueprint.md`
++- `Qeeva-Frontend/src/app/@TYPES/models.ts`
++- `Qeeva-Frontend/src/app/@SERVICES/storage/engine/saving-goal-storage.utils.ts`
++- `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts`
++- `plans/20260807-saving-goal-storage-plan.md`, `plans/plans-Backend/20260522-excluded-months-map.md`
++
++## Verification
++
++- With the Docker database running: `python -m pytest`, `ruff check .`, `mypy .`, `python manage.py makemigrations --check --dry-run --settings=core.settings_test`.
++- Manual: inspect the new tables in pgAdmin on the `test_postgres` database (`pytest --reuse-db`).
++- Nothing is applied to Supabase without the user's explicit approval (D-084).
++
++## Decisions
++
++Approved designs: D-036 to D-081, D-083. Open: the six questions above.
+-- 
+2.43.0
+
