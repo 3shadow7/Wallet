@@ -1,0 +1,68 @@
+---
+title: "Feature and data map (finish the tables)"
+author: "Claude"
+date: "2026-11-15"
+status: "draft"
+---
+
+# Feature and data map
+
+## TL;DR
+
+The user wants every table the project will ever need designed up front, including features that wait
+on the list, so a later feature adds tables or columns and never forces a rewrite. This document is
+the living map: for every feature, what data it needs, what is stored and what is calculated, what the
+database already has, and what is still open. We discuss one area at a time (one question per
+message) and write the answer here and in the decision log. No table is built before its area is approved.
+
+## Steps
+
+1. [ ] Area 1: covering a deficit and the saved amount per saving item (D-111). Proposal D-117 (one nullable column on the saving card) waits for the user's yes.
+2. [ ] Area 2: saving goals, accumulation, notifications (D-071, D-072), ETA.
+3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115).
+4. [ ] Area 4: tax: percentage, several taxes, tax goals, Zakat helper (D-112, D-113, D-114).
+5. [ ] Area 5: editing history and recalculating charts.
+6. [ ] Area 6: credits and debits (gifts, emergency, debts), manual savings (D-083, D-093), item links (D-092).
+7. [ ] Area 7: pending list (bank, voice, camera; D-062, D-074).
+8. [ ] Area 8: sync and devices (offline first).
+9. [ ] Area 9: account: plans, consents, audit, export/delete, notifications, Telegram bot, Community, Arabic, Advanced switch.
+
+## Map
+
+| Area | What the feature needs | In the database today | Open |
+|---|---|---|---|
+| 1 Deficit and saved amount | When free money is below 0: lower this month's saving cards (the user picks which when there are several), then take the rest from earlier savings ("storage"), with a pick. A note on the card: planned 300, saved 200, why. | Card `amount_minor` (the plan) only. No place for "reduced by" or "taken from storage". `is_reducible` not built (D-097). | Default while the user has not picked (Angular splits pro-rata today); one column on the card or a separate table for the pick; the storage total should be derived from months plus a list of manual adjustments, not a stored number (Angular keeps `totalSavings` as a stored number, which drifts when history is edited). |
+| 2 Goals | Accumulated saved amount per saving item across months; ignored months add 0; alert at the target; ETA from this month's saved amount; notifications at 25/50/75/100%. | `items.target_minor` (saving only). Accumulation is calculated, but it needs Area 1's saved amounts. | Where notification state (seen, sent) lives. |
+| 3 Income and time | Regular: one income, time in h:mm. Advanced: several income types, hourly rate summed into "Product Price", custom month boundary, time as h:mm or decimal. | `month_incomes` (amount, hours_per_day numeric, days_per_week, override, manual rate). `months.month_start` is the 1st. | Minutes instead of decimal hours (D-115). Income rule for several lines (D-109 point 5). Month boundary column for Advanced. |
+| 4 Tax | Fixed amount (built). Percentage of income or of total funds. Several taxes. Goal for a tax. Zakat helper with thresholds for money, gold, livestock; opt-in; may add or remove a tax item. | Tax item with a fixed amount card. Target is saving-only (CHECK, D-107). | What "total funds" is; holdings (gold grams, animal counts) as data; suggest vs auto (D-032); how percentage taxes combine. |
+| 5 History edits | Editing a past month recomputes charts. | Nothing is stored derived, so recalculation is free. | Charts' cache, if any, later. |
+| 6 Credits, manual savings, links | Gifts, emergency, debts with a card and logic; manual savings list; linked items. | Not built (D-092, D-093). | All open; design together. |
+| 7 Pending list | Bank, voice and camera items wait for a name and confirmation before joining the log. | Not built; the items table needs no change (D-013). | Table shape. |
+| 8 Sync and devices | Offline first; push/pull when asked; device list; conflicts. | Nothing yet. | Conflict rule, ids from the client, tombstones for deletes. |
+| 9 Account | Plans/waitlist, consents, audit log, export/delete, notifications, Telegram bot token and linking, Community, language, Advanced switch. | `profiles`, `username_reservations`, `user_settings`. | Each is its own small design. |
+
+## Notes logged on 2026-11-15 (the user's words, cleaned)
+
+- A saving item may have a target; it is optional (D-107 point 1 confirmed).
+- Overspend: taken from this month's saving items if they hold enough, the user picking which one when there are several; the rest from the total funds in storage. The card says "planned 300, saved 200 because of this month's overspend" (D-111). The Angular app has the single-item case; the pick between several saving items is not built yet and must be.
+- Tax can be a fixed number (30 each month for a service) or a percentage of income or of total funds (D-112). Percentages are not built and must not be forgotten.
+- Advanced: Zakat on money, gold and livestock when thresholds are hit, adding and removing the tax automatically; not every user is Muslim, so there is a way to offer it (D-113).
+- Several tax items: allowed; how percentage taxes combine is open.
+- A tax can have a target with notifications, for example a monthly car tax (D-114).
+- Time: Regular time format only; Advanced time or decimal; where to switch is open (D-115).
+
+## Relevant files
+
+- `Qeeva-Backend/docs/database/schema-blueprint.md`, `Qeeva-Backend/apps/finance/models.py`
+- `Qeeva-Backend/apps/finance/calculations.py`
+- `plans/decisions/decision-log.md`
+- `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts` (how the single saving item case works today)
+
+## Verification
+
+- Each area ends with the user's approval written in the decision log, then a plan, then code with tests.
+- The decision-log guard test (`core/tests/test_decision_log.py`) keeps the numbering honest.
+
+## Decisions
+
+D-111 to D-115 (proposal and deferred ideas, 2026-11-15). Earlier: D-016, D-018, D-032, D-071 to D-073, D-083, D-092, D-093, D-097.

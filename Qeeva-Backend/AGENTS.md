@@ -4,7 +4,7 @@ Read this file first, in every new session. It replaces the old file that descri
 legacy backend (SimpleJWT, `apps/authentication`, `apps/core_finance`); that code was deleted
 in commit 1 and survives only in Git history.
 
-Last updated: 2026-11-15. If you change how the project works, update this file in the same commit.
+Last updated: 2026-11-15 (see section 10 for where the work stopped). If you change how the project works, update this file in the same commit.
 
 ## 1. What Qeeva is (and is not)
 
@@ -180,7 +180,7 @@ doc files (D-101); patch 0013 builds the five finance tables (models, migrations
 D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
 test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with PostgreSQL.
 
-Next candidates, in this order, each needing his go-ahead:
+Next candidates (the user's current path is **Path A**, section 10; B and C wait). Each needs his go-ahead:
 1. Account services: create profile on first login, change username (14-day wait, old name held
    30 days). Needs endpoints, so **scope approval first** (§4).
 2. More of the calculation layer, pure Python, no endpoint: saving allocation when the saved total
@@ -192,6 +192,11 @@ Next candidates, in this order, each needing his go-ahead:
    was added automatically (A) or to a month the user picks (B)?
 
 ## 9. Open items and known gaps
+
+* **Path A is a design conversation first (D-116).** `plans/plans-Backend/20261115-feature-data-map.md`
+  lists every feature, including waiting-list ones, and what data it needs. Discuss one area at a time,
+  one question per message, only about what the database must store. Decisions D-111 to D-117 hold the
+  user's ideas of 2026-11-15 (deficit rule, percentage tax, Zakat helper, tax goals, time input).
 
 * **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
 * **Approved by the user on 2026-11-15 (D-093, D-097):** manual savings (D-083) are designed
@@ -233,3 +238,24 @@ Next candidates, in this order, each needing his go-ahead:
   plans/waitlist, consents, audit logs, export/delete flows, Community, Arabic UI.
 * Planned, not now: Telegram voice bot, bank import (pending list, D-062/D-074), Advanced-mode
   features, `POST /api/sync/batch` (client contract in `Qeeva-Frontend/AGENT_ONBOARDING.md`).
+
+## 10. Where we stopped (update this at the end of every work step, D-116)
+
+Date: 2026-11-15. Patches 0001-0014 are delivered to the user (0014 is applied on his Codespace; he
+runs `git pull`, `git am`, `git push`). A docs patch with D-103 to D-117 and the feature-data map follows.
+
+**Path A (current):** finish the data design for every feature, then the calculation layer. Not built:
+anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
+to keep one question per message and to keep the `.md` files updated.
+
+**Waiting for the user's answer:**
+* D-117: one nullable column on the saving card for the pick (recommended yes). Next area: goals.
+* D-107 (small constraints; point 1, the optional saving target, is confirmed) and D-109 (point 5,
+  income = sum of income lines, needs a longer talk in Area 3). Both stay "AI choice" until he agrees.
+* D-111 (deficit rule) is a proposal with details open.
+
+**Ideas to keep in mind (deferred):** percentage tax, several taxes, tax goals, Zakat helper (D-112 to
+D-114), time as minutes (D-115), manual savings and debit/credit (D-093), item links (D-092).
+
+**Not touched yet:** Supabase (read-only so far, nothing applied; D-084), JWT key check, Angular
+vectors run, any API endpoint. Month deletion rule is D-110 (for when the API exists).
