@@ -4,7 +4,7 @@ Read this file first, in every new session. It replaces the old file that descri
 legacy backend (SimpleJWT, `apps/authentication`, `apps/core_finance`); that code was deleted
 in commit 1 and survives only in Git history.
 
-Last updated: 2026-11-14. If you change how the project works, update this file in the same commit.
+Last updated: 2026-11-15. If you change how the project works, update this file in the same commit.
 
 ## 1. What Qeeva is (and is not)
 
@@ -167,7 +167,7 @@ tell him to run `git pull`, `git am <patch>`, `git push`. Commits use `noreply@a
 and the attribution lines given by the session. Hooks that complain about unpushed commits
 refer to this limitation; explain it, do not force a push.
 
-## 8. Current state (2026-11-14)
+## 8. Current state (2026-11-15)
 
 Done and on GitHub (branch `build-django-as-what-db-schema-looks-like-cloude`):
 commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker test database,
@@ -177,13 +177,17 @@ Windows run before 0011: 145 passed in 393 s; after 0011: 164 passed in 2.53 s.
 Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030; patch 0011
 makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes the stale agent and
 doc files (D-101); patch 0013 builds the five finance tables (models, migrations, 150 tests; D-103 to
-D-107). No finance endpoint exists.
+D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
+test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with PostgreSQL.
 
 Next candidates, in this order, each needing his go-ahead:
 1. Account services: create profile on first login, change username (14-day wait, old name held
    30 days). Needs endpoints, so **scope approval first** (§4).
-2. The calculation layer (free money, overspend, shortfall ...) with formula tests, on the finance
-   tables (see `docs/database/schema-blueprint.md`). Pure Python first, no endpoint.
+2. More of the calculation layer, pure Python, no endpoint: saving allocation when the saved total
+   is below the target (the user chooses which saving items reduce, at least one must stay
+   reducible), saving goals (accumulated saved per item, goal-hit alert, ETA hint), hourly rate and
+   hours of life per item. Then run the same vectors in the Angular calculator (alignment plan,
+   step 1; the frontend is outside `Qeeva-Backend`, so it needs the user's approval).
 3. Manual savings list (D-083): unanswered question: does a hand-added saving go to the time it
    was added automatically (A) or to a month the user picks (B)?
 

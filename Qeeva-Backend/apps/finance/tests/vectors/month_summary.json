@@ -1,0 +1,97 @@
+{
+  "about": "Shared test vectors for the month formulas. Money is in minor units (cents). The Python code runs them today; the Angular FinancialCalculatorService must give the same numbers (plan 20261114-frontend-backend-alignment, step 1). Keys of 'expected' are the MonthSummary fields.",
+  "cases": [
+    {
+      "name": "empty month",
+      "income": 0,
+      "cards": [],
+      "expected": {"planned_outflow": 0, "free_money": 0, "real_expense": 0, "savings_balance": 0, "actual_saved": 0, "overspend": 0, "saving_shortfall": 0}
+    },
+    {
+      "name": "income only",
+      "income": 50000,
+      "cards": [],
+      "expected": {"planned_outflow": 0, "free_money": 50000, "real_expense": 0, "savings_balance": 50000, "actual_saved": 50000, "overspend": 0, "saving_shortfall": 0}
+    },
+    {
+      "name": "healthy month: income 500, burn 200, tax 50, saving 100",
+      "income": 50000,
+      "cards": [
+        {"type": "burn", "amount": 20000},
+        {"type": "tax", "amount": 5000},
+        {"type": "saving", "amount": 10000}
+      ],
+      "expected": {"planned_outflow": 35000, "free_money": 15000, "real_expense": 25000, "savings_balance": 25000, "actual_saved": 25000, "overspend": 0, "saving_shortfall": 0}
+    },
+    {
+      "name": "the owner's example: income 500, planned outflow 550 of which saving 100",
+      "income": 50000,
+      "cards": [
+        {"type": "burn", "amount": 45000},
+        {"type": "saving", "amount": 10000}
+      ],
+      "expected": {"planned_outflow": 55000, "free_money": -5000, "real_expense": 45000, "savings_balance": 5000, "actual_saved": 5000, "overspend": 0, "saving_shortfall": 5000}
+    },
+    {
+      "name": "real spending is more than income: nothing is saved, whole saving target is missed",
+      "income": 50000,
+      "cards": [
+        {"type": "burn", "amount": 55000},
+        {"type": "saving", "amount": 10000}
+      ],
+      "expected": {"planned_outflow": 65000, "free_money": -15000, "real_expense": 55000, "savings_balance": -5000, "actual_saved": 0, "overspend": 5000, "saving_shortfall": 10000}
+    },
+    {
+      "name": "spending exactly equals income",
+      "income": 50000,
+      "cards": [
+        {"type": "burn", "amount": 40000},
+        {"type": "tax", "amount": 10000},
+        {"type": "saving", "amount": 10000}
+      ],
+      "expected": {"planned_outflow": 60000, "free_money": -10000, "real_expense": 50000, "savings_balance": 0, "actual_saved": 0, "overspend": 0, "saving_shortfall": 10000}
+    },
+    {
+      "name": "leftover is bigger than the saving target: no shortfall",
+      "income": 100000,
+      "cards": [
+        {"type": "burn", "amount": 20000},
+        {"type": "saving", "amount": 10000}
+      ],
+      "expected": {"planned_outflow": 30000, "free_money": 70000, "real_expense": 20000, "savings_balance": 80000, "actual_saved": 80000, "overspend": 0, "saving_shortfall": 0}
+    },
+    {
+      "name": "ignored cards do not count",
+      "income": 50000,
+      "cards": [
+        {"type": "burn", "amount": 20000},
+        {"type": "burn", "amount": 99999, "ignored": true},
+        {"type": "tax", "amount": 99999, "ignored": true},
+        {"type": "saving", "amount": 99999, "ignored": true}
+      ],
+      "expected": {"planned_outflow": 20000, "free_money": 30000, "real_expense": 20000, "savings_balance": 30000, "actual_saved": 30000, "overspend": 0, "saving_shortfall": 0}
+    },
+    {
+      "name": "saving only, no income",
+      "income": 0,
+      "cards": [{"type": "saving", "amount": 10000}],
+      "expected": {"planned_outflow": 10000, "free_money": -10000, "real_expense": 0, "savings_balance": 0, "actual_saved": 0, "overspend": 0, "saving_shortfall": 10000}
+    },
+    {
+      "name": "cents are exact (no float rounding)",
+      "income": 100010,
+      "cards": [
+        {"type": "burn", "amount": 33},
+        {"type": "burn", "amount": 66},
+        {"type": "tax", "amount": 1}
+      ],
+      "expected": {"planned_outflow": 100, "free_money": 99910, "real_expense": 100, "savings_balance": 99910, "actual_saved": 99910, "overspend": 0, "saving_shortfall": 0}
+    },
+    {
+      "name": "large amounts fit",
+      "income": 9000000000000,
+      "cards": [{"type": "burn", "amount": 8999999999999}],
+      "expected": {"planned_outflow": 8999999999999, "free_money": 1, "real_expense": 8999999999999, "savings_balance": 1, "actual_saved": 1, "overspend": 0, "saving_shortfall": 0}
+    }
+  ]
+}
