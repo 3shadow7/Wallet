@@ -54,3 +54,4 @@ Qeeva-Backend/venv/
 **/__pycache__/
 **/*.py[cod]
 **/.angular/
+Qeeva-Backend/.venv

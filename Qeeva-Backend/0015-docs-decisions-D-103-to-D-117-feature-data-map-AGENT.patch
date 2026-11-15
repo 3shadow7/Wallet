@@ -1,0 +1,193 @@
+From d9d310f78c53f13fdc1d26c3a9d1bf6ae218f28b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 15 Nov 2026 13:16:17 +0200
+Subject: [PATCH] docs: decisions D-103 to D-117, feature-data map, AGENTS.md
+ "where we stopped"
+
+D-103/D-104 approved; D-110 month deletion rule; D-111 to D-115 the user's
+ideas of 2026-11-15 (deficit rule, tax, Zakat helper, time input); D-116
+the .md files are the project memory; D-117 proposal for Area 1.
+New plans/plans-Backend/20261115-feature-data-map.md.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ Qeeva-Backend/AGENTS.md                       | 30 +++++++-
+ plans/decisions/decision-log.md               | 14 +++-
+ .../20261115-feature-data-map.md              | 68 +++++++++++++++++++
+ 3 files changed, 107 insertions(+), 5 deletions(-)
+ create mode 100644 plans/plans-Backend/20261115-feature-data-map.md
+
+diff --git a/Qeeva-Backend/AGENTS.md b/Qeeva-Backend/AGENTS.md
+index 760075c..5db00ed 100644
+--- a/Qeeva-Backend/AGENTS.md
++++ b/Qeeva-Backend/AGENTS.md
+@@ -4,7 +4,7 @@ Read this file first, in every new session. It replaces the old file that descri
+ legacy backend (SimpleJWT, `apps/authentication`, `apps/core_finance`); that code was deleted
+ in commit 1 and survives only in Git history.
+ 
+-Last updated: 2026-11-15. If you change how the project works, update this file in the same commit.
++Last updated: 2026-11-15 (see section 10 for where the work stopped). If you change how the project works, update this file in the same commit.
+ 
+ ## 1. What Qeeva is (and is not)
+ 
+@@ -180,7 +180,7 @@ doc files (D-101); patch 0013 builds the five finance tables (models, migrations
+ D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
+ test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with PostgreSQL.
+ 
+-Next candidates, in this order, each needing his go-ahead:
++Next candidates (the user's current path is **Path A**, section 10; B and C wait). Each needs his go-ahead:
+ 1. Account services: create profile on first login, change username (14-day wait, old name held
+    30 days). Needs endpoints, so **scope approval first** (§4).
+ 2. More of the calculation layer, pure Python, no endpoint: saving allocation when the saved total
+@@ -193,6 +193,11 @@ Next candidates, in this order, each needing his go-ahead:
+ 
+ ## 9. Open items and known gaps
+ 
++* **Path A is a design conversation first (D-116).** `plans/plans-Backend/20261115-feature-data-map.md`
++  lists every feature, including waiting-list ones, and what data it needs. Discuss one area at a time,
++  one question per message, only about what the database must store. Decisions D-111 to D-117 hold the
++  user's ideas of 2026-11-15 (deficit rule, percentage tax, Zakat helper, tax goals, time input).
++
+ * **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
+ * **Approved by the user on 2026-11-15 (D-093, D-097):** manual savings (D-083) are designed
+   later together with debit/credit; the per-card `is_reducible` flag is not added to
+@@ -233,3 +238,24 @@ Next candidates, in this order, each needing his go-ahead:
+   plans/waitlist, consents, audit logs, export/delete flows, Community, Arabic UI.
+ * Planned, not now: Telegram voice bot, bank import (pending list, D-062/D-074), Advanced-mode
+   features, `POST /api/sync/batch` (client contract in `Qeeva-Frontend/AGENT_ONBOARDING.md`).
++
++## 10. Where we stopped (update this at the end of every work step, D-116)
++
++Date: 2026-11-15. Patches 0001-0014 are delivered to the user (0014 is applied on his Codespace; he
++runs `git pull`, `git am`, `git push`). A docs patch with D-103 to D-117 and the feature-data map follows.
++
++**Path A (current):** finish the data design for every feature, then the calculation layer. Not built:
++anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
++to keep one question per message and to keep the `.md` files updated.
++
++**Waiting for the user's answer:**
++* D-117: one nullable column on the saving card for the pick (recommended yes). Next area: goals.
++* D-107 (small constraints; point 1, the optional saving target, is confirmed) and D-109 (point 5,
++  income = sum of income lines, needs a longer talk in Area 3). Both stay "AI choice" until he agrees.
++* D-111 (deficit rule) is a proposal with details open.
++
++**Ideas to keep in mind (deferred):** percentage tax, several taxes, tax goals, Zakat helper (D-112 to
++D-114), time as minutes (D-115), manual savings and debit/credit (D-093), item links (D-092).
++
++**Not touched yet:** Supabase (read-only so far, nothing applied; D-084), JWT key check, Angular
++vectors run, any API endpoint. Month deletion rule is D-110 (for when the API exists).
+diff --git a/plans/decisions/decision-log.md b/plans/decisions/decision-log.md
+index 475975e..badaf38 100644
+--- a/plans/decisions/decision-log.md
++++ b/plans/decisions/decision-log.md
+@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe
+ decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
+ Arabic; wording here is a faithful summary, not a new decision.
+ 
+-**Numbers:** D-001 to D-109 are used. **Next free number: D-110.** Never reuse or renumber one.
++**Numbers:** D-001 to D-117 are used. **Next free number: D-118.** Never reuse or renumber one.
+ 
+ **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
+ (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
+@@ -54,13 +54,21 @@ them says. Confirm them if one looks wrong.
+ | D-100 | approved (user, 2026-11-14) | When the user says "read all `.md` files", the AI reads **every** `.md` and `.mdc` file in the repository, including everything under `.cursor/` and `.github/`, and never answers that it did not read them. If it had not, it reads them then. Written into `Qeeva-Backend/AGENTS.md`. |
+ | D-101 | approved (user, 2026-11-15) | Fix the agent and documentation files outside `Qeeva-Backend/` that describe things that no longer exist. **Backend side:** `.cursor/rules/backend-django.mdc`, `.cursor/skills/backend-senior/SKILL.md`, `.github/agents/backend-senior.agent.md` and the backend lines of the root `README.md` still say SimpleJWT, SQLite, `apps/authentication`, `apps/core_finance`; the root `AGENTS.md` still points at the old decision-log path. **Frontend side (paths only, no behaviour):** `Qeeva-Frontend/AGENTS.md`, `AGENT_ONBOARDING.md`, `README.md`, `.cursor/rules/frontend-angular.mdc` and `.cursor/skills/frontend-senior/SKILL.md` name `core/...` folders that do not exist (the real ones are under `src/app/@SERVICES/`), and two files give the auth API as `http://localhost:8000/api/auth`. A Cursor agent is told the wrong stack today. The user said "you can do it" on 2026-11-15; done in patch 0012. The frontend path fixes touch documentation only, never code. |
+ | D-102 | approved (user, 2026-11-15) | A database host written as `localhost` is read as `127.0.0.1` (in `parse_database_url`). Measured on the user's Windows machine with Docker: connecting through `localhost` took 15,027 ms, through `127.0.0.1` 19 ms, per connection. The test suite opens many connections, so the 145 tests took 393 s instead of seconds. Probable cause (not proven): Windows tries IPv6 `::1` first and Docker publishes the port on IPv4 only. `[::1]` and every other host are left as written. Confirmed on the user's Windows machine after patch 0011: 164 tests passed in 2.53 s (before: 145 in 393 s). |
+-| D-103 | AI choice, please review | Item name comparison (`items.name_key`) follows D-056 and D-057, not only "trim + lowercase" as the blueprint said: surrounding spaces and letter case are ignored, every alef form counts as one letter, teh marbuta = heh, alef maksura = yeh, diacritics and tatweel are dropped, Arabic-Indic and Persian digits equal 0-9 (the digit rule is the assumption D-057 already names). Django computes the key in `Item.save()` (the stored name is unchanged). The Angular `normalizeName` only trims and lowercases today; making it match is part of the alignment phase (D-096). |
+-| D-104 | AI choice, please review | "No symbols" in item names (D-056) is checked in Python (`validate_item_name`: letters, digits, marks and single spaces) and **not** as a database CHECK, because PostgreSQL character classes depend on the server's locale and the rule would then behave differently per machine. The database still enforces length 1-40 and no leading, trailing or double spaces. |
++| D-103 | approved (user, 2026-11-15) | Item name comparison (`items.name_key`) follows D-056 and D-057, not only "trim + lowercase" as the blueprint said: surrounding spaces and letter case are ignored, every alef form counts as one letter, teh marbuta = heh, alef maksura = yeh, diacritics and tatweel are dropped, Arabic-Indic and Persian digits equal 0-9 (the digit rule is the assumption D-057 already names). Django computes the key in `Item.save()` (the stored name is unchanged). The Angular `normalizeName` only trims and lowercases today; making it match is part of the alignment phase (D-096). |
++| D-104 | approved (user, 2026-11-15) | "No symbols" in item names (D-056) is checked in Python (`validate_item_name`: letters, digits, marks and single spaces) and **not** as a database CHECK, because PostgreSQL character classes depend on the server's locale and the rule would then behave differently per machine. The database still enforces length 1-40 and no leading, trailing or double spaces. |
+ | D-105 | approved (user, 2026-11-15) | Delete rules of the finance tables: deleting a user (or profile) removes all of the user's finance rows; deleting a month removes its income lines and cards; deleting an item removes its merge dismissals; an item that still has cards **cannot** be deleted (the user merges or deletes the cards first; `NO ACTION` in the database, `RESTRICT` in Django). Every child row also keeps its own `user_id` foreign key to `profiles`, and every link to a month or item is a composite key `(id, user_id)`, so a card can never join another user's month or item. |
+ | D-106 | approved (user, 2026-11-15) | A merge dismissal (D-053) is stored in one fixed order: `item_a_id` is the smaller id (CHECK `item_a_id < item_b_id`), so "A with B" and "B with A" are one row and an item cannot be dismissed against itself. `ItemMergeDismissal.ordered_pair` puts two ids in that order. |
+ | D-107 | AI choice, please review | Small constraints the blueprint left open: `items.target_minor` only on saving items (database CHECK, D-073 defers a Tax goal); `month_items.unit_price_minor` is NULL or >= 0; a month has no cap on how many income lines it holds (D-041); `hours_per_day` is `numeric(4,2)`. Tables built with D-093 and D-097 as approved: no manual savings table, no `is_reducible` column. |
+ | D-108 | approved (user, 2026-11-15) | Merging items by hand is always available and never depends on a dismissed suggestion (D-053, D-106). The user can open Setup Items (search) or click an item in an old month and merge it with another item, for chosen months or for the whole timeline. The dismissals table only remembers "do not suggest this pair again". The merge logic itself (partial merge, what happens when both items have a card in the same month) is a future service, not built. |
+ | D-109 | AI choice, please review | The calculation layer is pure Python in `apps/finance/calculations.py`: integer minor units only (no division, no rounding), ignored cards are left out, a negative amount or an unknown item type raises `ValueError`. Formulas are exactly the approved dashboard formulas (they also equal `financial-calculator.service.ts`). Income of a month is the sum of its income lines (D-041). `summary.py` reads a month from the database and calls it. No endpoint. |
++| D-110 | approved (user, 2026-11-15) | A month can be deleted only when it is excluded (`totals_mode = excluded`) and has no cards; otherwise the user must clear it first. This is the rule the Angular app already follows. The server must enforce it when the API exists (nothing enforces it in the database today; only the delete rules of D-105 protect orphan rows). |
++| D-111 | proposal, waiting for the user's yes (details open) | Covering a deficit (the user's rule of 2026-11-15, restated). When the plan is bigger than the income (free money below 0), the deficit is covered first by lowering this month's saving cards (never more than they hold), and the user picks which saving item gives the money when there is more than one. Whatever is left (that is the overspend) is taken from the money already saved in earlier months (the "storage"), again with a pick when there is more than one saving item. The card shows a note, for example: "planned 300, saved 200 because you overspent 100 this month". "Storage" is the Angular savings module (`savings.service.ts`): a running total of every month's savings balance plus manual additions; it can go negative, and the user can also set it directly. The Angular app today lowers the saving cards by the same percentage (pro-rata, `history.component.ts`); it never asks the user to pick. Open: what the app does while the user has not picked, and where the pick is stored (a column on the card or a separate table). Nothing is built; D-097 stands. |
++| D-112 | deferred (user idea, 2026-11-15) | Tax amount has two kinds: a fixed amount (built: for example 30 each month for a service) and a percentage (not built). A percentage can be taken from the month's income or from the user's total funds. A user may have several tax items. How several percentage taxes combine, and what "total funds" means, are open. |
++| D-113 | deferred (user idea, 2026-11-15) | Advanced mode: religious tax helper (Zakat) for Muslim users: thresholds for money, gold and livestock; a tax item can be added or removed when a threshold is crossed or no longer crossed because of the month's spending. Not everyone is Muslim and not every Muslim is an Advanced user, so it is opt-in, and the app offers it through a neutral question and never guesses a religion. Idea: build it as a generic tax rule (base, rate, threshold, period) with Zakat as one template, so other taxes can use the same engine. Rules differ between schools and countries, so values must be editable and checked against a trusted source when built. Conflict to settle first: D-032 says the log never changes a value by itself (suggest and confirm, or an auto mode the user turns on). |
++| D-114 | deferred (user idea, 2026-11-15) | A goal for tax items (this is D-073, now wanted): for example a monthly car tax with a total target, progress and notifications. The database today allows a target on saving items only (D-107); one small migration lifts that when this is designed. |
++| D-115 | deferred (user idea, 2026-11-15) | Working time input: Regular users enter hours in time format (h:mm) only; Advanced users may use time format or a decimal number. Where the switch lives (a setting, or a toggle next to the field) is open. It is a screen choice only. Database idea: store minutes instead of decimal hours (7:20 is not exactly 7.33), replacing `hours_per_day` and `work_hours_override`; not changed yet. |
++| D-116 | approved (user, 2026-11-15) | The chat cannot hold the whole project, so the `.md` files are the memory: the AI updates the decision log, the feature-data map, the plans and `Qeeva-Backend/AGENTS.md` (section 10, "Where we stopped") from time to time and at the end of every work step, so no decision or idea is lost. The user confirmed that the AI keeps working the way it does now: one area at a time, one question per message, the database as the only subject until the tables are complete. |
++| D-117 | proposal, waiting for the user's yes | Area 1 storage: the user's pick of which saving item takes the deficit is saved in one nullable column on the saving card (working name `month_items.reduction_minor`: NULL = not chosen yet, otherwise 0 up to the card's amount, saving cards only). The total savings storage is not a table: it is calculated from the months plus a later list of manual adjustments (D-083, D-093). Not built. |
+ 
+ ## Product
+ 
+diff --git a/plans/plans-Backend/20261115-feature-data-map.md b/plans/plans-Backend/20261115-feature-data-map.md
+new file mode 100644
+index 0000000..59298bb
+--- /dev/null
++++ b/plans/plans-Backend/20261115-feature-data-map.md
+@@ -0,0 +1,68 @@
++---
++title: "Feature and data map (finish the tables)"
++author: "Claude"
++date: "2026-11-15"
++status: "draft"
++---
++
++# Feature and data map
++
++## TL;DR
++
++The user wants every table the project will ever need designed up front, including features that wait
++on the list, so a later feature adds tables or columns and never forces a rewrite. This document is
++the living map: for every feature, what data it needs, what is stored and what is calculated, what the
++database already has, and what is still open. We discuss one area at a time (one question per
++message) and write the answer here and in the decision log. No table is built before its area is approved.
++
++## Steps
++
++1. [ ] Area 1: covering a deficit and the saved amount per saving item (D-111). Proposal D-117 (one nullable column on the saving card) waits for the user's yes.
++2. [ ] Area 2: saving goals, accumulation, notifications (D-071, D-072), ETA.
++3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115).
++4. [ ] Area 4: tax: percentage, several taxes, tax goals, Zakat helper (D-112, D-113, D-114).
++5. [ ] Area 5: editing history and recalculating charts.
++6. [ ] Area 6: credits and debits (gifts, emergency, debts), manual savings (D-083, D-093), item links (D-092).
++7. [ ] Area 7: pending list (bank, voice, camera; D-062, D-074).
++8. [ ] Area 8: sync and devices (offline first).
++9. [ ] Area 9: account: plans, consents, audit, export/delete, notifications, Telegram bot, Community, Arabic, Advanced switch.
++
++## Map
++
++| Area | What the feature needs | In the database today | Open |
++|---|---|---|---|
++| 1 Deficit and saved amount | When free money is below 0: lower this month's saving cards (the user picks which when there are several), then take the rest from earlier savings ("storage"), with a pick. A note on the card: planned 300, saved 200, why. | Card `amount_minor` (the plan) only. No place for "reduced by" or "taken from storage". `is_reducible` not built (D-097). | Default while the user has not picked (Angular splits pro-rata today); one column on the card or a separate table for the pick; the storage total should be derived from months plus a list of manual adjustments, not a stored number (Angular keeps `totalSavings` as a stored number, which drifts when history is edited). |
++| 2 Goals | Accumulated saved amount per saving item across months; ignored months add 0; alert at the target; ETA from this month's saved amount; notifications at 25/50/75/100%. | `items.target_minor` (saving only). Accumulation is calculated, but it needs Area 1's saved amounts. | Where notification state (seen, sent) lives. |
++| 3 Income and time | Regular: one income, time in h:mm. Advanced: several income types, hourly rate summed into "Product Price", custom month boundary, time as h:mm or decimal. | `month_incomes` (amount, hours_per_day numeric, days_per_week, override, manual rate). `months.month_start` is the 1st. | Minutes instead of decimal hours (D-115). Income rule for several lines (D-109 point 5). Month boundary column for Advanced. |
++| 4 Tax | Fixed amount (built). Percentage of income or of total funds. Several taxes. Goal for a tax. Zakat helper with thresholds for money, gold, livestock; opt-in; may add or remove a tax item. | Tax item with a fixed amount card. Target is saving-only (CHECK, D-107). | What "total funds" is; holdings (gold grams, animal counts) as data; suggest vs auto (D-032); how percentage taxes combine. |
++| 5 History edits | Editing a past month recomputes charts. | Nothing is stored derived, so recalculation is free. | Charts' cache, if any, later. |
++| 6 Credits, manual savings, links | Gifts, emergency, debts with a card and logic; manual savings list; linked items. | Not built (D-092, D-093). | All open; design together. |
++| 7 Pending list | Bank, voice and camera items wait for a name and confirmation before joining the log. | Not built; the items table needs no change (D-013). | Table shape. |
++| 8 Sync and devices | Offline first; push/pull when asked; device list; conflicts. | Nothing yet. | Conflict rule, ids from the client, tombstones for deletes. |
++| 9 Account | Plans/waitlist, consents, audit log, export/delete, notifications, Telegram bot token and linking, Community, language, Advanced switch. | `profiles`, `username_reservations`, `user_settings`. | Each is its own small design. |
++
++## Notes logged on 2026-11-15 (the user's words, cleaned)
++
++- A saving item may have a target; it is optional (D-107 point 1 confirmed).
++- Overspend: taken from this month's saving items if they hold enough, the user picking which one when there are several; the rest from the total funds in storage. The card says "planned 300, saved 200 because of this month's overspend" (D-111). The Angular app has the single-item case; the pick between several saving items is not built yet and must be.
++- Tax can be a fixed number (30 each month for a service) or a percentage of income or of total funds (D-112). Percentages are not built and must not be forgotten.
++- Advanced: Zakat on money, gold and livestock when thresholds are hit, adding and removing the tax automatically; not every user is Muslim, so there is a way to offer it (D-113).
++- Several tax items: allowed; how percentage taxes combine is open.
++- A tax can have a target with notifications, for example a monthly car tax (D-114).
++- Time: Regular time format only; Advanced time or decimal; where to switch is open (D-115).
++
++## Relevant files
++
++- `Qeeva-Backend/docs/database/schema-blueprint.md`, `Qeeva-Backend/apps/finance/models.py`
++- `Qeeva-Backend/apps/finance/calculations.py`
++- `plans/decisions/decision-log.md`
++- `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts` (how the single saving item case works today)
++
++## Verification
++
++- Each area ends with the user's approval written in the decision log, then a plan, then code with tests.
++- The decision-log guard test (`core/tests/test_decision_log.py`) keeps the numbering honest.
++
++## Decisions
++
++D-111 to D-115 (proposal and deferred ideas, 2026-11-15). Earlier: D-016, D-018, D-032, D-071 to D-073, D-083, D-092, D-093, D-097.
+-- 
+2.43.0
+

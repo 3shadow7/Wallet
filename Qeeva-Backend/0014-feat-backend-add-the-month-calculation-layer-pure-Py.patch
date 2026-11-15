@@ -1,0 +1,718 @@
+From c21041ce6b60d57100376d9022666cf1fc366315 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 15 Nov 2026 08:57:48 +0200
+Subject: [PATCH] feat(backend): add the month calculation layer (pure Python,
+ no endpoint)
+
+calculations.py: planned outflow, free money, real expense, savings balance,
+actual saved, overspend and saving shortfall in integer minor units;
+summary.py reads a month from the database. Shared JSON test vectors for a
+later check against the Angular calculator. D-105/D-106 approved; D-108, D-109.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016XZgY67wRt6nPCj5ueMP8y
+---
+ Qeeva-Backend/AGENTS.md                       |  14 +-
+ Qeeva-Backend/apps/finance/calculations.py    | 111 ++++++++++
+ Qeeva-Backend/apps/finance/summary.py         |  29 +++
+ .../apps/finance/tests/test_calculations.py   | 195 ++++++++++++++++++
+ .../apps/finance/tests/test_summary.py        | 104 ++++++++++
+ .../finance/tests/vectors/month_summary.json  |  97 +++++++++
+ plans/decisions/decision-log.md               |   8 +-
+ .../20261115-calculation-layer.md             |  43 ++++
+ 8 files changed, 593 insertions(+), 8 deletions(-)
+ create mode 100644 Qeeva-Backend/apps/finance/calculations.py
+ create mode 100644 Qeeva-Backend/apps/finance/summary.py
+ create mode 100644 Qeeva-Backend/apps/finance/tests/test_calculations.py
+ create mode 100644 Qeeva-Backend/apps/finance/tests/test_summary.py
+ create mode 100644 Qeeva-Backend/apps/finance/tests/vectors/month_summary.json
+ create mode 100644 plans/plans-Backend/20261115-calculation-layer.md
+
+diff --git a/Qeeva-Backend/AGENTS.md b/Qeeva-Backend/AGENTS.md
+index 0befb4c..760075c 100644
+--- a/Qeeva-Backend/AGENTS.md
++++ b/Qeeva-Backend/AGENTS.md
+@@ -4,7 +4,7 @@ Read this file first, in every new session. It replaces the old file that descri
+ legacy backend (SimpleJWT, `apps/authentication`, `apps/core_finance`); that code was deleted
+ in commit 1 and survives only in Git history.
+ 
+-Last updated: 2026-11-14. If you change how the project works, update this file in the same commit.
++Last updated: 2026-11-15. If you change how the project works, update this file in the same commit.
+ 
+ ## 1. What Qeeva is (and is not)
+ 
+@@ -167,7 +167,7 @@ tell him to run `git pull`, `git am <patch>`, `git push`. Commits use `noreply@a
+ and the attribution lines given by the session. Hooks that complain about unpushed commits
+ refer to this limitation; explain it, do not force a push.
+ 
+-## 8. Current state (2026-11-14)
++## 8. Current state (2026-11-15)
+ 
+ Done and on GitHub (branch `build-django-as-what-db-schema-looks-like-cloude`):
+ commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker test database,
+@@ -177,13 +177,17 @@ Windows run before 0011: 145 passed in 393 s; after 0011: 164 passed in 2.53 s.
+ Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D-030; patch 0011
+ makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes the stale agent and
+ doc files (D-101); patch 0013 builds the five finance tables (models, migrations, 150 tests; D-103 to
+-D-107). No finance endpoint exists.
++D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
++test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with PostgreSQL.
+ 
+ Next candidates, in this order, each needing his go-ahead:
+ 1. Account services: create profile on first login, change username (14-day wait, old name held
+    30 days). Needs endpoints, so **scope approval first** (§4).
+-2. The calculation layer (free money, overspend, shortfall ...) with formula tests, on the finance
+-   tables (see `docs/database/schema-blueprint.md`). Pure Python first, no endpoint.
++2. More of the calculation layer, pure Python, no endpoint: saving allocation when the saved total
++   is below the target (the user chooses which saving items reduce, at least one must stay
++   reducible), saving goals (accumulated saved per item, goal-hit alert, ETA hint), hourly rate and
++   hours of life per item. Then run the same vectors in the Angular calculator (alignment plan,
++   step 1; the frontend is outside `Qeeva-Backend`, so it needs the user's approval).
+ 3. Manual savings list (D-083): unanswered question: does a hand-added saving go to the time it
+    was added automatically (A) or to a month the user picks (B)?
+ 
+diff --git a/Qeeva-Backend/apps/finance/calculations.py b/Qeeva-Backend/apps/finance/calculations.py
+new file mode 100644
+index 0000000..1de1e67
+--- /dev/null
++++ b/Qeeva-Backend/apps/finance/calculations.py
+@@ -0,0 +1,111 @@
++"""The month formulas (the numbers on the dashboard cards), as pure Python.
++
++"Pure" means: no database, no Django, no clock. Numbers go in, numbers come out. That makes the
++formulas easy to test, and it is the one place where they are written in the backend (D-032:
++the app only calculates, it never invents or changes a value).
++
++Rules (approved dashboard spec; they also equal the Angular ``FinancialCalculatorService``):
++
++* Ignored cards are left out of everything (they stay visible in the app, but do not count).
++* Only three kinds of item exist: ``burn`` (normal spending), ``tax`` and ``saving``.
++* A saving card is a *plan* ("I want to put this aside"), not a real expense.
++
++    planned_outflow = burn + tax + saving_target      (what the user plans to send out)
++    free_money      = income - planned_outflow        (can be negative)
++    real_expense    = burn + tax                      (money really spent)
++    savings_balance = income - real_expense           (can be negative)
++    actual_saved    = max(0, savings_balance)         (what is really left to save)
++    overspend       = max(0, real_expense - income)   (spent more than earned)
++    saving_shortfall = max(0, saving_target - actual_saved)   (saving goal that was missed)
++
++If burn + tax is more than the income, nothing is saved that month, so the whole saving target is
++the shortfall. All amounts are integers in minor units (cents, D-033), so there is no rounding.
++"""
++
++from __future__ import annotations
++
++from collections.abc import Iterable
++from dataclasses import dataclass
++
++from apps.finance.models import ItemType
++
++
++@dataclass(frozen=True, slots=True)
++class CardAmount:
++    """What the formulas need to know about one card: its kind, its amount and whether it counts."""
++
++    item_type: str  # "burn", "tax" or "saving"
++    amount_minor: int
++    is_ignored: bool = False
++
++
++@dataclass(frozen=True, slots=True)
++class MonthSummary:
++    """The numbers of one month. Every amount is in minor units."""
++
++    total_income_minor: int
++    burn_minor: int
++    tax_minor: int
++    saving_target_minor: int
++    planned_outflow_minor: int
++    free_money_minor: int
++    real_expense_minor: int
++    savings_balance_minor: int
++    actual_saved_minor: int
++    overspend_minor: int
++    saving_shortfall_minor: int
++
++    @property
++    def is_over_budget(self) -> bool:
++        """The plan (spending + taxes + saving targets) is bigger than the income."""
++        return self.free_money_minor < 0
++
++    @property
++    def is_overspent(self) -> bool:
++        """Real spending (without saving) is bigger than the income."""
++        return self.overspend_minor > 0
++
++    @property
++    def missed_saving_goal(self) -> bool:
++        """The month could not save the whole saving target."""
++        return self.saving_shortfall_minor > 0
++
++
++def summarize_month(income_minor: int, cards: Iterable[CardAmount]) -> MonthSummary:
++    """Calculate the month numbers from the total income and the month's cards.
++
++    Raises ``ValueError`` for a negative amount or an unknown item type: the database never
++    stores those, so seeing one means a bug that must not turn into a plausible-looking number.
++    """
++    if income_minor < 0:
++        raise ValueError("income must not be negative")
++
++    totals = dict.fromkeys(ItemType.values, 0)
++    for card in cards:
++        if card.item_type not in totals:
++            raise ValueError(f"unknown item type: {card.item_type!r}")
++        if card.amount_minor < 0:
++            raise ValueError("a card amount must not be negative")
++        if card.is_ignored:
++            continue  # ignored cards do not count anywhere
++        totals[card.item_type] += card.amount_minor
++
++    burn, tax, saving_target = totals["burn"], totals["tax"], totals["saving"]
++    planned_outflow = burn + tax + saving_target
++    real_expense = burn + tax
++    savings_balance = income_minor - real_expense
++    actual_saved = max(0, savings_balance)
++
++    return MonthSummary(
++        total_income_minor=income_minor,
++        burn_minor=burn,
++        tax_minor=tax,
++        saving_target_minor=saving_target,
++        planned_outflow_minor=planned_outflow,
++        free_money_minor=income_minor - planned_outflow,
++        real_expense_minor=real_expense,
++        savings_balance_minor=savings_balance,
++        actual_saved_minor=actual_saved,
++        overspend_minor=max(0, real_expense - income_minor),
++        saving_shortfall_minor=max(0, saving_target - actual_saved),
++    )
+diff --git a/Qeeva-Backend/apps/finance/summary.py b/Qeeva-Backend/apps/finance/summary.py
+new file mode 100644
+index 0000000..4bb1f45
+--- /dev/null
++++ b/Qeeva-Backend/apps/finance/summary.py
+@@ -0,0 +1,29 @@
++"""Read one month from the database and calculate its numbers.
++
++This is the bridge between the tables and the pure formulas in ``calculations.py``.
++
++The caller must have loaded the month with ``Month.objects.for_user(principal)``. The cards and
++income lines are found through the month, and the database guarantees (composite foreign keys)
++that they belong to the same user as the month, so no other user's row can be mixed in.
++"""
++
++from __future__ import annotations
++
++from django.db.models import Sum
++
++from apps.finance.calculations import CardAmount, MonthSummary, summarize_month
++from apps.finance.models import Month, MonthIncome, MonthItem
++
++
++def summarize_month_from_db(month: Month) -> MonthSummary:
++    """Return the dashboard numbers of ``month`` (income lines added up, ignored cards left out)."""
++    # SUM over no rows is NULL in SQL, which Django returns as None: a month without income is 0.
++    income_total = MonthIncome.objects.filter(month=month).aggregate(total=Sum("amount_minor"))[
++        "total"
++    ]
++    # One query for all cards of the month; the item gives the kind (burn / tax / saving).
++    rows = MonthItem.objects.filter(month=month).values_list(
++        "item__type", "amount_minor", "is_ignored"
++    )
++    cards = [CardAmount(item_type=t, amount_minor=a, is_ignored=i) for t, a, i in rows]
++    return summarize_month(income_total or 0, cards)
+diff --git a/Qeeva-Backend/apps/finance/tests/test_calculations.py b/Qeeva-Backend/apps/finance/tests/test_calculations.py
+new file mode 100644
+index 0000000..3a5f0c0
+--- /dev/null
++++ b/Qeeva-Backend/apps/finance/tests/test_calculations.py
+@@ -0,0 +1,195 @@
++"""The month formulas: shared vectors, the owner's examples, and rules that must always hold.
++
++No database is needed here, so these tests also run when ``QEEVA_TEST_DATABASE_URL`` is not set.
++"""
++
++from __future__ import annotations
++
++import json
++import random
++from pathlib import Path
++from typing import Any
++
++import pytest
++
++from apps.finance.calculations import CardAmount, MonthSummary, summarize_month
++from apps.finance.models import ItemType
++
++VECTORS = json.loads((Path(__file__).parent / "vectors" / "month_summary.json").read_text())[
++    "cases"
++]
++
++# Vector key -> MonthSummary field.
++FIELDS = {
++    "planned_outflow": "planned_outflow_minor",
++    "free_money": "free_money_minor",
++    "real_expense": "real_expense_minor",
++    "savings_balance": "savings_balance_minor",
++    "actual_saved": "actual_saved_minor",
++    "overspend": "overspend_minor",
++    "saving_shortfall": "saving_shortfall_minor",
++}
++
++
++def cards_from(vector_cards: list[dict[str, Any]]) -> list[CardAmount]:
++    return [
++        CardAmount(c["type"], c["amount"], is_ignored=c.get("ignored", False)) for c in vector_cards
++    ]
++
++
++@pytest.mark.parametrize("case", VECTORS, ids=[case["name"] for case in VECTORS])
++def test_shared_vectors(case: dict[str, Any]) -> None:
++    summary = summarize_month(case["income"], cards_from(case["cards"]))
++    actual = {key: getattr(summary, attribute) for key, attribute in FIELDS.items()}
++    assert actual == case["expected"]
++
++
++def test_vectors_cover_every_formula_edge() -> None:
++    # A reminder to add a vector when a new edge appears: each of these must occur at least once.
++    summaries = [summarize_month(c["income"], cards_from(c["cards"])) for c in VECTORS]
++    assert any(s.free_money_minor < 0 for s in summaries)
++    assert any(s.savings_balance_minor < 0 for s in summaries)
++    assert any(s.overspend_minor > 0 for s in summaries)
++    assert any(s.saving_shortfall_minor > 0 for s in summaries)
++    assert any(s.saving_shortfall_minor == 0 and s.saving_target_minor > 0 for s in summaries)
++
++
++class TestOwnersExamples:
++    """The example from the project description, read with the approved formulas.
++
++    Income 500.00, saving goal 100.00, planned outflow 550.00 (so spending + taxes = 450.00).
++    """
++
++    def test_planned_outflow_bigger_than_income_but_spending_is_covered(self) -> None:
++        summary = summarize_month(
++            50_000, [CardAmount("burn", 45_000), CardAmount("saving", 10_000)]
++        )
++        assert summary.free_money_minor == -5_000  # the plan is 50.00 over the income
++        assert summary.actual_saved_minor == 5_000  # 50.00 really saved
++        assert summary.saving_shortfall_minor == 5_000  # the goal is missed by 50.00
++        assert summary.overspend_minor == 0  # real spending is not over the income
++        assert summary.is_over_budget
++        assert summary.missed_saving_goal
++        assert not summary.is_overspent
++
++    def test_real_spending_over_income_saves_nothing(self) -> None:
++        summary = summarize_month(
++            50_000, [CardAmount("burn", 55_000), CardAmount("saving", 10_000)]
++        )
++        assert summary.overspend_minor == 5_000
++        assert summary.savings_balance_minor == -5_000  # shown as negative
++        assert summary.actual_saved_minor == 0
++        assert summary.saving_shortfall_minor == 10_000  # the whole target is missed
++        assert summary.is_overspent
++
++
++class TestIgnoredCards:
++    def test_ignored_cards_change_nothing(self) -> None:
++        base = [CardAmount("burn", 1_000), CardAmount("saving", 500)]
++        with_ignored = [*base, *(CardAmount(t, 7_777, is_ignored=True) for t in ItemType.values)]
++        assert summarize_month(5_000, with_ignored) == summarize_month(5_000, base)
++
++    def test_toggling_ignore_back_restores_the_numbers(self) -> None:
++        card = CardAmount("burn", 2_000)
++        counted = summarize_month(5_000, [card])
++        ignored = summarize_month(5_000, [CardAmount("burn", 2_000, is_ignored=True)])
++        assert counted.real_expense_minor == 2_000
++        assert ignored.real_expense_minor == 0
++
++
++class TestInvalidInput:
++    def test_negative_income(self) -> None:
++        with pytest.raises(ValueError, match="income"):
++            summarize_month(-1, [])
++
++    def test_negative_card_amount(self) -> None:
++        with pytest.raises(ValueError, match="negative"):
++            summarize_month(100, [CardAmount("burn", -1)])
++
++    def test_negative_amount_is_rejected_even_when_ignored(self) -> None:
++        # A negative amount is a bug whether or not the card counts, so it must not hide.
++        with pytest.raises(ValueError, match="negative"):
++            summarize_month(100, [CardAmount("burn", -1, is_ignored=True)])
++
++    @pytest.mark.parametrize("item_type", ["", "income", "Burn", "debit"])
++    def test_unknown_item_type(self, item_type: str) -> None:
++        with pytest.raises(ValueError, match="unknown item type"):
++            summarize_month(100, [CardAmount(item_type, 1)])
++
++    def test_accepts_any_iterable_of_cards(self) -> None:
++        summary = summarize_month(1_000, (CardAmount("burn", 100) for _ in range(3)))
++        assert summary.burn_minor == 300
++
++
++class TestFormulaIdentities:
++    """Rules that hold for every input. A seeded random run checks them on many months."""
++
++    @staticmethod
++    def random_month(rng: random.Random) -> tuple[int, list[CardAmount]]:
++        income = rng.choice([0, rng.randint(0, 1_000_000)])
++        cards = [
++            CardAmount(
++                rng.choice(ItemType.values), rng.randint(0, 500_000), is_ignored=rng.random() < 0.2
++            )
++            for _ in range(rng.randint(0, 12))
++        ]
++        return income, cards
++
++    def check(self, income: int, summary: MonthSummary) -> None:
++        # The two ways of writing the plan agree.
++        assert (
++            summary.planned_outflow_minor
++            == summary.real_expense_minor + summary.saving_target_minor
++        )
++        assert summary.free_money_minor == income - summary.planned_outflow_minor
++        assert summary.savings_balance_minor == income - summary.real_expense_minor
++        # Free money is the saving balance minus the saving target.
++        assert (
++            summary.free_money_minor == summary.savings_balance_minor - summary.saving_target_minor
++        )
++        # Nothing here can be negative except the two "can be negative" numbers.
++        assert summary.actual_saved_minor >= 0
++        assert summary.overspend_minor >= 0
++        assert 0 <= summary.saving_shortfall_minor <= summary.saving_target_minor
++        # Overspending means nothing is saved and the whole target is missed.
++        if summary.overspend_minor > 0:
++            assert summary.actual_saved_minor == 0
++            assert summary.saving_shortfall_minor == summary.saving_target_minor
++        # Overspend and real savings can never both exist in one month.
++        assert not (summary.overspend_minor > 0 and summary.actual_saved_minor > 0)
++        # The saving goal is met exactly when the saved amount reaches the target.
++        assert (summary.saving_shortfall_minor == 0) == (
++            summary.actual_saved_minor >= summary.saving_target_minor
++        )
++        # A positive free money means the whole plan fits, so the goal is met too.
++        if summary.free_money_minor >= 0:
++            assert summary.saving_shortfall_minor == 0
++            assert not summary.is_overspent
++
++    def test_identities_hold_for_many_random_months(self) -> None:
++        rng = random.Random(20261115)  # noqa: S311  (test data, not security; fixed seed)
++        for _ in range(2_000):
++            income, cards = self.random_month(rng)
++            self.check(income, summarize_month(income, cards))
++
++    def test_order_of_cards_does_not_matter(self) -> None:
++        rng = random.Random(7)  # noqa: S311  (test data, not security)
++        income, cards = self.random_month(rng)
++        shuffled = cards[:]
++        rng.shuffle(shuffled)
++        assert summarize_month(income, cards) == summarize_month(income, shuffled)
++
++    def test_adding_a_saving_card_never_changes_real_expense_or_overspend(self) -> None:
++        # Saving cards are plans, not real expenses (spec): they only move the plan numbers.
++        base = summarize_month(1_000, [CardAmount("burn", 1_500)])
++        with_saving = summarize_month(1_000, [CardAmount("burn", 1_500), CardAmount("saving", 300)])
++        assert with_saving.real_expense_minor == base.real_expense_minor
++        assert with_saving.overspend_minor == base.overspend_minor
++        assert with_saving.savings_balance_minor == base.savings_balance_minor
++        assert with_saving.planned_outflow_minor == base.planned_outflow_minor + 300
++
++
++def test_summary_is_immutable() -> None:
++    summary = summarize_month(100, [])
++    with pytest.raises(AttributeError):
++        summary.free_money_minor = 5  # type: ignore[misc]
+diff --git a/Qeeva-Backend/apps/finance/tests/test_summary.py b/Qeeva-Backend/apps/finance/tests/test_summary.py
+new file mode 100644
+index 0000000..ae51ec6
+--- /dev/null
++++ b/Qeeva-Backend/apps/finance/tests/test_summary.py
+@@ -0,0 +1,104 @@
++"""Reading a month from the database and calculating it (``summarize_month_from_db``)."""
++
++from __future__ import annotations
++
++from datetime import date
++
++import pytest
++
++from apps.accounts.tests.helpers import create_profile
++from apps.finance.summary import summarize_month_from_db
++from apps.finance.tests.helpers import create_card, create_income, create_item, create_month
++
++pytestmark = pytest.mark.django_db
++
++
++def test_month_without_anything_is_all_zero() -> None:
++    summary = summarize_month_from_db(create_month(create_profile()))
++    assert summary.total_income_minor == 0
++    assert summary.planned_outflow_minor == 0
++    assert summary.free_money_minor == 0
++
++
++def test_income_lines_are_added_up() -> None:
++    month = create_month(create_profile())
++    create_income(month, 40_000, name="Salary")
++    create_income(month, 10_000, name="Side job")
++    assert summarize_month_from_db(month).total_income_minor == 50_000
++
++
++def test_the_owners_example_from_the_database() -> None:
++    profile = create_profile()
++    month = create_month(profile)
++    create_income(month, 50_000)
++    create_card(month, create_item(profile, "Groceries", "burn"), 45_000)
++    create_card(month, create_item(profile, "Car fund", "saving", target_minor=1_400_000), 10_000)
++    summary = summarize_month_from_db(month)
++    assert summary.free_money_minor == -5_000
++    assert summary.actual_saved_minor == 5_000
++    assert summary.saving_shortfall_minor == 5_000
++    assert summary.overspend_minor == 0
++
++
++def test_all_three_kinds_are_counted_in_their_own_totals() -> None:
++    profile = create_profile()
++    month = create_month(profile)
++    create_income(month, 100_000)
++    create_card(month, create_item(profile, "Rent", "burn"), 30_000)
++    create_card(month, create_item(profile, "Income tax", "tax"), 5_000)
++    create_card(month, create_item(profile, "Fund", "saving"), 10_000)
++    summary = summarize_month_from_db(month)
++    assert (summary.burn_minor, summary.tax_minor, summary.saving_target_minor) == (
++        30_000,
++        5_000,
++        10_000,
++    )
++
++
++def test_ignored_cards_are_left_out_and_come_back_when_not_ignored() -> None:
++    profile = create_profile()
++    month = create_month(profile)
++    create_income(month, 50_000)
++    card = create_card(month, create_item(profile, "Rent", "burn"), 20_000, is_ignored=True)
++    assert summarize_month_from_db(month).real_expense_minor == 0
++    card.is_ignored = False
++    card.save()
++    assert summarize_month_from_db(month).real_expense_minor == 20_000
++
++
++def test_several_cards_of_the_same_item_in_a_month_are_all_counted() -> None:
++    profile = create_profile()
++    month = create_month(profile)
++    item = create_item(profile, "Food", "burn")
++    create_card(month, item, 1_000, importance="want")
++    create_card(month, item, 2_000, importance="must")
++    assert summarize_month_from_db(month).burn_minor == 3_000
++
++
++def test_other_months_and_other_users_are_not_mixed_in() -> None:
++    mine, other = create_profile("mine_1"), create_profile("other_1")
++    my_month = create_month(mine, date(2026, 11, 1))
++    create_income(my_month, 10_000)
++    create_card(my_month, create_item(mine, "Rent", "burn"), 4_000)
++    # Another month of the same user, and the same month of another user.
++    other_month_same_user = create_month(mine, date(2026, 10, 1))
++    create_income(other_month_same_user, 999_999)
++    create_card(other_month_same_user, create_item(mine, "Old", "burn"), 888_888)
++    their_month = create_month(other, date(2026, 11, 1))
++    create_income(their_month, 777_777)
++    create_card(their_month, create_item(other, "Rent", "burn"), 666_666)
++
++    summary = summarize_month_from_db(my_month)
++    assert summary.total_income_minor == 10_000
++    assert summary.real_expense_minor == 4_000
++
++
++def test_it_uses_a_fixed_number_of_queries(django_assert_num_queries: object) -> None:
++    profile = create_profile()
++    month = create_month(profile)
++    create_income(month, 1_000)
++    for index in range(5):
++        create_card(month, create_item(profile, f"Item {index}", "burn"), 100)
++    # One query for the income total and one for all cards, however many cards there are.
++    with django_assert_num_queries(2):  # type: ignore[operator]
++        summarize_month_from_db(month)
+diff --git a/Qeeva-Backend/apps/finance/tests/vectors/month_summary.json b/Qeeva-Backend/apps/finance/tests/vectors/month_summary.json
+new file mode 100644
+index 0000000..c7849e5
+--- /dev/null
++++ b/Qeeva-Backend/apps/finance/tests/vectors/month_summary.json
+@@ -0,0 +1,97 @@
++{
++  "about": "Shared test vectors for the month formulas. Money is in minor units (cents). The Python code runs them today; the Angular FinancialCalculatorService must give the same numbers (plan 20261114-frontend-backend-alignment, step 1). Keys of 'expected' are the MonthSummary fields.",
++  "cases": [
++    {
++      "name": "empty month",
++      "income": 0,
++      "cards": [],
++      "expected": {"planned_outflow": 0, "free_money": 0, "real_expense": 0, "savings_balance": 0, "actual_saved": 0, "overspend": 0, "saving_shortfall": 0}
++    },
++    {
++      "name": "income only",
++      "income": 50000,
++      "cards": [],
++      "expected": {"planned_outflow": 0, "free_money": 50000, "real_expense": 0, "savings_balance": 50000, "actual_saved": 50000, "overspend": 0, "saving_shortfall": 0}
++    },
++    {
++      "name": "healthy month: income 500, burn 200, tax 50, saving 100",
++      "income": 50000,
++      "cards": [
++        {"type": "burn", "amount": 20000},
++        {"type": "tax", "amount": 5000},
++        {"type": "saving", "amount": 10000}
++      ],
++      "expected": {"planned_outflow": 35000, "free_money": 15000, "real_expense": 25000, "savings_balance": 25000, "actual_saved": 25000, "overspend": 0, "saving_shortfall": 0}
++    },
++    {
++      "name": "the owner's example: income 500, planned outflow 550 of which saving 100",
++      "income": 50000,
++      "cards": [
++        {"type": "burn", "amount": 45000},
++        {"type": "saving", "amount": 10000}
++      ],
++      "expected": {"planned_outflow": 55000, "free_money": -5000, "real_expense": 45000, "savings_balance": 5000, "actual_saved": 5000, "overspend": 0, "saving_shortfall": 5000}
++    },
++    {
++      "name": "real spending is more than income: nothing is saved, whole saving target is missed",
++      "income": 50000,
++      "cards": [
++        {"type": "burn", "amount": 55000},
++        {"type": "saving", "amount": 10000}
++      ],
++      "expected": {"planned_outflow": 65000, "free_money": -15000, "real_expense": 55000, "savings_balance": -5000, "actual_saved": 0, "overspend": 5000, "saving_shortfall": 10000}
++    },
++    {
++      "name": "spending exactly equals income",
++      "income": 50000,
++      "cards": [
++        {"type": "burn", "amount": 40000},
++        {"type": "tax", "amount": 10000},
++        {"type": "saving", "amount": 10000}
++      ],
++      "expected": {"planned_outflow": 60000, "free_money": -10000, "real_expense": 50000, "savings_balance": 0, "actual_saved": 0, "overspend": 0, "saving_shortfall": 10000}
++    },
++    {
++      "name": "leftover is bigger than the saving target: no shortfall",
++      "income": 100000,
++      "cards": [
++        {"type": "burn", "amount": 20000},
++        {"type": "saving", "amount": 10000}
++      ],
++      "expected": {"planned_outflow": 30000, "free_money": 70000, "real_expense": 20000, "savings_balance": 80000, "actual_saved": 80000, "overspend": 0, "saving_shortfall": 0}
++    },
++    {
++      "name": "ignored cards do not count",
++      "income": 50000,
++      "cards": [
++        {"type": "burn", "amount": 20000},
++        {"type": "burn", "amount": 99999, "ignored": true},
++        {"type": "tax", "amount": 99999, "ignored": true},
++        {"type": "saving", "amount": 99999, "ignored": true}
++      ],
++      "expected": {"planned_outflow": 20000, "free_money": 30000, "real_expense": 20000, "savings_balance": 30000, "actual_saved": 30000, "overspend": 0, "saving_shortfall": 0}
++    },
++    {
++      "name": "saving only, no income",
++      "income": 0,
++      "cards": [{"type": "saving", "amount": 10000}],
++      "expected": {"planned_outflow": 10000, "free_money": -10000, "real_expense": 0, "savings_balance": 0, "actual_saved": 0, "overspend": 0, "saving_shortfall": 10000}
++    },
++    {
++      "name": "cents are exact (no float rounding)",
++      "income": 100010,
++      "cards": [
++        {"type": "burn", "amount": 33},
++        {"type": "burn", "amount": 66},
++        {"type": "tax", "amount": 1}
++      ],
++      "expected": {"planned_outflow": 100, "free_money": 99910, "real_expense": 100, "savings_balance": 99910, "actual_saved": 99910, "overspend": 0, "saving_shortfall": 0}
++    },
++    {
++      "name": "large amounts fit",
++      "income": 9000000000000,
++      "cards": [{"type": "burn", "amount": 8999999999999}],
++      "expected": {"planned_outflow": 8999999999999, "free_money": 1, "real_expense": 8999999999999, "savings_balance": 1, "actual_saved": 1, "overspend": 0, "saving_shortfall": 0}
++    }
++  ]
++}
+diff --git a/plans/decisions/decision-log.md b/plans/decisions/decision-log.md
+index 9828318..475975e 100644
+--- a/plans/decisions/decision-log.md
++++ b/plans/decisions/decision-log.md
+@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe
+ decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
+ Arabic; wording here is a faithful summary, not a new decision.
+ 
+-**Numbers:** D-001 to D-107 are used. **Next free number: D-108.** Never reuse or renumber one.
++**Numbers:** D-001 to D-109 are used. **Next free number: D-110.** Never reuse or renumber one.
+ 
+ **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
+ (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
+@@ -56,9 +56,11 @@ them says. Confirm them if one looks wrong.
+ | D-102 | approved (user, 2026-11-15) | A database host written as `localhost` is read as `127.0.0.1` (in `parse_database_url`). Measured on the user's Windows machine with Docker: connecting through `localhost` took 15,027 ms, through `127.0.0.1` 19 ms, per connection. The test suite opens many connections, so the 145 tests took 393 s instead of seconds. Probable cause (not proven): Windows tries IPv6 `::1` first and Docker publishes the port on IPv4 only. `[::1]` and every other host are left as written. Confirmed on the user's Windows machine after patch 0011: 164 tests passed in 2.53 s (before: 145 in 393 s). |
+ | D-103 | AI choice, please review | Item name comparison (`items.name_key`) follows D-056 and D-057, not only "trim + lowercase" as the blueprint said: surrounding spaces and letter case are ignored, every alef form counts as one letter, teh marbuta = heh, alef maksura = yeh, diacritics and tatweel are dropped, Arabic-Indic and Persian digits equal 0-9 (the digit rule is the assumption D-057 already names). Django computes the key in `Item.save()` (the stored name is unchanged). The Angular `normalizeName` only trims and lowercases today; making it match is part of the alignment phase (D-096). |
+ | D-104 | AI choice, please review | "No symbols" in item names (D-056) is checked in Python (`validate_item_name`: letters, digits, marks and single spaces) and **not** as a database CHECK, because PostgreSQL character classes depend on the server's locale and the rule would then behave differently per machine. The database still enforces length 1-40 and no leading, trailing or double spaces. |
+-| D-105 | AI choice, please review | Delete rules of the finance tables: deleting a user (or profile) removes all of the user's finance rows; deleting a month removes its income lines and cards; deleting an item removes its merge dismissals; an item that still has cards **cannot** be deleted (the user merges or deletes the cards first; `NO ACTION` in the database, `RESTRICT` in Django). Every child row also keeps its own `user_id` foreign key to `profiles`, and every link to a month or item is a composite key `(id, user_id)`, so a card can never join another user's month or item. |
+-| D-106 | AI choice, please review | A merge dismissal (D-053) is stored in one fixed order: `item_a_id` is the smaller id (CHECK `item_a_id < item_b_id`), so "A with B" and "B with A" are one row and an item cannot be dismissed against itself. `ItemMergeDismissal.ordered_pair` puts two ids in that order. |
++| D-105 | approved (user, 2026-11-15) | Delete rules of the finance tables: deleting a user (or profile) removes all of the user's finance rows; deleting a month removes its income lines and cards; deleting an item removes its merge dismissals; an item that still has cards **cannot** be deleted (the user merges or deletes the cards first; `NO ACTION` in the database, `RESTRICT` in Django). Every child row also keeps its own `user_id` foreign key to `profiles`, and every link to a month or item is a composite key `(id, user_id)`, so a card can never join another user's month or item. |
++| D-106 | approved (user, 2026-11-15) | A merge dismissal (D-053) is stored in one fixed order: `item_a_id` is the smaller id (CHECK `item_a_id < item_b_id`), so "A with B" and "B with A" are one row and an item cannot be dismissed against itself. `ItemMergeDismissal.ordered_pair` puts two ids in that order. |
+ | D-107 | AI choice, please review | Small constraints the blueprint left open: `items.target_minor` only on saving items (database CHECK, D-073 defers a Tax goal); `month_items.unit_price_minor` is NULL or >= 0; a month has no cap on how many income lines it holds (D-041); `hours_per_day` is `numeric(4,2)`. Tables built with D-093 and D-097 as approved: no manual savings table, no `is_reducible` column. |
++| D-108 | approved (user, 2026-11-15) | Merging items by hand is always available and never depends on a dismissed suggestion (D-053, D-106). The user can open Setup Items (search) or click an item in an old month and merge it with another item, for chosen months or for the whole timeline. The dismissals table only remembers "do not suggest this pair again". The merge logic itself (partial merge, what happens when both items have a card in the same month) is a future service, not built. |
++| D-109 | AI choice, please review | The calculation layer is pure Python in `apps/finance/calculations.py`: integer minor units only (no division, no rounding), ignored cards are left out, a negative amount or an unknown item type raises `ValueError`. Formulas are exactly the approved dashboard formulas (they also equal `financial-calculator.service.ts`). Income of a month is the sum of its income lines (D-041). `summary.py` reads a month from the database and calls it. No endpoint. |
+ 
+ ## Product
+ 
+diff --git a/plans/plans-Backend/20261115-calculation-layer.md b/plans/plans-Backend/20261115-calculation-layer.md
+new file mode 100644
+index 0000000..798acad
+--- /dev/null
++++ b/plans/plans-Backend/20261115-calculation-layer.md
+@@ -0,0 +1,43 @@
++---
++title: "Calculation layer: month summary"
++author: "Claude"
++date: "2026-11-15"
++status: "done"
++---
++
++# Calculation layer: month summary
++
++## TL;DR
++
++The dashboard formulas (planned outflow, free money, real expense, savings balance, actual saved,
++overspend, saving shortfall) now exist in Python, as pure functions on integer minor units, with a
++small database reader. The same cases are written in a neutral JSON file so the Angular calculator
++can be checked against them later. No endpoint.
++
++## Steps
++
++1. [x] `apps/finance/calculations.py`: `CardAmount`, `MonthSummary`, `summarize_month` (D-109).
++2. [x] `apps/finance/summary.py`: `summarize_month_from_db(month)` (two queries).
++3. [x] Shared vectors: `apps/finance/tests/vectors/month_summary.json` (11 cases, includes the owner's example).
++4. [x] Tests: vectors, owner's examples, ignored cards, invalid input, identities on 2,000 seeded random months, database reader (isolation between months and users, query count).
++5. [x] Checked that broken formulas make the tests fail (three deliberate mistakes tried).
++6. [ ] Run the same vectors in the Angular `FinancialCalculatorService` (needs the user's approval: outside `Qeeva-Backend`; the frontend works in dollars, the vectors in cents).
++7. [ ] Next parts: saving allocation, saving goals and ETA, hourly rate and hours of life (each needs the user's go-ahead on details such as rounding).
++
++## Relevant files
++
++- `Qeeva-Backend/apps/finance/calculations.py`, `summary.py`
++- `Qeeva-Backend/apps/finance/tests/test_calculations.py`, `test_summary.py`, `vectors/month_summary.json`
++- `Qeeva-Frontend/src/app/@SERVICES/financial-calculator.service.ts` (reference; unchanged)
++
++## Verification
++
++- `cd Qeeva-Backend`, Docker database running, `QEEVA_TEST_DATABASE_URL` set: `python -m pytest apps/finance -q`.
++- The formula tests need no database and also run without the variable.
++
++## Decisions
++
++D-108 (manual merge is always available), D-109 (shape of the calculation layer). The formulas are the
++approved dashboard spec, so they are not new decisions. The owner's first example (income 500, saving
++goal 100, expense 550) fits the formulas when the 550 is the planned outflow: free money -50,
++actual saved 50, shortfall 50, overspend 0.
+-- 
+2.43.0
+
