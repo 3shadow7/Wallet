@@ -17,7 +17,7 @@ message) and write the answer here and in the decision log. No table is built be
 
 ## Steps
 
-1. [x] Area 1 (data design): D-117 approved: one nullable column on the saving card for the pick. D-111 (deficit rule) stays a proposal; the default while no pick exists is a calculation question for later.
+1. [x] Area 1 (data design): D-117 approved (one nullable `reduction_minor` column on the saving card for the pick). D-111 approved: the deficit (and the editing-an-old-month gap, D-119) lowers the month's not-yet-completed saving cards; the default is pro-rata, a tap overrides it, nothing is forced or deleted. D-120 (global undo) deferred.
 2. [ ] Area 2: saving goals, accumulation, notifications (D-071, D-072), ETA. In progress: accumulation, goal hit, stop-repeating and ETA are calculated (no table); open: where an amount saved before Qeeva lives (the user's idea D-118, approved: a funds ledger with "move into item" entries; gap rule D-119 approved: the month's money fills the gap before the planned saving reaches its items, through the same `reduction_minor` pick as D-111), and notification state.
 3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115).
 4. [ ] Area 4: tax: percentage, several taxes, tax goals, Zakat helper (D-112, D-113, D-114).

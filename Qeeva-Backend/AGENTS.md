@@ -251,13 +251,14 @@ to keep one question per message and to keep the `.md` files updated.
 **Done in the design:** Area 1 (D-117 approved). D-119 approved: the free funds can go negative after editing an old month; the next months' money fills that gap first (free leftover, then the planned saving through `reduction_minor`); Regular sees a notice, Advanced also gets a "fix" that lowers one saving item. Funds pool and start amounts (D-118 approved: total funds are one pool, a saving item holds a part of it, the start amount is a ledger entry "move to item", a move larger than the free funds is refused; the ledger table `fund_entries` also serves the manual savings list).
 
 **Waiting for the user's answer:**
-* D-111 (deficit rule) still has an open default: what the app does while the user has not picked which saving item gives. D-119 (gap rule) is approved and reuses the same pick.
+* Nothing is open in Area 1. D-111 and D-119 are approved with one rule: the deficit and the old-month gap both lower the month's not-yet-completed saving cards, pro-rata by default, a tap overrides it (`reduction_minor`), nothing forced or deleted. D-120 (global undo) is a deferred idea.
 * D-107 (small constraints; point 1, the optional saving target, is confirmed) and D-109 (point 5,
   income = sum of income lines, needs a longer talk in Area 3). Both stay "AI choice" until he agrees.
 * D-111 (deficit rule) is a proposal with details open.
 
 **Ideas to keep in mind (deferred):** percentage tax, several taxes, tax goals, Zakat helper (D-112 to
-D-114), time as minutes (D-115), manual savings and debit/credit (D-093), item links (D-092).
+D-114), time as minutes (D-115), manual savings and debit/credit (D-093), item links (D-092), global
+undo with soft-delete tombstones (D-120, matters for sync).
 
 **Not touched yet:** Supabase (read-only so far, nothing applied; D-084), JWT key check, Angular
 vectors run, any API endpoint. Month deletion rule is D-110 (for when the API exists).
