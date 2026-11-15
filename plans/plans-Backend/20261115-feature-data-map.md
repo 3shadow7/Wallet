@@ -17,8 +17,8 @@ message) and write the answer here and in the decision log. No table is built be
 
 ## Steps
 
-1. [ ] Area 1: covering a deficit and the saved amount per saving item (D-111). Proposal D-117 (one nullable column on the saving card) waits for the user's yes.
-2. [ ] Area 2: saving goals, accumulation, notifications (D-071, D-072), ETA.
+1. [x] Area 1 (data design): D-117 approved: one nullable column on the saving card for the pick. D-111 (deficit rule) stays a proposal; the default while no pick exists is a calculation question for later.
+2. [ ] Area 2: saving goals, accumulation, notifications (D-071, D-072), ETA. In progress: accumulation, goal hit, stop-repeating and ETA are calculated (no table); open: where an amount saved before Qeeva lives (the user's idea D-118, approved: a funds ledger with "move into item" entries; gap rule D-119 waits for his yes), and notification state.
 3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115).
 4. [ ] Area 4: tax: percentage, several taxes, tax goals, Zakat helper (D-112, D-113, D-114).
 5. [ ] Area 5: editing history and recalculating charts.
@@ -36,7 +36,7 @@ message) and write the answer here and in the decision log. No table is built be
 | 3 Income and time | Regular: one income, time in h:mm. Advanced: several income types, hourly rate summed into "Product Price", custom month boundary, time as h:mm or decimal. | `month_incomes` (amount, hours_per_day numeric, days_per_week, override, manual rate). `months.month_start` is the 1st. | Minutes instead of decimal hours (D-115). Income rule for several lines (D-109 point 5). Month boundary column for Advanced. |
 | 4 Tax | Fixed amount (built). Percentage of income or of total funds. Several taxes. Goal for a tax. Zakat helper with thresholds for money, gold, livestock; opt-in; may add or remove a tax item. | Tax item with a fixed amount card. Target is saving-only (CHECK, D-107). | What "total funds" is; holdings (gold grams, animal counts) as data; suggest vs auto (D-032); how percentage taxes combine. |
 | 5 History edits | Editing a past month recomputes charts. | Nothing is stored derived, so recalculation is free. | Charts' cache, if any, later. |
-| 6 Credits, manual savings, links | Gifts, emergency, debts with a card and logic; manual savings list; linked items. | Not built (D-092, D-093). | All open; design together. |
+| 6 Credits, manual savings, links | Gifts, emergency, debts with a card and logic; manual savings list; linked items; the funds ledger of D-118 (opening funds, manual add/withdraw, move into or out of a saving item). | Not built (D-092, D-093). | All open; design together. The ledger is the leading idea for the manual savings list. |
 | 7 Pending list | Bank, voice and camera items wait for a name and confirmation before joining the log. | Not built; the items table needs no change (D-013). | Table shape. |
 | 8 Sync and devices | Offline first; push/pull when asked; device list; conflicts. | Nothing yet. | Conflict rule, ids from the client, tombstones for deletes. |
 | 9 Account | Plans/waitlist, consents, audit log, export/delete, notifications, Telegram bot token and linking, Community, language, Advanced switch. | `profiles`, `username_reservations`, `user_settings`. | Each is its own small design. |

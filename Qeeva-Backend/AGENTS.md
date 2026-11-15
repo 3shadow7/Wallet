@@ -248,8 +248,10 @@ runs `git pull`, `git am`, `git push`). A docs patch with D-103 to D-117 and the
 anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
 to keep one question per message and to keep the `.md` files updated.
 
+**Done in the design:** Area 1 (D-117 approved). Funds pool and start amounts (D-118 approved: total funds are one pool, a saving item holds a part of it, the start amount is a ledger entry "move to item", a move larger than the free funds is refused; the ledger table `fund_entries` also serves the manual savings list).
+
 **Waiting for the user's answer:**
-* D-117: one nullable column on the saving card for the pick (recommended yes). Next area: goals.
+* D-119: gap in the free funds after editing an old month (notice for Regular; notice plus "fix" for Advanced; next month's surplus fills it). One open point: should the planned saving also fill the gap first (recommended no).
 * D-107 (small constraints; point 1, the optional saving target, is confirmed) and D-109 (point 5,
   income = sum of income lines, needs a longer talk in Area 3). Both stay "AI choice" until he agrees.
 * D-111 (deficit rule) is a proposal with details open.
