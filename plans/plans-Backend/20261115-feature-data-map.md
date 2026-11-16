@@ -18,8 +18,8 @@ message) and write the answer here and in the decision log. No table is built be
 ## Steps
 
 1. [x] Area 1 (data design): D-117 approved (one nullable `reduction_minor` column on the saving card for the pick). D-111 approved: the deficit (and the editing-an-old-month gap, D-119) lowers the month's not-yet-completed saving cards; the default is pro-rata, a tap overrides it, nothing is forced or deleted. D-120 (global undo) deferred.
-2. [ ] Area 2: saving goals, accumulation, notifications (D-071, D-072), ETA. In progress: accumulation, goal hit, stop-repeating and ETA are calculated (no table); open: where an amount saved before Qeeva lives (the user's idea D-118, approved: a funds ledger with "move into item" entries; gap rule D-119 approved: the month's money fills the gap before the planned saving reaches its items, through the same `reduction_minor` pick as D-111), and notification state.
-3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115).
+2. [x] Area 2 (data design): accumulation, goal hit, stop-repeating and ETA are calculated (no table); notification state is one generic `notifications` table (D-121); an amount saved before Qeeva is a funds-ledger entry (D-118).
+3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115). Started: working time stays in hours (D-122, approved 2026-11-17; the minutes idea was dropped by the user). Still open: Regular single income vs Advanced several income types, the hourly rate summed into "Product Price", the custom month boundary, and D-109 point 5 (income = sum of the income lines).
 4. [ ] Area 4: tax: percentage, several taxes, tax goals, Zakat helper (D-112, D-113, D-114).
 5. [ ] Area 5: editing history and recalculating charts.
 6. [ ] Area 6: credits and debits (gifts, emergency, debts), manual savings (D-083, D-093), item links (D-092).
@@ -33,7 +33,7 @@ message) and write the answer here and in the decision log. No table is built be
 |---|---|---|---|
 | 1 Deficit and saved amount | When free money is below 0: lower this month's saving cards (the user picks which when there are several), then take the rest from earlier savings ("storage"), with a pick. A note on the card: planned 300, saved 200, why. | Card `amount_minor` (the plan) only. No place for "reduced by" or "taken from storage". `is_reducible` not built (D-097). | Default while the user has not picked (Angular splits pro-rata today); one column on the card or a separate table for the pick; the storage total should be derived from months plus a list of manual adjustments, not a stored number (Angular keeps `totalSavings` as a stored number, which drifts when history is edited). |
 | 2 Goals | Accumulated saved amount per saving item across months; ignored months add 0; alert at the target; ETA from this month's saved amount; notifications at 25/50/75/100%. | `items.target_minor` (saving only). Accumulation is calculated, but it needs Area 1's saved amounts. | Where notification state (seen, sent) lives. |
-| 3 Income and time | Regular: one income, time in h:mm. Advanced: several income types, hourly rate summed into "Product Price", custom month boundary, time as h:mm or decimal. | `month_incomes` (amount, hours_per_day numeric, days_per_week, override, manual rate). `months.month_start` is the 1st. | Minutes instead of decimal hours (D-115). Income rule for several lines (D-109 point 5). Month boundary column for Advanced. |
+| 3 Income and time | Regular: one income, time in h:mm. Advanced: several income types, hourly rate summed into "Product Price", custom month boundary, time as h:mm or decimal. | `month_incomes` (amount, hours_per_day numeric, days_per_week, override, manual rate). `months.month_start` is the 1st. | Hours stay as built: DECIDED, D-122 (no migration). Income rule for several lines (D-109 point 5). Month boundary column for Advanced. |
 | 4 Tax | Fixed amount (built). Percentage of income or of total funds. Several taxes. Goal for a tax. Zakat helper with thresholds for money, gold, livestock; opt-in; may add or remove a tax item. | Tax item with a fixed amount card. Target is saving-only (CHECK, D-107). | What "total funds" is; holdings (gold grams, animal counts) as data; suggest vs auto (D-032); how percentage taxes combine. |
 | 5 History edits | Editing a past month recomputes charts. | Nothing is stored derived, so recalculation is free. | Charts' cache, if any, later. |
 | 6 Credits, manual savings, links | Gifts, emergency, debts with a card and logic; manual savings list; linked items; the funds ledger of D-118 (opening funds, manual add/withdraw, move into or out of a saving item). | Not built (D-092, D-093). | All open; design together. The ledger is the leading idea for the manual savings list. |
@@ -50,6 +50,8 @@ message) and write the answer here and in the decision log. No table is built be
 - Several tax items: allowed; how percentage taxes combine is open.
 - A tax can have a target with notifications, for example a monthly car tax (D-114).
 - Time: Regular time format only; Advanced time or decimal; where to switch is open (D-115).
+- Time storage: hours stay (D-122; the user first picked minutes on 2026-11-16 and changed his mind on 2026-11-17). The tables designed so far (`reduction_minor`, `fund_entries`, `notifications`) are drawn in `schema-blueprint.md`, section "Designed, not built".
+- Deleting a month that has funds entries (2026-11-17, his popup idea, D-123): the database refuses; the screen popup lists the cards and each entry, the user deletes everything or keeps ticked entries, which move to the next month. Deleting a saving item returns its money to the free funds. Entries count in the pool even when the month is excluded.
 
 ## Relevant files
 
@@ -65,4 +67,4 @@ message) and write the answer here and in the decision log. No table is built be
 
 ## Decisions
 
-D-111 to D-115 (proposal and deferred ideas, 2026-11-15). Earlier: D-016, D-018, D-032, D-071 to D-073, D-083, D-092, D-093, D-097.
+D-111 to D-123 (approved decisions and deferred ideas, 2026-11-15 to 2026-11-17). Earlier: D-016, D-018, D-032, D-071 to D-073, D-083, D-092, D-093, D-097.

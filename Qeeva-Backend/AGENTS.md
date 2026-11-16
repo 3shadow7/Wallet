@@ -241,14 +241,19 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
 
 ## 10. Where we stopped (update this at the end of every work step, D-116)
 
-Date: 2026-11-15. Patches 0001-0014 are delivered to the user (0014 is applied on his Codespace; he
-runs `git pull`, `git am`, `git push`). A docs patch with D-103 to D-117 and the feature-data map follows.
+Date: 2026-11-17. Patches 0001-0018 are applied and pushed by the user (GitHub at 66f309b). Patch 0019 (docs only: D-121 notifications table, D-122 working time stays in hours, D-123 popup rule for deleting a month with funds entries, the "Designed, not built" tables in `docs/database/schema-blueprint.md`) is delivered; he applies it from the repo root with `git am` and then `git push`.
 
 **Path A (current):** finish the data design for every feature, then the calculation layer. Not built:
 anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
 to keep one question per message and to keep the `.md` files updated.
 
 **Done in the design:** Area 1 (D-117 approved). D-119 approved: the free funds can go negative after editing an old month; the next months' money fills that gap first (free leftover, then the planned saving through `reduction_minor`); Regular sees a notice, Advanced also gets a "fix" that lowers one saving item. Funds pool and start amounts (D-118 approved: total funds are one pool, a saving item holds a part of it, the start amount is a ledger entry "move to item", a move larger than the free funds is refused; the ledger table `fund_entries` also serves the manual savings list).
+
+**Area 2 done in the design** (D-121: one generic `notifications` table; the rest is calculated or in the funds ledger).
+
+**Area 3 started** (D-122, approved 2026-11-17): working time stays in hours as built (the user first chose minutes, then changed his mind); no migration. Next question in Area 3: Regular single income vs Advanced several income types (hourly rate summed into "Product Price"), the custom month boundary, and D-109 point 5 (income = sum of income lines).
+
+**Funds-entry deletion** (D-123, approved 2026-11-17): a month with funds entries cannot be deleted in the database; the screen popup lets the user delete everything or keep ticked entries (they move to the next month). Deleting a saving item returns its money to the free funds.
 
 **Waiting for the user's answer:**
 * Nothing is open in Area 1. D-111 and D-119 are approved with one rule: the deficit and the old-month gap both lower the month's not-yet-completed saving cards, pro-rata by default, a tap overrides it (`reduction_minor`), nothing forced or deleted. D-120 (global undo) is a deferred idea.
@@ -257,7 +262,7 @@ to keep one question per message and to keep the `.md` files updated.
 * D-111 (deficit rule) is a proposal with details open.
 
 **Ideas to keep in mind (deferred):** percentage tax, several taxes, tax goals, Zakat helper (D-112 to
-D-114), time as minutes (D-115), manual savings and debit/credit (D-093), item links (D-092), global
+D-114), time input format on screen (D-115; storage stays in hours, D-122), manual savings and debit/credit (D-093), item links (D-092), global
 undo with soft-delete tombstones (D-120, matters for sync).
 
 **Not touched yet:** Supabase (read-only so far, nothing applied; D-084), JWT key check, Angular

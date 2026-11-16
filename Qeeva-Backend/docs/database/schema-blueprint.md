@@ -47,7 +47,7 @@ the foreign keys (SQL), 0003 closes the tables to the Data API.
 `id`, `user_id`, `month_id`, `name` (optional, 1-30), `amount_minor` bigint >= 0,
 `hours_per_day` numeric 0-24 (default 8), `days_per_week` smallint 1-7 (default 5),
 `work_hours_override` int 1-744 (optional, manual monthly hours), `hourly_rate_manual_minor`
-bigint > 0 (optional), timestamps. Computed, not stored: monthly hours = override, else
+bigint > 0 (optional), timestamps. Working time stays in hours (D-122). Computed, not stored: monthly hours = override, else
 `hours_per_day x days_per_week x 4`; hourly rate = manual rate, else `amount / monthly hours`.
 
 ### `items`
@@ -65,8 +65,60 @@ not a table (D-075).
 ### `item_merge_dismissals`
 `id`, `user_id`, `item_a_id`, `item_b_id`, `created_at`. Unique on the pair (D-053); `item_a_id < item_b_id` (D-106).
 
+## Designed, not built (approved designs; no migration yet)
+
+Same conventions as above. Each piece is built with the code that uses it (decision D-084 also applies to
+Supabase: nothing is applied without the user's explicit approval).
+
+### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
+| Column | Type | Rule |
+|---|---|---|
+| `reduction_minor` | bigint, null | NULL = not chosen (the app splits pro-rata by default); otherwise 0 up to the card's `amount_minor` (CHECK in the database); saving cards only (checked in Python, because the card does not store the item's type) |
+
+How much the card really saved this month is calculated from the month's totals and this pick (D-119). Build-time rule: if the user lowers the card's amount below the pick, the pick goes back to NULL.
+
+### `fund_entries` (owner field: `user_id`) (D-118, approved)
+The funds ledger: the user's total funds are one pool, a saving item holds a part of it. The pool total and
+the free part are calculated from these rows plus the months (never stored). It also covers the old "manual
+savings" idea (D-083, D-093).
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `month_id` | uuid | the month the entry belongs to; composite FK `(month_id, user_id)` so it cannot join another user's month |
+| `kind` | text | `opening`, `add`, `withdraw`, `to_item`, `from_item` (CHECK) |
+| `amount_minor` | bigint | > 0 (the kind says the direction) |
+| `item_id` | uuid, null | required for `to_item` and `from_item`, must be NULL for the other kinds (CHECK); composite FK `(item_id, user_id)`; saving items only (checked in Python) |
+| `note` | text, null | optional, 1-60 characters |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Rules (D-123, approved; details by the AI):
+- Each addition is its own row (the user adds 28, then 22, then 10 = three rows), so the user can keep or delete each one.
+- `month_id` delete rule is NO ACTION: a month that still has entries cannot be deleted. The screen shows a popup with the cards and
+  the entries, the total funds before and after, and the choice: delete everything, or delete the cards and keep the ticked entries
+  (each kept entry moves to the next month: the next existing month, else the next calendar month, created). One transaction.
+- `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message).
+- Entries always count in the funds pool, even when their month is excluded (D-037).
+
+### `notifications` (owner field: `user_id`) (D-121, approved; details by the AI)
+One generic table for every kind of message (goal progress now; tax goals, Zakat, Telegram later). A row is
+created the first time the app finds that something is newly true.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent) and `goal_next_month` (D-072); each new feature adds its kind with its migration |
+| `dedupe_key` | text | 1-200 characters; unique per user `(user_id, dedupe_key)`, for example `goal:<item id>:50`, so the same message is never created twice |
+| `payload` | jsonb, null | small extra data for the message (item name, percent, month); no money rules live here |
+| `created_at` | timestamptz | default now |
+| `seen_at` | timestamptz, null | NULL = not seen yet |
+
+Index on `(user_id, seen_at)` for the unread count. Default for the open question: a milestone that is lost and
+reached again after a history edit does **not** notify again (the unique key blocks it); the user can change this later.
+Channels (in-app, Telegram), settings and push are Area 9.
+
 ## Not computed into storage (by design)
-Item groups, monthly hours, hourly rate, each month's result and the savings total are calculated.
+Item groups, monthly working time, hourly rate, each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
 
 ## Formulas (from `description`; ignored items excluded everywhere)
 ```
@@ -83,6 +135,6 @@ below the target, the user picks which saving items shrink; at least one must st
 Never change a formula without the user's approval.
 
 ## Still to design
-Manual savings list (D-083, month question open), pending list (D-062/D-074), notifications
-(D-072), goals and shared targets, sync/devices, plans and waitlist, consents, audit logs, data
-export and account deletion flow, Community, debit/credit, multi-income pool rules.
+Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
+data export and account deletion flow, Community, debit/credit, multi-income rules and the custom month boundary
+(Area 3, in progress), percentage tax and Zakat helper (Area 4).
