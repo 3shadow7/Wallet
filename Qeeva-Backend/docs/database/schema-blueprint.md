@@ -92,14 +92,14 @@ savings" idea (D-083, D-093).
 | `note` | text, null | optional, 1-60 characters |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Rules (D-123, approved; one point open):
+Rules (D-123, approved):
 - Each addition is its own row (the user adds 28, then 22, then 10 = three rows), so the user can keep or delete each one.
 - Months are a calendar; "delete a month" erases its data. The month must be ignored first, then Delete opens a popup with the cards and the
   entries, the total funds before and after, and the choice: delete everything, or delete the cards and income lines and keep the ticked entries.
   **Kept entries stay in the same month** (nothing moves). If nothing is kept the month row is deleted, otherwise it stays and holds only those entries.
 - `month_id` delete rule is NO ACTION: a month that still has entries cannot be deleted by the database (safety net); the popup works in one transaction.
 - `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message; an Advanced user can switch it off, see `user_settings` below).
-- Open: do entries count in the funds pool while their month is ignored? Angular today: no. Recommended: always count (they are the user's own money).
+- Entries do not count in the funds pool while their month is ignored (decided, as Angular does today); no column is needed for this, it is a calculation rule. The History table's "Direct Additions" column of a month = that month's `opening` + `add` - `withdraw` entries (item moves do not change the total).
 
 ### New column on `user_settings`: switch off the delete-item confirm (D-123, approved)
 | Column | Type | Rule |
