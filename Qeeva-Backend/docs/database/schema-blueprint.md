@@ -92,13 +92,19 @@ savings" idea (D-083, D-093).
 | `note` | text, null | optional, 1-60 characters |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Rules (D-123, approved; details by the AI):
+Rules (D-123, approved; one point open):
 - Each addition is its own row (the user adds 28, then 22, then 10 = three rows), so the user can keep or delete each one.
-- `month_id` delete rule is NO ACTION: a month that still has entries cannot be deleted. The screen shows a popup with the cards and
-  the entries, the total funds before and after, and the choice: delete everything, or delete the cards and keep the ticked entries
-  (each kept entry moves to the next month: the next existing month, else the next calendar month, created). One transaction.
-- `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message).
-- Entries always count in the funds pool, even when their month is excluded (D-037).
+- Months are a calendar; "delete a month" erases its data. The month must be ignored first, then Delete opens a popup with the cards and the
+  entries, the total funds before and after, and the choice: delete everything, or delete the cards and income lines and keep the ticked entries.
+  **Kept entries stay in the same month** (nothing moves). If nothing is kept the month row is deleted, otherwise it stays and holds only those entries.
+- `month_id` delete rule is NO ACTION: a month that still has entries cannot be deleted by the database (safety net); the popup works in one transaction.
+- `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message; an Advanced user can switch it off, see `user_settings` below).
+- Open: do entries count in the funds pool while their month is ignored? Angular today: no. Recommended: always count (they are the user's own money).
+
+### New column on `user_settings`: switch off the delete-item confirm (D-123, approved)
+| Column | Type | Rule |
+|---|---|---|
+| `skip_item_delete_confirm` (working name) | boolean | default false; same pattern as `skip_merge_confirm`; only Advanced users see the switch (a screen rule, like D-079) |
 
 ### `notifications` (owner field: `user_id`) (D-121, approved; details by the AI)
 One generic table for every kind of message (goal progress now; tax goals, Zakat, Telegram later). A row is

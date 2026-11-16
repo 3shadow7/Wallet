@@ -51,7 +51,7 @@ message) and write the answer here and in the decision log. No table is built be
 - A tax can have a target with notifications, for example a monthly car tax (D-114).
 - Time: Regular time format only; Advanced time or decimal; where to switch is open (D-115).
 - Time storage: hours stay (D-122; the user first picked minutes on 2026-11-16 and changed his mind on 2026-11-17). The tables designed so far (`reduction_minor`, `fund_entries`, `notifications`) are drawn in `schema-blueprint.md`, section "Designed, not built".
-- Deleting a month that has funds entries (2026-11-17, his popup idea, D-123): the database refuses; the screen popup lists the cards and each entry, the user deletes everything or keeps ticked entries, which move to the next month. Deleting a saving item returns its money to the free funds. Entries count in the pool even when the month is excluded.
+- Deleting a month that has funds entries (2026-11-17, his popup idea, D-123, rewritten after he pointed to the Angular behavior): months are a calendar, so "delete" erases the month's data; the month is ignored first, then Delete opens a popup (cards and each entry listed; delete everything, or keep the ticked entries). Kept entries stay in the SAME month. The database refuses to delete a month that still has entries (safety net). Deleting a saving item returns its money to the free funds; an Advanced user can switch that confirm off (`user_settings.skip_item_delete_confirm`). OPEN: do funds entries count while their month is ignored (Angular today: no; recommended: yes). Small screen ideas that are not decisions go to `plans/plans-Backend/20261117-ideas-list.md`.
 
 ## Relevant files
 
