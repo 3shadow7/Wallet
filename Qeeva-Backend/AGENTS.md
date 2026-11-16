@@ -167,7 +167,7 @@ tell him to run `git pull`, `git am <patch>`, `git push`. Commits use `noreply@a
 and the attribution lines given by the session. Hooks that complain about unpushed commits
 refer to this limitation; explain it, do not force a push.
 
-## 8. Current state (2026-11-15)
+## 8. Current state (2026-11-17)
 
 Done and on GitHub (branch `build-django-as-what-db-schema-looks-like-cloude`):
 commits 1-2 foundation, 0003 test-settings fix, 0004 accounts app, 0005 Docker test database,
@@ -179,28 +179,32 @@ makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes t
 doc files (D-101); patch 0013 builds the five finance tables (models, migrations, 150 tests; D-103 to
 D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
 test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with PostgreSQL.
+Patches 0015-0018 (docs only) hold decisions D-103 to D-120 and the feature-data map; patches 0019-0021 (docs only, delivered
+2026-11-17) hold D-121 to D-123, the "Designed, not built" tables in the schema blueprint and the ideas list.
+A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-progress-summary.md`.
 
 Next candidates (the user's current path is **Path A**, section 10; B and C wait). Each needs his go-ahead:
-1. Account services: create profile on first login, change username (14-day wait, old name held
+1. Finish the data design (Path A): Area 3 continues, then Areas 4-9 of the feature map.
+2. After Path A, build what was designed, one area at a time with tests: `fund_entries`, `notifications`,
+   `month_items.reduction_minor`, `user_settings.skip_item_delete_confirm`; then extend the calculation layer
+   (deficit and old-month gap rules D-111 and D-119, goals) and run the same vectors in the Angular calculator
+   (alignment plan, step 1; the frontend is outside `Qeeva-Backend`, so it needs the user's approval).
+3. Account services: create profile on first login, change username (14-day wait, old name held
    30 days). Needs endpoints, so **scope approval first** (§4).
-2. More of the calculation layer, pure Python, no endpoint: saving allocation when the saved total
-   is below the target (the user chooses which saving items reduce, at least one must stay
-   reducible), saving goals (accumulated saved per item, goal-hit alert, ETA hint), hourly rate and
-   hours of life per item. Then run the same vectors in the Angular calculator (alignment plan,
-   step 1; the frontend is outside `Qeeva-Backend`, so it needs the user's approval).
-3. Manual savings list (D-083): unanswered question: does a hand-added saving go to the time it
-   was added automatically (A) or to a month the user picks (B)?
+4. Paths B and C: check Supabase `qeeva-dev` (JWT keys, Data API off, apply migrations with approval) and the
+   frontend/backend alignment.
 
 ## 9. Open items and known gaps
 
 * **Path A is a design conversation first (D-116).** `plans/plans-Backend/20261115-feature-data-map.md`
   lists every feature, including waiting-list ones, and what data it needs. Discuss one area at a time,
-  one question per message, only about what the database must store. Decisions D-111 to D-117 hold the
-  user's ideas of 2026-11-15 (deficit rule, percentage tax, Zakat helper, tax goals, time input).
+  one question per message, only about what the database must store. Decisions D-111 to D-123 hold the
+  user's ideas and approvals of 2026-11-15 to 2026-11-17 (deficit rule, funds pool, notifications, month-delete popup,
+  percentage tax, Zakat helper, tax goals, time input).
 
 * **Item links (Item Explorer plan):** postponed, D-092 (D-060 stands). Do not build a link table.
-* **Approved by the user on 2026-11-15 (D-093, D-097):** manual savings (D-083) are designed
-  later together with debit/credit; the per-card `is_reducible` flag is not added to
+* **Approved by the user on 2026-11-15 (D-093, D-097):** manual savings (D-083) were designed
+  later together with debit/credit (update: D-118 puts hand-added savings in the funds ledger `fund_entries`; debit/credit stays Area 6); the per-card `is_reducible` flag is not added to
   `month_items` (the frontend only carries it, no logic uses it). The finance tables are built
   without them.
 * **Stale agent and doc files outside `Qeeva-Backend/`: fixed in patch 0012 (D-101).** The
@@ -234,14 +238,14 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
 * With the pinned django-stubs, `Model.objects` is typed `Any` (also for Django's own `User`), so
   mypy is weaker on ORM calls. Re-check after upgrading the stubs.
 * Not yet decided: hosting, Django admin (deferred, D-080), per-request RLS (option B in D-087,
-  can be added later through a migration), multi-income pool rules, sync, devices, notifications,
+  can be added later through a migration), multi-income pool rules, sync, devices,
   plans/waitlist, consents, audit logs, export/delete flows, Community, Arabic UI.
 * Planned, not now: Telegram voice bot, bank import (pending list, D-062/D-074), Advanced-mode
   features, `POST /api/sync/batch` (client contract in `Qeeva-Frontend/AGENT_ONBOARDING.md`).
 
 ## 10. Where we stopped (update this at the end of every work step, D-116)
 
-Date: 2026-11-17. Patches 0001-0018 are applied and pushed. Patch 0019 (docs: D-121 notifications table, D-122 working time stays in hours, D-123 popup rule for deleting a month with funds entries, the "Designed, not built" tables in `docs/database/schema-blueprint.md`) was applied by the user. Patch 0020 (docs: D-123 rewritten to match the Angular month behavior, the Advanced switch `skip_item_delete_confirm`, a low-priority ideas list) is delivered and he is applying 0019 and 0020. Patch 0021 (docs: D-123 open point decided, History table notes, two more ideas) is delivered on top of them.
+Date: 2026-11-17. Patches 0001-0018 are applied and pushed. Patches 0019, 0020 and 0021 are docs only and delivered: 0019 (D-121 notifications table, D-122 working time stays in hours, first D-123 wording, the "Designed, not built" tables in `docs/database/schema-blueprint.md`), 0020 (D-123 rewritten to match the Angular month behavior, the Advanced switch `skip_item_delete_confirm`, the ideas list) and 0021 (D-123 open point decided, History table notes, two more ideas). On 2026-11-17 the user said he is applying 0019 and 0020, and that any change goes into 0021. Patch 0022 (docs: this progress snapshot and the AGENTS.md refresh) follows them.
 
 **Path A (current):** finish the data design for every feature, then the calculation layer. Not built:
 anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
@@ -256,10 +260,10 @@ to keep one question per message and to keep the `.md` files updated.
 **Funds-entry deletion** (D-123, approved 2026-11-17, rewritten after he pointed to Angular): months are a calendar, so deleting a month erases its data; the month is ignored first, then Delete opens a popup (delete everything, or keep the ticked funds entries, which stay in the SAME month). The database refuses to delete a month that still has entries. Deleting a saving item returns its money to the free funds (an Advanced user can switch the confirm message off, `user_settings.skip_item_delete_confirm`). DECIDED (his choice, as Angular): funds entries do not count while their month is ignored; one meaning of Ignore for every user mode. Small non-decision ideas live in `plans/plans-Backend/20261117-ideas-list.md`.
 
 **Waiting for the user's answer:**
-* Nothing is open in Area 1. D-111 and D-119 are approved with one rule: the deficit and the old-month gap both lower the month's not-yet-completed saving cards, pro-rata by default, a tap overrides it (`reduction_minor`), nothing forced or deleted. D-120 (global undo) is a deferred idea.
+* Area 3 question (asked 2026-11-17): which income lines repeat into the next month (D-036: income lines are copied automatically)? A: all lines; B: a yes/no column per line (recommended; the Angular `MonthlyIncome` type already has `isRecurring`); C: none for Advanced. Next after it: does a line like Bonus have working hours (hourly rate sum into "Product Price"), the custom month boundary, D-109 point 5.
 * D-107 (small constraints; point 1, the optional saving target, is confirmed) and D-109 (point 5,
   income = sum of income lines, needs a longer talk in Area 3). Both stay "AI choice" until he agrees.
-* D-111 (deficit rule) is a proposal with details open.
+* Nothing is open in Areas 1 and 2 or in D-123. D-111 and D-119 are approved with one rule: the deficit and the old-month gap both lower the month's not-yet-completed saving cards, pro-rata by default, a tap overrides it (`reduction_minor`), nothing forced or deleted. D-120 (global undo) is a deferred idea.
 
 **Ideas to keep in mind (deferred):** percentage tax, several taxes, tax goals, Zakat helper (D-112 to
 D-114), time input format on screen (D-115; storage stays in hours, D-122), manual savings and debit/credit (D-093), item links (D-092), global

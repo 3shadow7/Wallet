@@ -57,6 +57,7 @@ message) and write the answer here and in the decision log. No table is built be
 ## Relevant files
 
 - `Qeeva-Backend/docs/database/schema-blueprint.md`, `Qeeva-Backend/apps/finance/models.py`
+- `plans/plans-Backend/20261117-progress-summary.md` (what is done so far), `plans/plans-Backend/20261117-ideas-list.md`
 - `Qeeva-Backend/apps/finance/calculations.py`
 - `plans/decisions/decision-log.md`
 - `Qeeva-Frontend/src/app/@SERVICES/state/budget-state.service.ts` (how the single saving item case works today)
