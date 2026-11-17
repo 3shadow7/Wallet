@@ -90,14 +90,15 @@ at the job start date and not in January. Other repeat types can be added later 
 One CHECK: both are empty or both are set. The existing range CHECKs stay (a NULL passes them). A line with no working time is a Bonus, rent or gift line.
 Rules (calculated, never stored): monthly hours = `work_hours_override` if set, else `hours_per_day x days_per_week x 4` if both are set, else none; hourly rate = `hourly_rate_manual_minor` if set, else `amount / monthly hours` when monthly hours are more than 0, else none. A line with no hourly rate is left out when rates are combined (how several lines combine is still open). The defaults 8 and 5 are dropped so the database never invents working time (D-032); a screen may pre-fill them. Built rows keep their values.
 
-### New columns on `month_items`: percentage tax (D-130, approved; columns and rounding by the AI)
+### New columns on `month_items`: percentage tax (D-130 and D-134, approved; columns and rounding by the AI)
 | Column | Type | Rule |
 |---|---|---|
 | `rate_basis_points` | integer, null | 1 to 10000 (10% = 1000); only on tax cards (checked in Python) |
 | `rate_base` | text, null | `income` or `funds` (CHECK); set exactly when `rate_basis_points` is set |
+| `threshold_minor` | bigint, null | > 0; only on a percentage card (CHECK); the amount is 0 while the base is below it (D-134) |
 | `amount_minor` | bigint, now null | empty on a percentage card; >= 0 when set |
 
-One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty). The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
+One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty); a threshold is allowed only on a percentage card. The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |
@@ -130,6 +131,20 @@ Rules (D-123, approved):
 - `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message; an Advanced user can switch it off, see `user_settings` below).
 - Entries do not count in the funds pool while their month is ignored (decided, as Angular does today); no column is needed for this, it is a calculation rule. The History table's "Direct Additions" column of a month = that month's `opening` + `add` - `withdraw` entries (item moves do not change the total).
 
+### `holdings` (owner field: `user_id`) (D-133, approved; details by the AI)
+Gold and silver the user owns, typed by him, as dated snapshots. The app never fetches prices (D-032, offline first). Livestock is a later design.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner |
+| `kind` | text | `gold` or `silver` (CHECK; the list can grow by migration) |
+| `as_of_month` | date | day 1 of the month the snapshot starts to count |
+| `grams` | numeric(12,3) | >= 0 (0 = he sold it) |
+| `price_per_gram_minor` | bigint | >= 0, typed by the user |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Unique `(user_id, kind, as_of_month)`. The value as of a month = for each kind the latest row with `as_of_month` not after that month: grams x price, rounded to the nearest cent (halves up); calculated, never stored. It is not linked to `months`, so deleting a month (D-123) never touches it. Example: in March 2027 the user records gold 100.000 g at 70.00 per gram: value 7,000.00 for March and every later month until he records a new snapshot.
+
 ### New column on `user_settings`: how the hourly rate is shown (D-128, approved; the formula is by the AI)
 | Column | Type | Rule |
 |---|---|---|
@@ -160,7 +175,7 @@ reached again after a history edit does **not** notify again (the unique key blo
 Channels (in-app, Telegram), settings and push are Area 9.
 
 ## Not computed into storage (by design)
-Item groups, monthly working time, hourly rate, the amount of a percentage tax card, each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
+Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the value of holdings, each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
 
 ## Formulas (from `description`; ignored items excluded everywhere)
 ```
@@ -178,4 +193,4 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, the Zakat helper (Area 4: yearly period on a tax card, holdings such as gold, the threshold, suggest vs auto). The custom month boundary is deferred (D-127).
+data export and account deletion flow, Community, debit/credit, the Zakat helper (Area 4: yearly period on a tax card, which funds moment Zakat uses, how the Zakat card is created; livestock later). The custom month boundary is deferred (D-127).
