@@ -198,7 +198,7 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
 
 * **Path A is a design conversation first (D-116).** `plans/plans-Backend/20261115-feature-data-map.md`
   lists every feature, including waiting-list ones, and what data it needs. Discuss one area at a time,
-  one question per message, only about what the database must store. Decisions D-111 to D-123 hold the
+  one to three questions per message (he asked on 2026-11-17 for two or more, to go faster), only about what the database must store. Decisions D-111 to D-123 hold the
   user's ideas and approvals of 2026-11-15 to 2026-11-17 (deficit rule, funds pool, notifications, month-delete popup,
   percentage tax, Zakat helper, tax goals, time input).
 
@@ -249,7 +249,7 @@ Date: 2026-11-17. Patches 0001-0018 are applied and pushed. Patches 0019, 0020 a
 
 **Path A (current):** finish the data design for every feature, then the calculation layer. Not built:
 anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
-to keep one question per message and to keep the `.md` files updated.
+to ask two or more questions per message (changed 2026-11-17) and to keep the `.md` files updated.
 
 **Done in the design:** Area 1 (D-117 approved). D-119 approved: the free funds can go negative after editing an old month; the next months' money fills that gap first (free leftover, then the planned saving through `reduction_minor`); Regular sees a notice, Advanced also gets a "fix" that lowers one saving item. Funds pool and start amounts (D-118 approved: total funds are one pool, a saving item holds a part of it, the start amount is a ledger entry "move to item", a move larger than the free funds is refused; the ledger table `fund_entries` also serves the manual savings list).
 
@@ -260,7 +260,7 @@ to keep one question per message and to keep the `.md` files updated.
 **Funds-entry deletion** (D-123, approved 2026-11-17, rewritten after he pointed to Angular): months are a calendar, so deleting a month erases its data; the month is ignored first, then Delete opens a popup (delete everything, or keep the ticked funds entries, which stay in the SAME month). The database refuses to delete a month that still has entries. Deleting a saving item returns its money to the free funds (an Advanced user can switch the confirm message off, `user_settings.skip_item_delete_confirm`). DECIDED (his choice, as Angular): funds entries do not count while their month is ignored; one meaning of Ignore for every user mode. Small non-decision ideas live in `plans/plans-Backend/20261117-ideas-list.md`.
 
 **Waiting for the user's answer:**
-* Area 3, answered 2026-11-17 (D-124): income lines copy automatically to the next month for both modes (option A), no repeat column. Open (the question I asked next): how a yearly line, such as a bonus once a year, enters the month: A spread over 12 months, or B counted only in the month it is received (a `frequency` column, working values monthly and yearly; AI recommends B). Then: does a line like Bonus have working hours (hourly rate sum into "Product Price"), the custom month boundary, D-109 point 5.
+* Area 3, answered 2026-11-17: income lines copy automatically for both modes, no repeat column (D-124); a yearly line counts only in the month it arrives, with `frequency` and `due_month` columns, the user picks the arrival month (D-125, column design by the AI). Asked next (answers pending): (1) working hours on an income line: nullable hours (a Bonus line has none, recommended) or monthly lines only; (2) the custom month boundary for Advanced: one start-day number in `user_settings` (recommended), per-month dates, or later; (3) confirm that a month's income = its monthly lines + its yearly lines due that month (closes D-109 point 5).
 * D-107 (small constraints; point 1, the optional saving target, is confirmed) and D-109 (point 5,
   income = sum of income lines, needs a longer talk in Area 3). Both stay "AI choice" until he agrees.
 * Nothing is open in Areas 1 and 2 or in D-123. D-111 and D-119 are approved with one rule: the deficit and the old-month gap both lower the month's not-yet-completed saving cards, pro-rata by default, a tap overrides it (`reduction_minor`), nothing forced or deleted. D-120 (global undo) is a deferred idea.

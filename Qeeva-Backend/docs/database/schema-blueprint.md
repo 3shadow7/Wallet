@@ -47,7 +47,7 @@ the foreign keys (SQL), 0003 closes the tables to the Data API.
 `id`, `user_id`, `month_id`, `name` (optional, 1-30), `amount_minor` bigint >= 0,
 `hours_per_day` numeric 0-24 (default 8), `days_per_week` smallint 1-7 (default 5),
 `work_hours_override` int 1-744 (optional, manual monthly hours), `hourly_rate_manual_minor`
-bigint > 0 (optional), timestamps. Working time stays in hours (D-122). Income lines copy to the next month automatically, so there is no repeat column (D-124); a yearly line may add a `frequency` column later (open). Computed, not stored: monthly hours = override, else
+bigint > 0 (optional), timestamps. Working time stays in hours (D-122). Income lines copy to the next month automatically, so there is no repeat column (D-124); yearly lines add two columns (D-125, below). Computed, not stored: monthly hours = override, else
 `hours_per_day x days_per_week x 4`; hourly rate = manual rate, else `amount / monthly hours`.
 
 ### `items`
@@ -69,6 +69,16 @@ not a table (D-075).
 
 Same conventions as above. Each piece is built with the code that uses it (decision D-084 also applies to
 Supabase: nothing is applied without the user's explicit approval).
+
+### New columns on `month_incomes`: yearly lines (D-125, idea approved; column design by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `frequency` | text | `monthly` or `yearly` (CHECK); default `monthly` |
+| `due_month` | smallint, null | 1 to 12; required when `frequency` is `yearly`, empty when `monthly` (one CHECK for both) |
+
+A yearly line is copied to every next month like all lines (D-124) and keeps its yearly amount, but it counts in a month's income only in its `due_month`;
+a month's income = its monthly lines + its yearly lines whose `due_month` is that month. The user picks the month it arrives (for example his work anniversary), so the year can start
+at the job start date and not in January. Other repeat types can be added later by changing the CHECK list.
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |

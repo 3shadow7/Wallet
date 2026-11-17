@@ -12,14 +12,14 @@ status: "draft"
 The user wants every table the project will ever need designed up front, including features that wait
 on the list, so a later feature adds tables or columns and never forces a rewrite. This document is
 the living map: for every feature, what data it needs, what is stored and what is calculated, what the
-database already has, and what is still open. We discuss one area at a time (one question per
-message) and write the answer here and in the decision log. No table is built before its area is approved.
+database already has, and what is still open. We discuss one area at a time (since 2026-11-17 two or more
+questions per message, at his request) and write the answer here and in the decision log. No table is built before its area is approved.
 
 ## Steps
 
 1. [x] Area 1 (data design): D-117 approved (one nullable `reduction_minor` column on the saving card for the pick). D-111 approved: the deficit (and the editing-an-old-month gap, D-119) lowers the month's not-yet-completed saving cards; the default is pro-rata, a tap overrides it, nothing is forced or deleted. D-120 (global undo) deferred.
 2. [x] Area 2 (data design): accumulation, goal hit, stop-repeating and ETA are calculated (no table); notification state is one generic `notifications` table (D-121); an amount saved before Qeeva is a funds-ledger entry (D-118).
-3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115). Started: working time stays in hours (D-122, approved 2026-11-17; the minutes idea was dropped by the user). Decided: income lines copy to the next month automatically for both modes, no repeat column (D-124, option A). Open: how a yearly line (a bonus once a year) enters the month. Still open: Regular single income vs Advanced several income types, the hourly rate summed into "Product Price", the custom month boundary, and D-109 point 5 (income = sum of the income lines).
+3. [ ] Area 3: income and working time (Regular vs Advanced, D-109 point 5, D-115). Started: working time stays in hours (D-122, approved 2026-11-17; the minutes idea was dropped by the user). Decided: income lines copy to the next month automatically for both modes, no repeat column (D-124, option A). Yearly lines (a bonus once a year) count only in the month they arrive, with `frequency` and `due_month` columns (D-125). Still open: Regular single income vs Advanced several income types, the hourly rate summed into "Product Price", the custom month boundary, and D-109 point 5 (income = sum of the income lines).
 4. [ ] Area 4: tax: percentage, several taxes, tax goals, Zakat helper (D-112, D-113, D-114).
 5. [ ] Area 5: editing history and recalculating charts.
 6. [ ] Area 6: credits and debits (gifts, emergency, debts), manual savings (D-083, D-093), item links (D-092).
