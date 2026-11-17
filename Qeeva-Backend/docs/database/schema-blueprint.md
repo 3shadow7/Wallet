@@ -46,7 +46,7 @@ the foreign keys (SQL), 0003 closes the tables to the Data API.
 ### `month_incomes`
 `id`, `user_id`, `month_id`, `name` (optional, 1-30), `amount_minor` bigint >= 0,
 `hours_per_day` numeric 0-24 (default 8), `days_per_week` smallint 1-7 (default 5),
-`work_hours_override` int 1-744 (optional, manual monthly hours), `hourly_rate_manual_minor`
+`work_hours_override` int 1-744 (optional, manual monthly hours; will become numeric(5,2) to accept parts of an hour, D-129), `hourly_rate_manual_minor`
 bigint > 0 (optional), timestamps. Working time stays in hours (D-122); both hours columns will become optional, a line may have no working time (D-126, designed below). Income lines copy to the next month automatically, so there is no repeat column (D-124); yearly lines add two columns (D-125, below). Computed, not stored: monthly hours = override, else
 `hours_per_day x days_per_week x 4`; hourly rate = manual rate, else `amount / monthly hours`.
 
@@ -80,11 +80,12 @@ A yearly line is copied to every next month like all lines (D-124) and keeps its
 a month's income = its monthly lines + its yearly lines whose `due_month` is that month (confirmed by the user on 2026-11-17, D-109 point 5). The user picks the month it arrives (for example his work anniversary), so the year can start
 at the job start date and not in January. Other repeat types can be added later by changing the CHECK list.
 
-### Change on `month_incomes`: working time may be empty (D-126, approved; details by the AI)
+### Change on `month_incomes`: working time may be empty (D-126) and manual monthly hours accept parts of an hour (D-129), approved; details by the AI
 | Column | Built today | After the change |
 |---|---|---|
 | `hours_per_day` | numeric(4,2), NOT NULL, default 8, 0 to 24 | nullable, no default, 0 to 24 when set |
 | `days_per_week` | smallint, NOT NULL, default 5, 1 to 7 | nullable, no default, 1 to 7 when set |
+| `work_hours_override` | integer, null, 1 to 744 | numeric(5,2), null, 1 to 744 (a widening: every built value stays) |
 
 One CHECK: both are empty or both are set. The existing range CHECKs stay (a NULL passes them). A line with no working time is a Bonus, rent or gift line.
 Rules (calculated, never stored): monthly hours = `work_hours_override` if set, else `hours_per_day x days_per_week x 4` if both are set, else none; hourly rate = `hourly_rate_manual_minor` if set, else `amount / monthly hours` when monthly hours are more than 0, else none. A line with no hourly rate is left out when rates are combined (how several lines combine is still open). The defaults 8 and 5 are dropped so the database never invents working time (D-032); a screen may pre-fill them. Built rows keep their values.
@@ -119,6 +120,13 @@ Rules (D-123, approved):
 - `month_id` delete rule is NO ACTION: a month that still has entries cannot be deleted by the database (safety net); the popup works in one transaction.
 - `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message; an Advanced user can switch it off, see `user_settings` below).
 - Entries do not count in the funds pool while their month is ignored (decided, as Angular does today); no column is needed for this, it is a calculation rule. The History table's "Direct Additions" column of a month = that month's `opening` + `add` - `withdraw` entries (item moves do not change the total).
+
+### New column on `user_settings`: how the hourly rate is shown (D-128, approved; the formula is by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `hourly_rate_mode` | text | `combined` or `per_income` (CHECK); default `combined` |
+
+Regular always sees one field (combined), whatever is stored; an Advanced user may choose `per_income` in settings (one field for each income line that has an hourly rate). Both are calculated, nothing about the rate is stored. Combined rate = the sum of the amounts that count in the month of the lines that have monthly hours, divided by the sum of their monthly hours (a line with no working time does not change it; a line that has only a manual rate takes part with hours = amount / manual rate). Example: Salary 800.00 for 160 h and Freelance 600.00 for 40 h: combined = 1400 / 200 = 7.00 per hour; per income = 5.00 and 15.00.
 
 ### New column on `user_settings`: switch off the delete-item confirm (D-123, approved)
 | Column | Type | Rule |
@@ -161,5 +169,4 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, how the hourly rates of several income lines combine (Area 3, in progress; the custom month boundary is deferred, D-127),
-percentage tax and Zakat helper (Area 4).
+data export and account deletion flow, Community, debit/credit, percentage tax and Zakat helper (Area 4). The custom month boundary is deferred (D-127).
