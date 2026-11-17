@@ -163,9 +163,24 @@ test results. Run `pytest --reuse-db` to keep `test_postgres` for inspection in 
 The cloud sandbox cannot push to GitHub (the repository is not in the session's authorized
 sources; do not work around the 403). Deliver numbered patches (`0001`..), each created with
 `git format-patch`, verified with `git am` on a fresh clone that matches the user's state, then
-tell him to run `git pull`, `git am <patch>`, `git push`. Commits use `noreply@anthropic.com`
-and the attribution lines given by the session. Hooks that complain about unpushed commits
-refer to this limitation; explain it, do not force a push.
+tell him to run the helper below (or, without it, `git pull`, `git am <patch>`, `git push`).
+Commits use `noreply@anthropic.com` and the attribution lines given by the session. Hooks that
+complain about unpushed commits refer to this limitation; explain it, do not force a push.
+
+Since patch 0025 the user applies patches with the helper `Qeeva-Backend/scripts/apply-patches.sh`.
+From `Qeeva-Backend`: `bash scripts/apply-patches.sh --clean <patch files in order>`. It runs
+`git am` once per file, skips a patch that is already applied (same subject in the log, or its
+changes are already in the files), cancels a failing patch cleanly with `git am --abort`, pushes
+once and never forces. With `--clean` it deletes the named `.patch` files, only when git does not
+track them and only after the push worked. Rules that go with it:
+
+- Patch files are never committed: they are only the delivery package, the history holds the commits.
+  Keep them out of the index (`git rm --cached -q -- '*.patch'` if some were added by hand).
+- Every commit subject carries the patch number as its scope: `type(NNNN): text`, for example
+  `docs(0025): ...`. Never write it in square brackets: `git am` strips a leading `[...]`.
+  Commits before 0025 have no number in the subject; do not rewrite them.
+- Never ask him to apply a patch that may already be applied: tell him to check
+  `git log --oneline -8` first, or just run the helper, which skips it.
 
 ## 8. Current state (2026-11-17)
 
@@ -182,6 +197,7 @@ test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with Postgre
 Patches 0015-0018 (docs only) hold decisions D-103 to D-120 and the feature-data map; patches 0019-0021 (docs only, delivered
 2026-11-17) hold D-121 to D-123, the "Designed, not built" tables in the schema blueprint and the ideas list.
 A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-progress-summary.md`.
+Patch 0025 adds the delivery helper `scripts/apply-patches.sh` (section 7); patch subjects now carry their number.
 
 Next candidates (the user's current path is **Path A**, section 10; B and C wait). Each needs his go-ahead:
 1. Finish the data design (Path A): Area 3 continues, then Areas 4-9 of the feature map.
