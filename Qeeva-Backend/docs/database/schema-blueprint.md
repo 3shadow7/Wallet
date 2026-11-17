@@ -57,7 +57,7 @@ comparison: case, Arabic spelling variants, digits; computed by Django in `apps/
 
 ### `month_items` (the cards)
 `id`, `user_id`, `month_id`, `item_id`, `importance` `want|must|emergency|gift` (default
-`want`), `amount_minor` >= 0, `quantity` int >= 1, `unit_price_minor` (NULL = the +1 / +N
+`want`), `amount_minor` >= 0 (will be empty on a percentage tax card, D-130), `quantity` int >= 1, `unit_price_minor` (NULL = the +1 / +N
 buttons are locked, D-065), `quantity_needs_review` boolean, `is_ignored` boolean, timestamps.
 Unique `(month_id, item_id, importance)`. A "group" (same item, several importances) is computed,
 not a table (D-075).
@@ -70,7 +70,7 @@ not a table (D-075).
 Same conventions as above. Each piece is built with the code that uses it (decision D-084 also applies to
 Supabase: nothing is applied without the user's explicit approval).
 
-### New columns on `month_incomes`: yearly lines (D-125, idea approved; column design by the AI)
+### New columns on `month_incomes`: yearly lines (D-125, approved)
 | Column | Type | Rule |
 |---|---|---|
 | `frequency` | text | `monthly` or `yearly` (CHECK); default `monthly` |
@@ -89,6 +89,15 @@ at the job start date and not in January. Other repeat types can be added later 
 
 One CHECK: both are empty or both are set. The existing range CHECKs stay (a NULL passes them). A line with no working time is a Bonus, rent or gift line.
 Rules (calculated, never stored): monthly hours = `work_hours_override` if set, else `hours_per_day x days_per_week x 4` if both are set, else none; hourly rate = `hourly_rate_manual_minor` if set, else `amount / monthly hours` when monthly hours are more than 0, else none. A line with no hourly rate is left out when rates are combined (how several lines combine is still open). The defaults 8 and 5 are dropped so the database never invents working time (D-032); a screen may pre-fill them. Built rows keep their values.
+
+### New columns on `month_items`: percentage tax (D-130, approved; columns and rounding by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `rate_basis_points` | integer, null | 1 to 10000 (10% = 1000); only on tax cards (checked in Python) |
+| `rate_base` | text, null | `income` or `funds` (CHECK); set exactly when `rate_basis_points` is set |
+| `amount_minor` | bigint, now null | empty on a percentage card; >= 0 when set |
+
+One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty). The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |
@@ -151,7 +160,7 @@ reached again after a history edit does **not** notify again (the unique key blo
 Channels (in-app, Telegram), settings and push are Area 9.
 
 ## Not computed into storage (by design)
-Item groups, monthly working time, hourly rate, each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
+Item groups, monthly working time, hourly rate, the amount of a percentage tax card, each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
 
 ## Formulas (from `description`; ignored items excluded everywhere)
 ```
@@ -169,4 +178,4 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, percentage tax and Zakat helper (Area 4). The custom month boundary is deferred (D-127).
+data export and account deletion flow, Community, debit/credit, the Zakat helper (Area 4: yearly period on a tax card, holdings such as gold, the threshold, suggest vs auto). The custom month boundary is deferred (D-127).
