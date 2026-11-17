@@ -124,7 +124,7 @@ System data: the same rows for every user, seeded by a migration, never edited b
 | `item_class_aliases` | `id`, `item_class_id` (FK), `word` (normalized like `name_key`, D-103), `language` (`en` now) | unique `(language, word)` |
 | `items.item_class_id` | uuid, null | FK to `item_classes`; one class per item; set automatically by a name match while the helper is on, removable by the user |
 
-Grams owned in a month = the latest typed snapshot in `holdings` (grams at the END of its month) + the weight of tagged purchase cards (not ignored) in the later months; price per gram = the newer of the snapshot price and the unit price of the latest tagged purchase. Calculated, never stored. Only gold and silver are calculated now; the animal classes are catalogued, their rules are a later design.
+Grams owned in a month = the latest typed snapshot in `holdings` (grams at the END of its month) + the weight of tagged purchase cards (not ignored) in the later months; price per gram = the newest row of `metal_prices` for the metal in his currency (D-142). Calculated, never stored. Only gold and silver are calculated now; the animal classes are catalogued, their rules are a later design.
 
 ### New column on `items`: the unit, and weight quantities (D-140, approved; design by the AI)
 | Column | Type | Rule |
@@ -133,6 +133,41 @@ Grams owned in a month = the latest typed snapshot in `holdings` (grams at the E
 | `month_items.quantity` | numeric(14,3) | > 0 (was an integer >= 1); whole numbers only while the unit is `piece` (checked in Python) |
 
 `unit_price_minor` is the price of ONE unit (a piece, a gram or a kg). Amount = quantity x unit price, rounded to the nearest cent (halves up). A different weight unit on an existing item is converted exactly (1 kg = 1,000 g). Examples: rice 2.500 kg at 3.20 per kg = 8.00; a gold ring 12.500 g at 70.00 per g = 875.00.
+
+### `zakat_payments` (owner field: `user_id`) (D-141, approved; design by the AI)
+The paid mark of a Zakat line. The Zakat group card and its lines are calculated; only the fact "he paid this line in this cycle" is stored.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `cycle_month` | date | day 1 of the due month of the cycle (D-135) |
+| `source_kind` | text | `funds`, `holding` or `item` (CHECK) |
+| `holding_kind` | text, null | `gold` or `silver`; required for `holding`, empty otherwise (CHECK) |
+| `item_id` | uuid, null | required for `item`, empty otherwise (CHECK); composite FK `(item_id, user_id)` |
+| `amount_minor` | bigint | > 0; the line's amount when he marked it paid, kept so a later price change never rewrites history |
+| `paid_at` | timestamptz | |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Unique per user, cycle and source. Toggling paid inserts the row, toggling back deletes it. A line is `paid` while its row exists for the cycle, else `due`; the card is `not reached`, `due` or `paid`; the next cycle starts at the next due month. Card total = the sum of its lines, each rounded to the nearest cent (halves up). Open (asked): whether marking a line as paid also takes the money out of his funds (the AI recommends yes) or the amount is already a tax in the due month.
+
+### `metal_prices` (owner field: `user_id`) and new `user_settings` columns (D-142, D-140; approved; design by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `metal` | text | `gold` or `silver` (CHECK) |
+| `currency_code` | char(3) | ISO 4217 code of the price |
+| `price_per_gram_minor` | bigint | >= 0 |
+| `fetched_at` | timestamptz | when the price was read |
+| `source` | text | `api` or `typed` (CHECK) |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Unique `(user_id, metal, currency_code, fetched_at)`. The price used = the newest row of the metal in his currency; none = no value, the app never invents one (D-032). Per user because the app is offline first and works in the guest mode.
+
+| New `user_settings` column | Type | Rule |
+|---|---|---|
+| `country_code` | char(2), null | ISO 3166; set in Settings under the title Zakat; empty = no automatic price update (overrides D-023); the app maps it to a currency (D-033 stays for amounts: they are plain numbers) |
+| `default_weight_unit` | text | `kg` or `g` (CHECK); default `kg`; both modes can change it in Settings (D-140) |
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |
@@ -166,7 +201,7 @@ Rules (D-123, approved):
 - Entries do not count in the funds pool while their month is ignored (decided, as Angular does today); no column is needed for this, it is a calculation rule. The History table's "Direct Additions" column of a month = that month's `opening` + `add` - `withdraw` entries (item moves do not change the total).
 
 ### `holdings` (owner field: `user_id`) (D-133, approved; details by the AI)
-Gold and silver the user owns, typed by him, as dated snapshots. The app never fetches prices (D-032, offline first). Livestock is a later design.
+Gold and silver the user owns, typed by him, as dated snapshots (grams only). Prices live in `metal_prices` (D-142). Livestock is a later design.
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
@@ -174,10 +209,9 @@ Gold and silver the user owns, typed by him, as dated snapshots. The app never f
 | `kind` | text | `gold` or `silver` (CHECK; the list can grow by migration) |
 | `as_of_month` | date | day 1 of the month the snapshot starts to count |
 | `grams` | numeric(12,3) | >= 0 (0 = he sold it) |
-| `price_per_gram_minor` | bigint | >= 0, typed by the user |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Update (D-139): a snapshot means the grams he owned at the END of its month; tagged purchase cards add grams after it, and the price can come from the latest purchase. Unique `(user_id, kind, as_of_month)`. The value as of a month = for each kind the latest row with `as_of_month` not after that month: grams x price, rounded to the nearest cent (halves up); calculated, never stored. It is not linked to `months`, so deleting a month (D-123) never touches it. Example: in March 2027 the user records gold 100.000 g at 70.00 per gram: value 7,000.00 for March and every later month until he records a new snapshot.
+Update (D-139, D-142): a snapshot means the grams he owned at the END of its month; tagged purchase cards add grams after it; the price is NOT stored here any more, it comes from `metal_prices` (below). Unique `(user_id, kind, as_of_month)`. The value as of a month = for each kind the latest row with `as_of_month` not after that month: grams x the price of `metal_prices`, rounded to the nearest cent (halves up); calculated, never stored. It is not linked to `months`, so deleting a month (D-123) never touches it. Example: in March 2027 the user records gold 100.000 g and the newest gold price is 70.00 per gram: value 7,000.00 for March and every later month until he records a new snapshot or a newer price arrives.
 
 ### New column on `user_settings`: how the hourly rate is shown (D-128, approved; the formula is by the AI)
 | Column | Type | Rule |
@@ -198,7 +232,7 @@ created the first time the app finds that something is newly true.
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent), `goal_next_month` (D-072) and `zakat_point` (D-136); each new feature adds its kind with its migration |
+| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent), `goal_next_month` (D-072), `zakat_point` (D-136), `zakat_due` and `prices_stale` (D-141, D-142); each new feature adds its kind with its migration |
 | `dedupe_key` | text | 1-200 characters; unique per user `(user_id, dedupe_key)`, for example `goal:<item id>:50`, so the same message is never created twice |
 | `payload` | jsonb, null | small extra data for the message (item name, percent, month); no money rules live here |
 | `created_at` | timestamptz | default now |
@@ -209,7 +243,7 @@ reached again after a history edit does **not** notify again (the unique key blo
 Channels (in-app, Telegram), settings and push are Area 9.
 
 ## Not computed into storage (by design)
-Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the value of holdings, the grams owned, the wealth base of a Zakat card (D-138), each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
+Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the value of holdings, the grams owned, the wealth base of a Zakat card (D-138), the Zakat lines and their status (D-141), each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
 
 ## Formulas (from `description`; ignored items excluded everywhere)
 ```
@@ -227,4 +261,4 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, the rules for animals in Zakat (counts and tiers), grouping items under one title (D-092, Area 6). The custom month boundary is deferred (D-127).
+data export and account deletion flow, Community, debit/credit, the rules for animals in Zakat (counts and tiers), grouping other items under one title (D-092; maybe version 2). The custom month boundary is deferred (D-127).
