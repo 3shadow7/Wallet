@@ -53,11 +53,11 @@ bigint > 0 (optional), timestamps. Working time stays in hours (D-122); both hou
 ### `items`
 `id`, `user_id`, `name` (1-40, no leading/trailing/double spaces; letters, digits and single spaces only, checked in Python, D-104), `name_key` (normalized for
 comparison: case, Arabic spelling variants, digits; computed by Django in `apps/finance/naming.py`, D-103), `type` `burn|tax|saving` (never changes, D-047),
-`target_minor` bigint > 0 (optional, saving only, database CHECK), timestamps. Unique `(user_id, name_key, type)`.
+`target_minor` bigint > 0 (optional, saving only, database CHECK), timestamps. Unique `(user_id, name_key, type)`. Designed, not built: `unit` (D-140) and `item_class_id` (D-139), below.
 
 ### `month_items` (the cards)
 `id`, `user_id`, `month_id`, `item_id`, `importance` `want|must|emergency|gift` (default
-`want`), `amount_minor` >= 0 (will be empty on a percentage tax card, D-130), `quantity` int >= 1, `unit_price_minor` (NULL = the +1 / +N
+`want`), `amount_minor` >= 0 (will be empty on a percentage tax card, D-130), `quantity` int >= 1 (becomes numeric(14,3) > 0 for weight items, D-140), `unit_price_minor` (NULL = the +1 / +N
 buttons are locked, D-065), `quantity_needs_review` boolean, `is_ignored` boolean, timestamps.
 Unique `(month_id, item_id, importance)`. A "group" (same item, several importances) is computed,
 not a table (D-075).
@@ -94,11 +94,45 @@ Rules (calculated, never stored): monthly hours = `work_hours_override` if set, 
 | Column | Type | Rule |
 |---|---|---|
 | `rate_basis_points` | integer, null | 1 to 10000 (10% = 1000); only on tax cards (checked in Python) |
-| `rate_base` | text, null | `income` or `funds` (CHECK); set exactly when `rate_basis_points` is set |
+| `rate_base` | text, null | `income`, `funds` or `wealth` (CHECK; `wealth` is new, D-138); set exactly when `rate_basis_points` is set |
 | `threshold_minor` | bigint, null | > 0; only on a percentage card (CHECK); the amount is 0 while the base is below it (D-134) |
 | `amount_minor` | bigint, now null | empty on a percentage card; >= 0 when set |
 
-One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty); a threshold is allowed only on a percentage card. The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
+One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty); a threshold is allowed only on a percentage card. The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131); base `wealth` = the funds pool live with the month's logged entries + the value of the holdings, and the card's own amount is never part of it (D-138). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
+
+### New columns on `month_items`: yearly period on a tax card (D-135, approved; the columns are by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `frequency` | text | `monthly` or `yearly` (CHECK); default `monthly` |
+| `due_month` | smallint, null | 1 to 12; required when `frequency` is `yearly`, empty when `monthly` (CHECK); tax cards only (checked in Python, because the card does not store the item's type) |
+
+The card is copied to the next month like every tax card (D-082); a yearly card counts only in its due month, and the manual Ignore (`is_ignored`) works together with it: ignored never counts, and the ignored state is copied too. Example: yearly tax 1,200.00 due in March counts 0 in January and February, 1,200.00 in March, 0 in April; ignored in March it counts 0 there as well.
+
+### New columns on `user_settings`: the Zakat helper (D-136, approved; the columns are by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `zakat_helper_enabled` | boolean | default false; a neutral feature switch in Settings for Regular and Advanced; it is NOT a religion field and the app stores no religion |
+| `zakat_threshold_minor` | bigint, null | > 0, typed by the user; CHECK: `zakat_helper_enabled` cannot be true while it is empty |
+
+The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. The Zakat card is made once from a template (D-137): a normal percentage tax card with base `wealth`, a yearly period and the threshold copied from this setting. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5% gives 225.00 in the due month; after 5,000.00 more spending (wealth 4,000.00) the card gives 0.
+
+### `item_classes` and `item_class_aliases` (system tables), `items.item_class_id` (D-139, approved idea; design by the AI)
+System data: the same rows for every user, seeded by a migration, never edited by a user, no screen, no `user_id`. RLS stays on with no policy (D-087) like every table.
+| Table | Columns | Rule |
+|---|---|---|
+| `item_classes` | `id`, `code` (`gold`, `silver`, `camel`, `cattle`, `sheep_goat`), `measure` (`weight` or `count`) | `code` unique; CHECK on both lists; the list grows by migration |
+| `item_class_aliases` | `id`, `item_class_id` (FK), `word` (normalized like `name_key`, D-103), `language` (`en` now) | unique `(language, word)` |
+| `items.item_class_id` | uuid, null | FK to `item_classes`; one class per item; set automatically by a name match while the helper is on, removable by the user |
+
+Grams owned in a month = the latest typed snapshot in `holdings` (grams at the END of its month) + the weight of tagged purchase cards (not ignored) in the later months; price per gram = the newer of the snapshot price and the unit price of the latest tagged purchase. Calculated, never stored. Only gold and silver are calculated now; the animal classes are catalogued, their rules are a later design.
+
+### New column on `items`: the unit, and weight quantities (D-140, approved; design by the AI)
+| Column | Type | Rule |
+|---|---|---|
+| `items.unit` | text | `piece`, `g` or `kg` (CHECK); default `piece`; fixed when the item is created |
+| `month_items.quantity` | numeric(14,3) | > 0 (was an integer >= 1); whole numbers only while the unit is `piece` (checked in Python) |
+
+`unit_price_minor` is the price of ONE unit (a piece, a gram or a kg). Amount = quantity x unit price, rounded to the nearest cent (halves up). A different weight unit on an existing item is converted exactly (1 kg = 1,000 g). Examples: rice 2.500 kg at 3.20 per kg = 8.00; a gold ring 12.500 g at 70.00 per g = 875.00.
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |
@@ -143,7 +177,7 @@ Gold and silver the user owns, typed by him, as dated snapshots. The app never f
 | `price_per_gram_minor` | bigint | >= 0, typed by the user |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Unique `(user_id, kind, as_of_month)`. The value as of a month = for each kind the latest row with `as_of_month` not after that month: grams x price, rounded to the nearest cent (halves up); calculated, never stored. It is not linked to `months`, so deleting a month (D-123) never touches it. Example: in March 2027 the user records gold 100.000 g at 70.00 per gram: value 7,000.00 for March and every later month until he records a new snapshot.
+Update (D-139): a snapshot means the grams he owned at the END of its month; tagged purchase cards add grams after it, and the price can come from the latest purchase. Unique `(user_id, kind, as_of_month)`. The value as of a month = for each kind the latest row with `as_of_month` not after that month: grams x price, rounded to the nearest cent (halves up); calculated, never stored. It is not linked to `months`, so deleting a month (D-123) never touches it. Example: in March 2027 the user records gold 100.000 g at 70.00 per gram: value 7,000.00 for March and every later month until he records a new snapshot.
 
 ### New column on `user_settings`: how the hourly rate is shown (D-128, approved; the formula is by the AI)
 | Column | Type | Rule |
@@ -164,7 +198,7 @@ created the first time the app finds that something is newly true.
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent) and `goal_next_month` (D-072); each new feature adds its kind with its migration |
+| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent), `goal_next_month` (D-072) and `zakat_point` (D-136); each new feature adds its kind with its migration |
 | `dedupe_key` | text | 1-200 characters; unique per user `(user_id, dedupe_key)`, for example `goal:<item id>:50`, so the same message is never created twice |
 | `payload` | jsonb, null | small extra data for the message (item name, percent, month); no money rules live here |
 | `created_at` | timestamptz | default now |
@@ -175,7 +209,7 @@ reached again after a history edit does **not** notify again (the unique key blo
 Channels (in-app, Telegram), settings and push are Area 9.
 
 ## Not computed into storage (by design)
-Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the value of holdings, each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
+Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the value of holdings, the grams owned, the wealth base of a Zakat card (D-138), each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
 
 ## Formulas (from `description`; ignored items excluded everywhere)
 ```
@@ -193,4 +227,4 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, the Zakat helper (Area 4: yearly period on a tax card, which funds moment Zakat uses, how the Zakat card is created; livestock later). The custom month boundary is deferred (D-127).
+data export and account deletion flow, Community, debit/credit, the rules for animals in Zakat (counts and tiers), grouping items under one title (D-092, Area 6). The custom month boundary is deferred (D-127).
