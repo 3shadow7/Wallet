@@ -32,7 +32,7 @@ Designed and recorded (documents only, nothing built):
 - [x] The tables designed but not built are drawn in `schema-blueprint.md`, section "Designed, not built": `month_items.reduction_minor`, `fund_entries`, `notifications`, `user_settings.skip_item_delete_confirm`.
 
 In progress and waiting:
-- [ ] Area 3, income and time: working time stays in hours (decided). Waiting for the user: which income lines repeat into the next month. Then: working hours on a line like Bonus, the custom month boundary, and the rule that income is the sum of the income lines.
+- [ ] Area 3, income and time: working time stays in hours (D-122); income lines copy to the next month automatically for both modes, no repeat column (D-124). Waiting for the user: how a yearly line (a bonus once a year) enters the month. Then: working hours on a line like Bonus, the custom month boundary, and the rule that income is the sum of the income lines.
 - [ ] Areas 4-9: tax (percentage, several, goals, Zakat helper), editing history, credits and debits, pending list, sync and devices, account.
 - [ ] Two "AI choice" decisions wait for his agreement: the small constraints and the shape of the calculation layer.
 
@@ -50,4 +50,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-123 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-124 (the ones this period produced); the earlier ones are in the decision log.

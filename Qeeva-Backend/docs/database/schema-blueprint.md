@@ -47,7 +47,7 @@ the foreign keys (SQL), 0003 closes the tables to the Data API.
 `id`, `user_id`, `month_id`, `name` (optional, 1-30), `amount_minor` bigint >= 0,
 `hours_per_day` numeric 0-24 (default 8), `days_per_week` smallint 1-7 (default 5),
 `work_hours_override` int 1-744 (optional, manual monthly hours), `hourly_rate_manual_minor`
-bigint > 0 (optional), timestamps. Working time stays in hours (D-122). Computed, not stored: monthly hours = override, else
+bigint > 0 (optional), timestamps. Working time stays in hours (D-122). Income lines copy to the next month automatically, so there is no repeat column (D-124); a yearly line may add a `frequency` column later (open). Computed, not stored: monthly hours = override, else
 `hours_per_day x days_per_week x 4`; hourly rate = manual rate, else `amount / monthly hours`.
 
 ### `items`
