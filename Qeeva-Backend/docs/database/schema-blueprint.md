@@ -94,11 +94,11 @@ Rules (calculated, never stored): monthly hours = `work_hours_override` if set, 
 | Column | Type | Rule |
 |---|---|---|
 | `rate_basis_points` | integer, null | 1 to 10000 (10% = 1000); only on tax cards (checked in Python) |
-| `rate_base` | text, null | `income`, `funds` or `wealth` (CHECK; `wealth` is new, D-138); set exactly when `rate_basis_points` is set |
+| `rate_base` | text, null | `income` or `funds` (CHECK); set exactly when `rate_basis_points` is set (a Zakat `wealth` base is NOT a card value: Zakat is not an ordinary card, D-145) |
 | `threshold_minor` | bigint, null | > 0; only on a percentage card (CHECK); the amount is 0 while the base is below it (D-134) |
 | `amount_minor` | bigint, now null | empty on a percentage card; >= 0 when set |
 
-One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty); a threshold is allowed only on a percentage card. The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131); base `wealth` = the funds pool live with the month's logged entries + the value of the holdings, and the card's own amount is never part of it (D-138). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
+One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percentage (rate and base set; amount empty); a threshold is allowed only on a percentage card. The amount of a percentage card = base x rate / 10,000, rounded to the nearest cent (halves up); it is calculated, never stored. Base `income` = the month's income; base `funds` = the funds pool at the start of the month (D-131). Several percentage cards each use the same base and the amounts are added (D-132). Example: income 3,000.00 with two cards, 10% and 5%: 300.00 + 150.00 = 450.00.
 
 ### New columns on `month_items`: yearly period on a tax card (D-135, approved; the columns are by the AI)
 | Column | Type | Rule |
@@ -108,13 +108,16 @@ One CHECK: a card is EITHER fixed (amount set; rate and base empty) OR a percent
 
 The card is copied to the next month like every tax card (D-082); a yearly card counts only in its due month, and the manual Ignore (`is_ignored`) works together with it: ignored never counts, and the ignored state is copied too. Example: yearly tax 1,200.00 due in March counts 0 in January and February, 1,200.00 in March, 0 in April; ignored in March it counts 0 there as well.
 
-### New columns on `user_settings`: the Zakat helper (D-136, approved; the columns are by the AI)
+### New columns on `user_settings`: the Zakat helper (D-136, D-144, D-145; approved; the columns are by the AI)
 | Column | Type | Rule |
 |---|---|---|
 | `zakat_helper_enabled` | boolean | default false; a neutral feature switch in Settings for Regular and Advanced; it is NOT a religion field and the app stores no religion |
-| `zakat_threshold_minor` | bigint, null | > 0, typed by the user; CHECK: `zakat_helper_enabled` cannot be true while it is empty |
+| `zakat_threshold_minor` | bigint, null | > 0, typed by the user |
+| `zakat_rate_basis_points` | smallint, null | 1 to 10000; the app pre-fills 250 (2.5%) and he can edit it |
+| `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); chosen from a dropdown of all currencies with a small note that it is needed to calculate the Zakat of gold and the like; the list lives in the app (D-144) |
+| `zakat_due_month` | smallint, null | 1 to 12; set when he says Yes on the popup = the month the point was first reached (his option 1 of D-137); he can change it |
 
-The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. The Zakat card is made once from a template (D-137): a normal percentage tax card with base `wealth`, a yearly period and the threshold copied from this setting. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5% gives 225.00 in the due month; after 5,000.00 more spending (wealth 4,000.00) the card gives 0.
+CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Open (asked): whether the first payment is due when the point is first reached or one year later.
 
 ### `item_classes` and `item_class_aliases` (system tables), `items.item_class_id` (D-139, approved idea; design by the AI)
 System data: the same rows for every user, seeded by a migration, never edited by a user, no screen, no `user_id`. RLS stays on with no policy (D-087) like every table.
@@ -124,7 +127,7 @@ System data: the same rows for every user, seeded by a migration, never edited b
 | `item_class_aliases` | `id`, `item_class_id` (FK), `word` (normalized like `name_key`, D-103), `language` (`en` now) | unique `(language, word)` |
 | `items.item_class_id` | uuid, null | FK to `item_classes`; one class per item; set automatically by a name match while the helper is on, removable by the user |
 
-Grams owned in a month = the latest typed snapshot in `holdings` (grams at the END of its month) + the weight of tagged purchase cards (not ignored) in the later months; price per gram = the newest row of `metal_prices` for the metal in his currency (D-142). Calculated, never stored. Only gold and silver are calculated now; the animal classes are catalogued, their rules are a later design.
+Grams owned in a month = the latest typed snapshot in `holdings` (grams at the END of its month) + the weight of tagged purchase cards (not ignored) in the later months; price per gram = the newest row of `metal_prices` for the metal in his currency (D-142). Calculated, never stored. Only gold and silver are calculated now; the animal classes are catalogued, and animals ARE part of the Zakat feature, but their rules wait on the waiting list (D-143).
 
 ### New column on `items`: the unit, and weight quantities (D-140, approved; design by the AI)
 | Column | Type | Rule |
@@ -135,12 +138,13 @@ Grams owned in a month = the latest typed snapshot in `holdings` (grams at the E
 `unit_price_minor` is the price of ONE unit (a piece, a gram or a kg). Amount = quantity x unit price, rounded to the nearest cent (halves up). A different weight unit on an existing item is converted exactly (1 kg = 1,000 g). Examples: rice 2.500 kg at 3.20 per kg = 8.00; a gold ring 12.500 g at 70.00 per g = 875.00.
 
 ### `zakat_payments` (owner field: `user_id`) (D-141, approved; design by the AI)
-The paid mark of a Zakat line. The Zakat group card and its lines are calculated; only the fact "he paid this line in this cycle" is stored.
+The paid mark of a Zakat line. The Zakat group card and its lines are calculated; only the fact "he paid this line in this cycle" is stored. Paying moves the money at that moment (D-145).
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `cycle_month` | date | day 1 of the due month of the cycle (D-135) |
+| `cycle_month` | date | day 1 of the due month of the cycle (`zakat_due_month`) |
+| `month_id` | uuid | the month the payment is logged in (D-145); composite FK `(month_id, user_id)`; ON DELETE CASCADE: deleting the month deletes its payments and the lines are due again (the D-123 popup lists them) |
 | `source_kind` | text | `funds`, `holding` or `item` (CHECK) |
 | `holding_kind` | text, null | `gold` or `silver`; required for `holding`, empty otherwise (CHECK) |
 | `item_id` | uuid, null | required for `item`, empty otherwise (CHECK); composite FK `(item_id, user_id)` |
@@ -148,9 +152,9 @@ The paid mark of a Zakat line. The Zakat group card and its lines are calculated
 | `paid_at` | timestamptz | |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Unique per user, cycle and source. Toggling paid inserts the row, toggling back deletes it. A line is `paid` while its row exists for the cycle, else `due`; the card is `not reached`, `due` or `paid`; the next cycle starts at the next due month. Card total = the sum of its lines, each rounded to the nearest cent (halves up). Open (asked): whether marking a line as paid also takes the money out of his funds (the AI recommends yes) or the amount is already a tax in the due month.
+Unique per user, cycle and source. Toggling paid inserts the row, toggling back deletes it. A line is `paid` while its row exists for the cycle, else `due`; the card is `not reached`, `due` or `paid`; the next cycle starts at the next due month. Card total = the sum of its lines, each rounded to the nearest cent (halves up). A month's tax total = its tax cards + the Zakat payments logged in it (not counted while the month is ignored, as funds entries in D-123); the formulas themselves do not change. Open (asked): whether a payment is part of the month's tax total (the AI recommends) or only a withdrawal from the funds pool.
 
-### `metal_prices` (owner field: `user_id`) and new `user_settings` columns (D-142, D-140; approved; design by the AI)
+### `metal_prices` (owner field: `user_id`) and the `user_settings` weight unit (D-142, D-144, D-140; approved; design by the AI)
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
@@ -164,9 +168,9 @@ Unique per user, cycle and source. Toggling paid inserts the row, toggling back 
 
 Unique `(user_id, metal, currency_code, fetched_at)`. The price used = the newest row of the metal in his currency; none = no value, the app never invents one (D-032). Per user because the app is offline first and works in the guest mode.
 
-| New `user_settings` column | Type | Rule |
+| `user_settings` column | Type | Rule |
 |---|---|---|
-| `country_code` | char(2), null | ISO 3166; set in Settings under the title Zakat; empty = no automatic price update (overrides D-023); the app maps it to a currency (D-033 stays for amounts: they are plain numbers) |
+| `zakat_currency_code` | char(3), null | the currency dropdown of the Zakat helper (see above, D-144); automatic prices run when it is set. There is NO country field (D-023 stays); D-033 is overridden only for these prices, amounts stay plain numbers |
 | `default_weight_unit` | text | `kg` or `g` (CHECK); default `kg`; both modes can change it in Settings (D-140) |
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
@@ -261,4 +265,4 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, the rules for animals in Zakat (counts and tiers), grouping other items under one title (D-092; maybe version 2). The custom month boundary is deferred (D-127).
+data export and account deletion flow, Community, debit/credit, the rules for animals in Zakat (counts and tiers; in scope, waiting list, D-143), grouping other items under one title (D-092; maybe version 2). The custom month boundary is deferred (D-127).
