@@ -32,9 +32,9 @@ Designed and recorded (documents only, nothing built):
 - [x] The tables designed but not built are drawn in `schema-blueprint.md`, section "Designed, not built": `month_items.reduction_minor`, `fund_entries`, `notifications`, `user_settings.skip_item_delete_confirm`.
 
 In progress and waiting:
-- [ ] Area 3, income and time: working time stays in hours (D-122); income lines copy to the next month automatically for both modes (D-124); a yearly line (a bonus) counts only in the month it arrives, with `frequency` and `due_month` columns (D-125). Waiting for the user: working hours on a line like Bonus, the custom month boundary, and the rule that income is the sum of the lines that count in the month (D-109 point 5).
+- [ ] Area 3, income and time: working time stays in hours (D-122); income lines copy to the next month automatically for both modes (D-124); a yearly line (a bonus) counts only in the month it arrives, with `frequency` and `due_month` columns (D-125). Decided later the same day: the hours columns may be empty for a line like a Bonus (D-126), the custom month boundary is deferred until users ask (D-127, waiting for his confirmation of how the AI read his answer), and a month's income is its monthly lines plus its yearly lines due that month (D-109 point 5). Still open: how the hourly rates of several lines combine into "Product Price", and whether the monthly-hours override accepts parts of an hour.
 - [ ] Areas 4-9: tax (percentage, several, goals, Zakat helper), editing history, credits and debits, pending list, sync and devices, account.
-- [ ] Two "AI choice" decisions wait for his agreement: the small constraints and the shape of the calculation layer.
+- [ ] "AI choice" items wait for his agreement: the small constraints (D-107), the rest of the calculation layer's shape (D-109; its point 5 is approved) and the yearly-line column design (D-125).
 
 Not touched yet: Supabase (read-only, nothing applied), the JWT key check, running the shared vectors in Angular, any API endpoint.
 
@@ -50,4 +50,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-125 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-127 (the ones this period produced); the earlier ones are in the decision log.

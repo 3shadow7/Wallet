@@ -23,10 +23,11 @@ Add a row here whenever a small idea comes up. Tick a row when it has become a d
 | [ ] | In the "delete a month" popup (D-123: it lists the month's funds entries), tick every entry by default, which means "keep in the same month", so no money is lost by accident; the user unticks what he wants gone. | Screen (Angular), not the database | AI suggestion, the user asked to keep it as a low-priority idea | 2026-11-17 |
 | [ ] | More control inside the analysis for Advanced users: view options that change no data, for example count the funds of ignored months, or ignore other things (Angular already has "Show excluded months" on the History charts). Regular keeps the one simple meaning of Ignore. | Screen and analysis (Angular), not the database | The user asked what to do; AI suggestion | 2026-11-17 |
 | [ ] | In the month-delete popup, when the user keeps funds and the month is ignored, say in one sentence that those funds are not counted and offer a Count switch for that month. | Screen (Angular), part of D-123 | AI suggestion | 2026-11-17 |
+| [ ] | Path C check of Angular fallbacks that invent a value: 160 monthly hours when none are set (`financial-calculator.service.ts`) and 1 per hour in the purchase calculator (`analyzePurchase`); compare with D-032 and D-126 (a line may have no working time) when the screens are aligned. | Screen (Angular) | AI finding | 2026-11-17 |
 
 ## Relevant files
 
-- `plans/decisions/decision-log.md` (D-123 is the popup rule)
+- `plans/decisions/decision-log.md` (D-123 is the popup rule; D-126 and D-032 for the fallbacks row)
 - `plans/plans-Backend/20261115-feature-data-map.md`
 
 ## Verification

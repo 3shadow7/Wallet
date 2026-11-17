@@ -47,7 +47,7 @@ the foreign keys (SQL), 0003 closes the tables to the Data API.
 `id`, `user_id`, `month_id`, `name` (optional, 1-30), `amount_minor` bigint >= 0,
 `hours_per_day` numeric 0-24 (default 8), `days_per_week` smallint 1-7 (default 5),
 `work_hours_override` int 1-744 (optional, manual monthly hours), `hourly_rate_manual_minor`
-bigint > 0 (optional), timestamps. Working time stays in hours (D-122). Income lines copy to the next month automatically, so there is no repeat column (D-124); yearly lines add two columns (D-125, below). Computed, not stored: monthly hours = override, else
+bigint > 0 (optional), timestamps. Working time stays in hours (D-122); both hours columns will become optional, a line may have no working time (D-126, designed below). Income lines copy to the next month automatically, so there is no repeat column (D-124); yearly lines add two columns (D-125, below). Computed, not stored: monthly hours = override, else
 `hours_per_day x days_per_week x 4`; hourly rate = manual rate, else `amount / monthly hours`.
 
 ### `items`
@@ -77,8 +77,17 @@ Supabase: nothing is applied without the user's explicit approval).
 | `due_month` | smallint, null | 1 to 12; required when `frequency` is `yearly`, empty when `monthly` (one CHECK for both) |
 
 A yearly line is copied to every next month like all lines (D-124) and keeps its yearly amount, but it counts in a month's income only in its `due_month`;
-a month's income = its monthly lines + its yearly lines whose `due_month` is that month. The user picks the month it arrives (for example his work anniversary), so the year can start
+a month's income = its monthly lines + its yearly lines whose `due_month` is that month (confirmed by the user on 2026-11-17, D-109 point 5). The user picks the month it arrives (for example his work anniversary), so the year can start
 at the job start date and not in January. Other repeat types can be added later by changing the CHECK list.
+
+### Change on `month_incomes`: working time may be empty (D-126, approved; details by the AI)
+| Column | Built today | After the change |
+|---|---|---|
+| `hours_per_day` | numeric(4,2), NOT NULL, default 8, 0 to 24 | nullable, no default, 0 to 24 when set |
+| `days_per_week` | smallint, NOT NULL, default 5, 1 to 7 | nullable, no default, 1 to 7 when set |
+
+One CHECK: both are empty or both are set. The existing range CHECKs stay (a NULL passes them). A line with no working time is a Bonus, rent or gift line.
+Rules (calculated, never stored): monthly hours = `work_hours_override` if set, else `hours_per_day x days_per_week x 4` if both are set, else none; hourly rate = `hourly_rate_manual_minor` if set, else `amount / monthly hours` when monthly hours are more than 0, else none. A line with no hourly rate is left out when rates are combined (how several lines combine is still open). The defaults 8 and 5 are dropped so the database never invents working time (D-032); a screen may pre-fill them. Built rows keep their values.
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |
@@ -152,5 +161,5 @@ Never change a formula without the user's approval.
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, multi-income rules and the custom month boundary
-(Area 3, in progress), percentage tax and Zakat helper (Area 4).
+data export and account deletion flow, Community, debit/credit, how the hourly rates of several income lines combine (Area 3, in progress; the custom month boundary is deferred, D-127),
+percentage tax and Zakat helper (Area 4).
