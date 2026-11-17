@@ -115,9 +115,9 @@ The card is copied to the next month like every tax card (D-082); a yearly card 
 | `zakat_threshold_minor` | bigint, null | > 0, typed by the user |
 | `zakat_rate_basis_points` | smallint, null | 1 to 10000; the app pre-fills 250 (2.5%) and he can edit it |
 | `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); chosen from a dropdown of all currencies with a small note that it is needed to calculate the Zakat of gold and the like; the list lives in the app (D-144) |
-| `zakat_due_month` | smallint, null | 1 to 12; set when he says Yes on the popup = the month the point was first reached (his option 1 of D-137); he can change it |
+| `zakat_cycle_start` | date, null | the exact day he said Yes on the popup = the day the point was first reached (D-146); he can change it; the first payment is due one year later, then every year on the same date |
 
-CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Open (asked): whether the first payment is due when the point is first reached or one year later.
+CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Zakat timing (D-146): first due one year after `zakat_cycle_start` (12 calendar months for now, a Hijri year later), then yearly; on each due date the wealth is calculated, at or above the threshold the lines are due, below it they are 0. Card status: `waiting`, `due`, `paid`, `nothing due`.
 
 ### `item_classes` and `item_class_aliases` (system tables), `items.item_class_id` (D-139, approved idea; design by the AI)
 System data: the same rows for every user, seeded by a migration, never edited by a user, no screen, no `user_id`. RLS stays on with no policy (D-087) like every table.
@@ -143,7 +143,7 @@ The paid mark of a Zakat line. The Zakat group card and its lines are calculated
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `cycle_month` | date | day 1 of the due month of the cycle (`zakat_due_month`) |
+| `cycle_month` | date | day 1 of the month of the cycle's due date (D-146) |
 | `month_id` | uuid | the month the payment is logged in (D-145); composite FK `(month_id, user_id)`; ON DELETE CASCADE: deleting the month deletes its payments and the lines are due again (the D-123 popup lists them) |
 | `source_kind` | text | `funds`, `holding` or `item` (CHECK) |
 | `holding_kind` | text, null | `gold` or `silver`; required for `holding`, empty otherwise (CHECK) |
@@ -152,7 +152,7 @@ The paid mark of a Zakat line. The Zakat group card and its lines are calculated
 | `paid_at` | timestamptz | |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Unique per user, cycle and source. Toggling paid inserts the row, toggling back deletes it. A line is `paid` while its row exists for the cycle, else `due`; the card is `not reached`, `due` or `paid`; the next cycle starts at the next due month. Card total = the sum of its lines, each rounded to the nearest cent (halves up). A month's tax total = its tax cards + the Zakat payments logged in it (not counted while the month is ignored, as funds entries in D-123); the formulas themselves do not change. Open (asked): whether a payment is part of the month's tax total (the AI recommends) or only a withdrawal from the funds pool.
+Unique per user, cycle and source. Toggling paid inserts the row, toggling back deletes it. A line is `paid` while its row exists for the cycle, else `due`; the card is `not reached`, `due` or `paid`; the next cycle starts at the next due month. Card total = the sum of its lines, each rounded to the nearest cent (halves up). A month's tax total = its tax cards + the Zakat payments logged in it (not counted while the month is ignored, as funds entries in D-123); the formulas themselves do not change. A payment IS part of the month's tax total (his option 1, D-145).
 
 ### `metal_prices` (owner field: `user_id`) and the `user_settings` weight unit (D-142, D-144, D-140; approved; design by the AI)
 | Column | Type | Rule |
@@ -166,7 +166,7 @@ Unique per user, cycle and source. Toggling paid inserts the row, toggling back 
 | `source` | text | `api` or `typed` (CHECK) |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-Unique `(user_id, metal, currency_code, fetched_at)`. The price used = the newest row of the metal in his currency; none = no value, the app never invents one (D-032). Per user because the app is offline first and works in the guest mode.
+Unique `(user_id, metal, currency_code, fetched_at)`. Prices keep two decimals like every amount (D-144; three-decimal currencies are a parked idea). The price used = the newest row of the metal in his currency; none = no value, the app never invents one (D-032). Per user because the app is offline first and works in the guest mode.
 
 | `user_settings` column | Type | Rule |
 |---|---|---|
