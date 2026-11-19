@@ -191,10 +191,12 @@ savings" idea (D-083, D-093).
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
 | `month_id` | uuid | the month the entry belongs to; composite FK `(month_id, user_id)` so it cannot join another user's month |
-| `kind` | text | `opening`, `add`, `withdraw`, `to_item`, `from_item` (CHECK) |
+| `kind` | text | `opening`, `add`, `withdraw`, `to_item`, `from_item` (CHECK); designed, not built (D-155, D-157): `gift`, `lend`, `borrow`, `repay_in`, `repay_out` |
 | `amount_minor` | bigint | > 0 (the kind says the direction) |
 | `item_id` | uuid, null | required for `to_item` and `from_item`, must be NULL for the other kinds (CHECK); composite FK `(item_id, user_id)`; saving items only (checked in Python) |
 | `note` | text, null | optional, 1-60 characters |
+| `title` | text, null | designed, not built: 1-60; required for `gift` (who gave it or what it is, D-155) |
+| `debt_id` | uuid, null | designed, not built: required for `lend`, `borrow`, `repay_in`, `repay_out`, empty otherwise (CHECK); composite FK `(debt_id, user_id)` (D-157) |
 | `created_at`, `updated_at` | timestamptz | default now |
 
 Rules (D-123, approved):
@@ -205,6 +207,20 @@ Rules (D-123, approved):
 - `month_id` delete rule is NO ACTION: a month that still has entries cannot be deleted by the database (safety net); the popup works in one transaction.
 - `item_id` delete rule is CASCADE: deleting a saving item deletes its move entries and the money goes back to the free funds (confirm message; an Advanced user can switch it off, see `user_settings` below).
 - Entries do not count in the funds pool while their month is ignored (decided, as Angular does today); no column is needed for this, it is a calculation rule. The History table's "Direct Additions" column of a month = that month's `opening` + `add` - `withdraw` entries (item moves do not change the total).
+
+### `debts` (owner field: `user_id`) (D-157, approved; design by the AI)
+A debt is a header; its money moves in `fund_entries` (lend, borrow, repay_in, repay_out). The open amount and the status are calculated. Lending and borrowing are moves of the funds, never an expense or income.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `direction` | text | `lent` or `borrowed` (CHECK) |
+| `person_name` | text | 1-60, required |
+| `month_id` | uuid | the month the debt started; composite FK `(month_id, user_id)` |
+| `note` | text, null | 1-60 |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+A repayment larger than the open amount is refused at entry; deleting a debt deletes its entries. Example: lend 300.000 in March, repaid 100.000 in April and 200.000 in June: open 300, 200, 0, then settled.
 
 ### `holdings` (owner field: `user_id`) (D-133, approved; details by the AI)
 Gold and silver the user owns, typed by him, as dated snapshots (grams only). Prices live in `metal_prices` (D-142). Livestock is a later design.
