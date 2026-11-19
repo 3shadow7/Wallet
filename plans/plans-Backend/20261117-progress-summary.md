@@ -36,7 +36,8 @@ In progress and waiting:
 - [x] Area 4, tax (designed, nothing pending): a percentage tax is calculated live (D-130), total funds = the funds pool at the start of the month (D-131), several percentage taxes add up from the same base (D-132); the Zakat helper was added to D-113; gold and silver holdings are typed snapshots (D-133) and the threshold is typed (D-134); decided on 2026-11-17 (evening): the yearly period with Ignore (D-135), the Zakat switch and one-time popup (D-136), the card made once from a template (D-137), live wealth (D-138), hidden gold/silver/animal classes (D-139), weight items (D-140); also the Zakat group card with paid toggles (D-141) and online prices (D-142); also D-143 (animals are in scope, design waits), D-144 (currency dropdown, no country), D-145 (paying moves the money; Zakat is driven by settings); D-146 (the first payment is due one year after the point is first reached; checked against zakat.org and the National Zakat Foundation UK); a payment is part of the tax total (D-145); two decimals kept (D-144). General item grouping stays postponed, maybe version 2 (D-092).
 - [x] Area 5, history edits (2026-11-19): months follow the calendar, missing months are created with copies, the next month at most one month ahead (D-150); a past month added by hand starts empty (D-151); the edit trace in Advanced only (D-152). Also: the Zakat year restarts after a dip (D-147), Hijri year and display-only calendar (D-148), decimals as a setting with 3 decimals stored (D-149).
 - [x] Also 2026-11-19 (13:16): storage of 3 decimals confirmed (D-149), month reading confirmed (D-150), Umm al-Qura with the 1st/2nd-day rule (D-154), welcome and fast-clear ideas deferred (D-153).
-- [ ] Area 6, credits and debits (in progress): gifts to the funds with a name (D-155), one add card with two tabs (D-156, to confirm), debts with partial repayments as moves of the funds (D-157).
+- [ ] Area 6, credits and debits (in progress): gifts to the funds with a name (D-155), one add card with two tabs (D-156, to confirm), debts with partial repayments as moves of the funds (D-157); 14:06: tabs confirmed, Reconcile Balance (D-158), debt dates and three reminders (D-159), a gift he gives is a burn item (D-160), debts in Zakat (D-161, proposal, from NZF and zakat.org).
+- [x] 2026-11-19 (14:06): his `git log` shows patches 0025 to 0035 applied and pushed.
 - [x] 2026-11-19: he ran the 360 backend tests on his own machine (Windows, Python 3.14.3, pytest 9.2.0): all passed.
 - [ ] Areas 7-9: pending list, sync and devices, account.
 - [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
@@ -55,4 +56,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-157 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-161 (the ones this period produced); the earlier ones are in the decision log.

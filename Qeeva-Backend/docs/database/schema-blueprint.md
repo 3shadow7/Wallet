@@ -174,6 +174,8 @@ Unique `(user_id, metal, currency_code, fetched_at)`. Prices keep two decimals l
 |---|---|---|
 | `zakat_currency_code` | char(3), null | the currency dropdown of the Zakat helper (see above, D-144); automatic prices run when it is set. There is NO country field (D-023 stays); D-033 is overridden only for these prices, amounts stay plain numbers |
 | `default_weight_unit` | text | `kg` or `g` (CHECK); default `kg`; both modes can change it in Settings (D-140) |
+| `reconcile_every_months` | smallint | 6 or 12 (CHECK), default 6: how often the Reconcile Balance reminder comes (D-158) |
+| `last_reconciled_on` | date, null | set by his reconcile, even when nothing differed (D-158) |
 
 ### New column on `month_items`: the user's pick of which saving item gives money (D-117 and D-111, approved)
 | Column | Type | Rule |
@@ -196,6 +198,7 @@ savings" idea (D-083, D-093).
 | `item_id` | uuid, null | required for `to_item` and `from_item`, must be NULL for the other kinds (CHECK); composite FK `(item_id, user_id)`; saving items only (checked in Python) |
 | `note` | text, null | optional, 1-60 characters |
 | `title` | text, null | designed, not built: 1-60; required for `gift` (who gave it or what it is, D-155) |
+| `counted_minor` | bigint, null | designed, not built: >= 0; the amount he counted; required on a Reconcile Balance row (an `add` or `withdraw` written by D-158) |
 | `debt_id` | uuid, null | designed, not built: required for `lend`, `borrow`, `repay_in`, `repay_out`, empty otherwise (CHECK); composite FK `(debt_id, user_id)` (D-157) |
 | `created_at`, `updated_at` | timestamptz | default now |
 
@@ -217,6 +220,9 @@ A debt is a header; its money moves in `fund_entries` (lend, borrow, repay_in, r
 | `direction` | text | `lent` or `borrowed` (CHECK) |
 | `person_name` | text | 1-60, required |
 | `month_id` | uuid | the month the debt started; composite FK `(month_id, user_id)` |
+| `started_on` | date | the exact day, for display; inside that month (checked in Python) (D-159) |
+| `due_on` | date, null | optional due date; reminders a week before, on the 1st of the due month and on the day, never two on the same day (D-159) |
+| `expect_repayment` | boolean | `lent` only, default true: "I am confident it will be repaid"; used by the Zakat wealth (D-161, proposal) |
 | `note` | text, null | 1-60 |
 | `created_at`, `updated_at` | timestamptz | default now |
 
@@ -254,7 +260,7 @@ created the first time the app finds that something is newly true.
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent), `goal_next_month` (D-072), `zakat_point` (D-136), `zakat_due` and `prices_stale` (D-141, D-142); each new feature adds its kind with its migration |
+| `kind` | text | fixed list (CHECK), first values `goal_progress` (25, 50, 75, 100 percent), `goal_next_month` (D-072), `zakat_point` (D-136), `zakat_due` and `prices_stale` (D-141, D-142), `reconcile_due` (D-158), `debt_due_week`, `debt_due_month`, `debt_due_day` (D-159); each new feature adds its kind with its migration |
 | `dedupe_key` | text | 1-200 characters; unique per user `(user_id, dedupe_key)`, for example `goal:<item id>:50`, so the same message is never created twice |
 | `payload` | jsonb, null | small extra data for the message (item name, percent, month); no money rules live here |
 | `created_at` | timestamptz | default now |
