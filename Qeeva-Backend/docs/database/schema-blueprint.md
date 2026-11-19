@@ -4,7 +4,7 @@ The Django models and migrations are the real schema. This file is the human-rea
 plus the approved-but-unbuilt designs. Decisions behind each rule: see `plans/decisions/decision-log.md`.
 
 Conventions for every table: `uuid` ids, `timestamptz` (UTC) timestamps, money as `bigint` minor
-units (2 decimals, no currency, D-033), CHECK constraints for every fixed list, RLS on with no
+units (2 decimals, no currency, D-033; designed, not built: 3 decimals stored for every user, shown with 2 or 3 by a setting, D-149), CHECK constraints for every fixed list, RLS on with no
 policies (D-087), every model declares `OWNER_FIELD`.
 
 ## Built: `apps/accounts` (migrations 0001-0003)
@@ -42,6 +42,7 @@ the foreign keys (SQL), 0003 closes the tables to the Data API.
 ### `months`
 `id`, `user_id`, `month_start` date (day must be 1), `totals_mode` `auto|included|excluded`
 (default `auto`, D-037), timestamps. Unique `(user_id, month_start)`.
+Designed, not built (D-150, D-151): months follow the calendar; every missing month up to the current one is created automatically with the usual copies; the next month may be created by hand at most one month ahead (server check); a month before the first one, added by hand, starts empty. The trace "changed after the month ended" is calculated from `updated_at` and shown only in Advanced (D-152).
 
 ### `month_incomes`
 `id`, `user_id`, `month_id`, `name` (optional, 1-30), `amount_minor` bigint >= 0,
@@ -115,9 +116,10 @@ The card is copied to the next month like every tax card (D-082); a yearly card 
 | `zakat_threshold_minor` | bigint, null | > 0, typed by the user |
 | `zakat_rate_basis_points` | smallint, null | 1 to 10000; the app pre-fills 250 (2.5%) and he can edit it |
 | `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); chosen from a dropdown of all currencies with a small note that it is needed to calculate the Zakat of gold and the like; the list lives in the app (D-144) |
-| `zakat_cycle_start` | date, null | the exact day he said Yes on the popup = the day the point was first reached (D-146); he can change it; the first payment is due one year later, then every year on the same date |
+| `zakat_cycle_start` | date, null | the exact day he said Yes on the popup = the day the point was first reached (D-146); he can change it; the first payment is due one Hijri year later (D-148); later starts are calculated (D-147) |
+| `decimal_places` | smallint | 2 or 3 (CHECK), default 3; Regular always shows 3, Advanced chooses; display only, storage is always 3 decimals (D-149) |
 
-CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Zakat timing (D-146): first due one year after `zakat_cycle_start` (12 calendar months for now, a Hijri year later), then yearly; on each due date the wealth is calculated, at or above the threshold the lines are due, below it they are 0. Card status: `waiting`, `due`, `paid`, `nothing due`.
+CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Zakat timing (D-146): first due one year after `zakat_cycle_start` (12 calendar months for now, a Hijri year later), then yearly; on each due date the wealth is calculated, at or above the threshold the lines are due, below it they are 0. Card status: `waiting`, `due`, `paid`, `nothing due`. Update 2026-11-19: a dip below the threshold in any month of the cycle restarts the year (Maliki, Shafi'i, Hanbali; checked per month; the starts are calculated; notification `zakat_restarted`) (D-147); the year is a Hijri year (Umm al-Qura), the due date and a display-only Hijri calendar with a countdown are calculated, no table (D-148).
 
 ### `item_classes` and `item_class_aliases` (system tables), `items.item_class_id` (D-139, approved idea; design by the AI)
 System data: the same rows for every user, seeded by a migration, never edited by a user, no screen, no `user_id`. RLS stays on with no policy (D-087) like every table.
