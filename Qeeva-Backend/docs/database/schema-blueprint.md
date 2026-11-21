@@ -306,7 +306,7 @@ reached again after a history edit does **not** notify again (the unique key blo
 Channels (in-app, Telegram), settings and push are Area 9.
 
 ## Not computed into storage (by design)
-Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the value of holdings, the grams owned, the wealth base of a Zakat card (D-138), the Zakat lines and their status (D-141), each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
+Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the daily Zakat threshold and the wealth of the daily check (D-162, D-164), the Zakat group total (D-167), the open amount and status of a debt (D-157), each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
 
 ## Formulas (from `description`; ignored items excluded everywhere)
 ```
@@ -321,7 +321,8 @@ saving_shortfall = max(0, saving_target - actual_saved)
 If `burn + tax` exceeds income, saving items save nothing that month. When `actual_saved` is
 below the target, the user picks which saving items shrink; at least one must stay reducible.
 Never change a formula without the user's approval.
+Approved additions (not formula changes): `tax` of a month also counts the Zakat payments logged in that month (D-145, D-165); a gift he gives is a `burn` item (D-160); money received outside income, lending, borrowing and repayments are moves of the funds, never income or expense (D-155, D-157).
 
 ## Still to design
 Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community, debit/credit, the rules for animals in Zakat (counts and tiers; in scope, waiting list, D-143), grouping other items under one title (D-092; maybe version 2). The custom month boundary is deferred (D-127).
+data export and account deletion flow, Community. Version 2, maybe: Zakat on gold, silver and animals (D-168), grouping other items under one title (D-092). Debit/credit is designed (D-155 to D-160). The custom month boundary is deferred (D-127).
