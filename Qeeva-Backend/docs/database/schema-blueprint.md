@@ -113,10 +113,10 @@ The card is copied to the next month like every tax card (D-082); a yearly card 
 | Column | Type | Rule |
 |---|---|---|
 | `zakat_helper_enabled` | boolean | default false; a neutral feature switch in Settings for Regular and Advanced; it is NOT a religion field and the app stores no religion |
-| `zakat_threshold_minor` | bigint, null | > 0, typed by the user |
+| `zakat_threshold_minor` | bigint, null | DROPPED 2026-11-21: the threshold is calculated every day from 595 g of silver (D-162) |
 | `zakat_rate_basis_points` | smallint, null | 1 to 10000; the app pre-fills 250 (2.5%) and he can edit it |
 | `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); chosen from a dropdown of all currencies with a small note that it is needed to calculate the Zakat of gold and the like; the list lives in the app (D-144) |
-| `zakat_cycle_start` | date, null | the exact day he said Yes on the popup = the day the point was first reached (D-146); he can change it; the first payment is due one Hijri year later (D-148); later starts are calculated (D-147) |
+| `zakat_cycle_start` | date, null | DROPPED 2026-11-21: the counter lives in `zakat_cycles` (D-164) |
 | `decimal_places` | smallint | 2 or 3 (CHECK), default 3; Regular always shows 3, Advanced chooses; display only, storage is always 3 decimals (D-149) |
 
 CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Zakat timing (D-146): first due one year after `zakat_cycle_start` (12 calendar months for now, a Hijri year later), then yearly; on each due date the wealth is calculated, at or above the threshold the lines are due, below it they are 0. Card status: `waiting`, `due`, `paid`, `nothing due`. Update 2026-11-19: a dip below the threshold in any month of the cycle restarts the year (Maliki, Shafi'i, Hanbali; checked per month; the starts are calculated; notification `zakat_restarted`) (D-147); the year is a Hijri year (Umm al-Qura, no manual correction), the due date and a display-only Hijri calendar with a countdown are calculated, no table (D-148); a due date on the 1st or 2nd of a month counts in the month before (D-154).
@@ -139,7 +139,39 @@ Grams owned in a month = the latest typed snapshot in `holdings` (grams at the E
 
 `unit_price_minor` is the price of ONE unit (a piece, a gram or a kg). Amount = quantity x unit price, rounded to the nearest cent (halves up). A different weight unit on an existing item is converted exactly (1 kg = 1,000 g). Examples: rice 2.500 kg at 3.20 per kg = 8.00; a gold ring 12.500 g at 70.00 per g = 875.00.
 
-### `zakat_payments` (owner field: `user_id`) (D-141, approved; design by the AI)
+### Zakat redesign of 2026-11-21 (D-162 to D-166, approved; the tables are the AI's design)
+He warned that this feature is complex and may be opened again: keep the Zakat tables separate from the core finance tables, so a change touches only them.
+- Threshold = 595 g x silver price per gram (USD) x his black-market rate, every day; the 595 is one constant in the code (D-162, D-163).
+- Wealth for the check = total funds + free money of the current month, + lent money due inside the running year, - borrowed money due by the year end (D-164, D-166).
+
+`exchange_rates` (owner field: `user_id`)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `currency_code` | char(3) | ISO 4217 |
+| `units_per_usd` | numeric(18,6) | > 0; the BLACK-MARKET rate (example: 10.650000 LYD for 1 USD) |
+| `observed_at` | timestamptz | |
+| `source` | text | `typed` or `api` (CHECK) |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Unique `(user_id, currency_code, observed_at)`. The rate of a day = the newest row not after that day; none = no threshold (D-032).
+
+`zakat_cycles` (owner field: `user_id`): the stored lunar-year counter, because a past day cannot be rebuilt (cards have no day, prices change daily)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `started_on` | date | the day the total got above the threshold |
+| `ends_on` | date | started_on + one Hijri year (Umm al-Qura, D-148) |
+| `stopped_on` | date, null | the day the total fell below the threshold |
+| `status` | text | `running`, `stopped` or `completed` (CHECK); at most one `running` per user (partial unique index) |
+| `wealth_at_end_minor`, `threshold_at_end_minor`, `zakat_minor` | bigint, null | kept on the end day so history never changes |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Year end (D-165): wealth >= threshold: `completed`, Zakat = 2.5% of the wealth, the Zakat item appears in that month (D-154 for the 1st or 2nd); then wealth - Zakat >= threshold starts a new `running` cycle the same day. Toggling the item as spent writes one `zakat_payments` row with `zakat_cycle_id` (unique), counted in that month's tax total.
+
+### `zakat_payments` (owner field: `user_id`) (D-141, approved; design by the AI; CHANGED by D-165: one row per cycle with `zakat_cycle_id`, the per-line columns below are dropped)
 The paid mark of a Zakat line. The Zakat group card and its lines are calculated; only the fact "he paid this line in this cycle" is stored. Paying moves the money at that moment (D-145).
 | Column | Type | Rule |
 |---|---|---|
@@ -222,7 +254,7 @@ A debt is a header; its money moves in `fund_entries` (lend, borrow, repay_in, r
 | `month_id` | uuid | the month the debt started; composite FK `(month_id, user_id)` |
 | `started_on` | date | the exact day, for display; inside that month (checked in Python) (D-159) |
 | `due_on` | date, null | optional due date; reminders a week before, on the 1st of the due month and on the day, never two on the same day (D-159) |
-| `expect_repayment` | boolean | `lent` only, default true: "I am confident it will be repaid"; used by the Zakat wealth (D-161, proposal) |
+| `expect_repayment` | boolean | DROPPED 2026-11-21 (D-166: only the due date decides); was: `lent` only, default true: "I am confident it will be repaid"; used by the Zakat wealth (D-161, proposal) |
 | `note` | text, null | 1-60 |
 | `created_at`, `updated_at` | timestamptz | default now |
 
