@@ -38,7 +38,7 @@ In progress and waiting:
 - [x] Also 2026-11-19 (13:16): storage of 3 decimals confirmed (D-149), month reading confirmed (D-150), Umm al-Qura with the 1st/2nd-day rule (D-154), welcome and fast-clear ideas deferred (D-153).
 - [ ] Area 6, credits and debits (in progress): gifts to the funds with a name (D-155), one add card with two tabs (D-156, to confirm), debts with partial repayments as moves of the funds (D-157); 14:06: tabs confirmed, Reconcile Balance (D-158), debt dates and three reminders (D-159), a gift he gives is a burn item (D-160), debts in Zakat (D-161, proposal, from NZF and zakat.org).
 - [x] 2026-11-19 (14:06): his `git log` shows patches 0025 to 0035 applied and pushed.
-- [x] 2026-11-21: Zakat redesigned by the user (D-162 to D-166): silver nisab of 595 g, black-market rate, daily lunar-year counter stored in `zakat_cycles`, year end checked as if paid, debts by due date. D-161 superseded.
+- [x] 2026-11-21: Zakat redesigned by the user (D-162 to D-166): silver nisab of 595 g, black-market rate, daily lunar-year counter stored in `zakat_cycles`, year end checked as if paid, debts by due date. D-161 superseded. 03:19: one Zakat item per year inside the group card, unpaid Zakat deducted (D-167); Zakat on money only, gold/silver/holdings/animals to version 2 (D-168).
 - [x] 2026-11-19: he ran the 360 backend tests on his own machine (Windows, Python 3.14.3, pytest 9.2.0): all passed.
 - [ ] Areas 7-9: pending list, sync and devices, account.
 - [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
@@ -57,4 +57,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-166 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-168 (the ones this period produced); the earlier ones are in the decision log.

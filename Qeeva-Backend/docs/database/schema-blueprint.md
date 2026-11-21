@@ -121,7 +121,7 @@ The card is copied to the next month like every tax card (D-082); a yearly card 
 
 CHECK: `zakat_helper_enabled` cannot be true while the threshold, the rate or the currency is empty. The one-time popup is kept in `notifications` (kind `zakat_point`, dedupe key `zakat:point`); declining switches `zakat_helper_enabled` off; turning it on again deletes that row, so the popup can show once more. There is NO Zakat card row in `month_items` (D-145): the Zakat group card is calculated from these settings, the holdings, the tagged items and `zakat_payments`. Example: threshold 5,000.00; wealth 9,000.00 (funds 6,000.00 + gold 3,000.00) at 2.5%: the lines are 150.00 (funds) and 75.00 (gold), 225.00 in all; after 5,000.00 more spending (wealth 4,000.00) the lines are 0. Wealth = the funds pool live + the value of the holdings + this cycle's Zakat payments added back, so paying never changes what is still due (D-138, D-145). Zakat timing (D-146): first due one year after `zakat_cycle_start` (12 calendar months for now, a Hijri year later), then yearly; on each due date the wealth is calculated, at or above the threshold the lines are due, below it they are 0. Card status: `waiting`, `due`, `paid`, `nothing due`. Update 2026-11-19: a dip below the threshold in any month of the cycle restarts the year (Maliki, Shafi'i, Hanbali; checked per month; the starts are calculated; notification `zakat_restarted`) (D-147); the year is a Hijri year (Umm al-Qura, no manual correction), the due date and a display-only Hijri calendar with a countdown are calculated, no table (D-148); a due date on the 1st or 2nd of a month counts in the month before (D-154).
 
-### `item_classes` and `item_class_aliases` (system tables), `items.item_class_id` (D-139, approved idea; design by the AI)
+### DEFERRED TO VERSION 2 (D-168): `item_classes` and `item_class_aliases` (system tables), `items.item_class_id` (D-139, approved idea; design by the AI)
 System data: the same rows for every user, seeded by a migration, never edited by a user, no screen, no `user_id`. RLS stays on with no policy (D-087) like every table.
 | Table | Columns | Rule |
 |---|---|---|
@@ -142,7 +142,9 @@ Grams owned in a month = the latest typed snapshot in `holdings` (grams at the E
 ### Zakat redesign of 2026-11-21 (D-162 to D-166, approved; the tables are the AI's design)
 He warned that this feature is complex and may be opened again: keep the Zakat tables separate from the core finance tables, so a change touches only them.
 - Threshold = 595 g x silver price per gram (USD) x his black-market rate, every day; the 595 is one constant in the code (D-162, D-163).
-- Wealth for the check = total funds + free money of the current month, + lent money due inside the running year, - borrowed money due by the year end (D-164, D-166).
+- Wealth for the check = total funds + free money of the current month, + lent money due inside the running year, - borrowed money due by the year end, - Zakat of earlier years not paid yet (D-164, D-166, D-167). Money only: gold, silver and animals are version 2 (D-168).
+- One check per day, the first time the app is opened that day; days not opened are treated as unchanged (D-164).
+- The Zakat group card = the Zakat money: its total = the unpaid items; one item per `completed` cycle with its date; no edit, no delete; only "spent" or Zakat off in Settings (D-167).
 
 `exchange_rates` (owner field: `user_id`)
 | Column | Type | Rule |
@@ -188,7 +190,7 @@ The paid mark of a Zakat line. The Zakat group card and its lines are calculated
 
 Unique per user, cycle and source. Toggling paid inserts the row, toggling back deletes it. A line is `paid` while its row exists for the cycle, else `due`; the card is `not reached`, `due` or `paid`; the next cycle starts at the next due month. Card total = the sum of its lines, each rounded to the nearest cent (halves up). A month's tax total = its tax cards + the Zakat payments logged in it (not counted while the month is ignored, as funds entries in D-123); the formulas themselves do not change. A payment IS part of the month's tax total (his option 1, D-145).
 
-### `metal_prices` (owner field: `user_id`) and the `user_settings` weight unit (D-142, D-144, D-140; approved; design by the AI)
+### `metal_prices` (owner field: `user_id`; only `silver` is needed now, for the nisab, D-168) and the `user_settings` weight unit (D-142, D-144, D-140; approved; design by the AI)
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
@@ -260,7 +262,7 @@ A debt is a header; its money moves in `fund_entries` (lend, borrow, repay_in, r
 
 A repayment larger than the open amount is refused at entry; deleting a debt deletes its entries. Example: lend 300.000 in March, repaid 100.000 in April and 200.000 in June: open 300, 200, 0, then settled.
 
-### `holdings` (owner field: `user_id`) (D-133, approved; details by the AI)
+### DEFERRED TO VERSION 2 (D-168): `holdings` (owner field: `user_id`) (D-133, approved; details by the AI)
 Gold and silver the user owns, typed by him, as dated snapshots (grams only). Prices live in `metal_prices` (D-142). Livestock is a later design.
 | Column | Type | Rule |
 |---|---|---|
