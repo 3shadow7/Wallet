@@ -145,6 +145,7 @@ He warned that this feature is complex and may be opened again: keep the Zakat t
 - Wealth for the check = total funds + free money of the current month, + lent money due inside the running year, - borrowed money due by the year end, - Zakat of earlier years not paid yet (D-164, D-166, D-167). Money only: gold, silver and animals are version 2 (D-168).
 - One check per day, the first time the app is opened that day; days not opened are treated as unchanged (D-164).
 - The Zakat group card = the Zakat money: its total = the unpaid items; one item per `completed` cycle with its date; no edit, no delete; only "spent" or Zakat off in Settings (D-167).
+- Zakat off = hidden, the rows stay; on again shows every year (D-169). A Settings button deletes old Zakat items, once per user for now: `user_settings.zakat_clear_count` smallint >= 0, default 0; the limit (1) is a constant in the code (D-169).
 
 `exchange_rates` (owner field: `user_id`)
 | Column | Type | Rule |
