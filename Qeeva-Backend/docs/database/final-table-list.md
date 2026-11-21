@@ -1,0 +1,48 @@
+# Final table list
+
+The target database, as decided so far: every table and every column in its FINAL form, nothing else. No history, no
+replaced designs (those live in `plans/decisions/decision-log.md`). Rules and examples live in `schema-blueprint.md`.
+This file is updated in the same commit as every decision that adds, changes or removes a table or a column (D-172).
+
+Legend: **[built]** exists in Django today; **[designed]** approved, not built yet; *(new)* or *(changes)* = a column
+that a design adds to, or changes in, a built table. Every table: `uuid` ids, `timestamptz` timestamps, RLS on with no
+policies (D-087), CHECK for every fixed list. Money: `bigint`, 3 decimals stored for every user (D-149; built tables
+still use 2 until the one-time change).
+
+## Accounts
+| Table | Status | Columns |
+|---|---|---|
+| `profiles` | [built] | `id` (= auth user id), `username`, `display_name`, `role` (user/admin), `status` (active/suspended/pending_deletion), `username_changed_at`, `created_at`, `updated_at`, `deleted_at` |
+| `username_reservations` | [built] | `id`, `username`, `previous_owner_id`, `reserved_until` |
+| `user_settings` | [built] + [designed] | `user_id`, `experience_mode` (regular/advanced), `timezone`, `language`, `skip_merge_confirm`, `created_at`, `updated_at`; *(new)* `hourly_rate_mode` (combined/per_income), `skip_item_delete_confirm`, `decimal_places` (2/3, default 3), `default_weight_unit` (kg/g), `reconcile_every_months` (6/12), `last_reconciled_on`, `zakat_helper_enabled`, `zakat_rate_basis_points` (default 250), `zakat_currency_code`, `zakat_clear_count` |
+
+## Finance
+| Table | Status | Columns |
+|---|---|---|
+| `months` | [built] | `id`, `user_id`, `month_start`, `totals_mode` (auto/included/excluded), `created_at`, `updated_at` |
+| `month_incomes` | [built] + [designed] | `id`, `user_id`, `month_id`, `name`, `amount_minor`, `hourly_rate_manual_minor`, `created_at`, `updated_at`; *(changes)* `hours_per_day` and `days_per_week` nullable, `work_hours_override` numeric(5,2); *(new)* `frequency` (monthly/yearly), `due_month` |
+| `items` | [built] + [designed] | `id`, `user_id`, `name`, `name_key`, `type` (burn/tax/saving), `target_minor`, `created_at`, `updated_at`; *(new)* `unit` (piece/g/kg) |
+| `month_items` | [built] + [designed] | `id`, `user_id`, `month_id`, `item_id`, `importance` (want/must/emergency/gift), `unit_price_minor`, `quantity_needs_review`, `is_ignored`, `created_at`, `updated_at`; *(changes)* `amount_minor` nullable, `quantity` numeric(14,3); *(new)* `rate_basis_points`, `rate_base` (income/funds), `threshold_minor`, `frequency` (monthly/yearly), `due_month`, `reduction_minor` |
+| `item_merge_dismissals` | [built] | `id`, `user_id`, `item_a_id`, `item_b_id`, `created_at` |
+| `fund_entries` | [designed] | `id`, `user_id`, `month_id`, `kind` (opening/add/withdraw/to_item/from_item/gift/lend/borrow/repay_in/repay_out), `amount_minor`, `item_id`, `debt_id`, `title`, `counted_minor`, `note`, `created_at`, `updated_at` |
+| `debts` | [designed] | `id`, `user_id`, `direction` (lent/borrowed), `person_name`, `month_id`, `started_on`, `due_on`, `note`, `created_at`, `updated_at` |
+| `notifications` | [designed] | `id`, `user_id`, `kind`, `dedupe_key`, `payload`, `created_at`, `seen_at` |
+
+## Zakat (kept separate; may be opened again)
+| Table | Status | Columns |
+|---|---|---|
+| `metal_prices` | [designed] | `id`, `user_id`, `metal` (silver), `price_per_gram_minor` (USD), `fetched_at`, `source` (api/typed), `created_at`, `updated_at` |
+| `exchange_rates` | [designed] | `id`, `user_id`, `currency_code`, `units_per_usd`, `observed_at`, `source` (typed/api), `created_at`, `updated_at` |
+| `zakat_cycles` | [designed] | `id`, `user_id`, `started_on`, `ends_on`, `stopped_on`, `status` (running/stopped/completed), `wealth_at_end_minor`, `threshold_at_end_minor`, `zakat_minor`, `created_at`, `updated_at` |
+| `zakat_payments` | [designed] | `id`, `user_id`, `zakat_cycle_id`, `month_id`, `amount_minor`, `paid_at`, `created_at`, `updated_at` |
+
+## Not tables (calculated, never stored)
+Month results and every dashboard formula, hourly rates, percentage tax amounts, the funds pool and its free part,
+goal progress, debt open amounts, the daily Zakat threshold and wealth, the Zakat group total, Hijri dates.
+
+## Version 2, maybe (not in the list above)
+`holdings`, `item_classes`, `item_class_aliases`, `items.item_class_id`, gold prices, animals (D-168); item groups
+under one title (D-092).
+
+## Still to design (Path A, areas 7 to 9)
+Pending list, sync and devices, account (plans and waitlist, consents, audit logs, export and deletion), Community.
