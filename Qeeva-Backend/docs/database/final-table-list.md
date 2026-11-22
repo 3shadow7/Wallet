@@ -14,7 +14,7 @@ still use 2 until the one-time change).
 |---|---|---|
 | `profiles` | [built] | `id` (= auth user id), `username`, `display_name`, `role` (user/admin), `status` (active/suspended/pending_deletion), `username_changed_at`, `created_at`, `updated_at`, `deleted_at` |
 | `username_reservations` | [built] | `id`, `username`, `previous_owner_id`, `reserved_until` |
-| `user_settings` | [built] + [designed] | `user_id`, `experience_mode` (regular/advanced), `timezone`, `language`, `skip_merge_confirm`, `created_at`, `updated_at`; *(new)* `hourly_rate_mode` (combined/per_income), `skip_item_delete_confirm`, `decimal_places` (2/3, default 3), `default_weight_unit` (kg/g), `reconcile_every_months` (6/12), `last_reconciled_on`, `zakat_helper_enabled`, `zakat_rate_basis_points` (default 250), `zakat_currency_code`, `zakat_clear_count` |
+| `user_settings` | [built] + [designed] | `user_id`, `experience_mode` (regular/advanced), `timezone`, `language`, `skip_merge_confirm`, `created_at`, `updated_at`; *(new)* `hourly_rate_mode` (combined/per_income), `skip_item_delete_confirm`, `decimal_places` (2/3, default 3), `default_weight_unit` (kg/g), `reconcile_every_months` (6/12), `last_reconciled_on`, `zakat_helper_enabled`, `zakat_rate_basis_points` (default 250), `zakat_currency_code`, `zakat_clear_count`, `show_deleted_info` |
 
 ## Finance
 | Table | Status | Columns |
@@ -28,6 +28,12 @@ still use 2 until the one-time change).
 | `debts` | [designed] | `id`, `user_id`, `direction` (lent/borrowed), `person_name`, `month_id`, `started_on`, `due_on`, `note`, `created_at`, `updated_at` |
 | `notifications` | [designed] | `id`, `user_id`, `kind`, `dedupe_key`, `payload`, `created_at`, `seen_at` |
 | `pending_entries` | [designed] | `id`, `user_id`, `source` (bank/voice/camera/card), `status` (pending/confirmed/dismissed), `external_id`, `occurred_on`, `direction` (out/in), `amount_minor`, `suggested_name`, `suggested_type`, `raw_text`, `month_item_id`, `decided_at`, `created_at`, `updated_at` |
+
+## Sync
+Every user-owned table that syncs also gets `deleted_at` and `deleted_by_device_id` (D-176).
+| Table | Status | Columns |
+|---|---|---|
+| `devices` | [designed] | `id`, `user_id`, `name`, `platform` (web/android/ios), `last_seen_at`, `created_at`, `updated_at` |
 
 ## Zakat (kept separate; may be opened again)
 | Table | Status | Columns |

@@ -131,6 +131,7 @@ in Advanced (D-152). A welcome for new users and a fast clear of fake data are a
 | `zakat_rate_basis_points` | smallint, null | 1 to 10000; pre-filled 250 (2.5%) (D-137) |
 | `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); dropdown of all currencies with a short note; no country field (D-023, D-144) |
 | `zakat_clear_count` | smallint | >= 0, default 0; how many times the "delete old Zakat" button was used; the limit (1) is a code constant (D-169) |
+| `show_deleted_info` | boolean | shows or hides the delete date, device and countdown (D-176); default asked |
 
 CHECK: `zakat_helper_enabled` cannot be true while `zakat_rate_basis_points` or `zakat_currency_code` is empty.
 Combined hourly rate = sum of the counted amounts of the lines with monthly hours / sum of those hours (D-128).
@@ -212,6 +213,28 @@ CHECK: `month_item_id` may be set only when `status` is `confirmed`. Confirm = o
 month of `occurred_on` (D-150, D-151), create the card, set the link and the status. Receipt photos themselves are not
 stored here (file storage is a later decision); the retention of `raw_text` and bank data is part of Area 9 (account,
 privacy). An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
+
+### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
+Every user-owned table that syncs gets two columns:
+| Column | Type | Rule |
+|---|---|---|
+| `deleted_at` | timestamptz, null | set instead of erasing the row; other devices learn about the delete when they sync |
+| `deleted_by_device_id` | uuid, null | the device that deleted it; FK to `devices` |
+
+A daily cleanup erases a row for good 45 days after `deleted_at`. Advanced shows the date, the device name and the
+days left; Regular shows only the device name; both can hide it with `user_settings.show_deleted_info`. How two devices
+that changed the same row are merged is still asked (D-176 is only about deletes). A guest's local data moves into the
+account automatically at sign-up (D-177).
+
+`devices` (owner field: `user_id`)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `name` | text | 1-40, shown to the user |
+| `platform` | text | `web`, `android`, `ios` (CHECK) |
+| `last_seen_at` | timestamptz, null | |
+| `created_at`, `updated_at` | timestamptz | default now |
 
 ### Zakat (D-136, D-162 to D-171; approved; may be opened again, so these tables stay separate)
 Money only for now (D-168). Rules:

@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe 
 decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
 Arabic; wording here is a faithful summary, not a new decision.
 
-**Numbers:** D-001 to D-175 are used. **Next free number: D-176.** Never reuse or renumber one.
+**Numbers:** D-001 to D-178 are used. **Next free number: D-179.** Never reuse or renumber one.
 
 **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
 (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
@@ -127,6 +127,9 @@ them says. Confirm them if one looks wrong.
 | D-173 | approved (user, 2026-11-23: "first option"); columns by the AI, please review | ONE table `pending_entries` for every source of the pending list (D-062, D-074): bank, voice, camera (receipt photo) and card; the tabs on the screen filter by `source`. A new source later = one new value in the CHECK list, not a new table. It follows "Template 2" of the Foundation Build Plan: a status and an external id that is unique per user, so a bank re-sync never creates the same entry twice. |
 | D-174 | approved (user, 2026-11-23: "first option") | After he confirms a pending entry, its row STAYS with status `confirmed` and a link to the card it became; a dismissed entry stays with status `dismissed`. So when the bank sends the same transaction again (same external id), the app knows it and never adds it twice. Example: bank transaction `TX-881` of 45.000, he names it "Fuel" and confirms: a card appears in his month, the pending row keeps `TX-881`, `confirmed` and the card's id. |
 | D-175 | approved (user, 2026-11-23: "first option") | A confirmed entry goes into the month of its OWN date (the day the money moved), not the month he confirms it, so the log stays true. Example: a bank transaction of 28 October confirmed on 3 November goes into October. If that month does not exist yet it is created the usual way (D-150 for a missing month, D-151 for a month before the first one). |
+| D-176 | approved (user, 2026-11-23 01:03); details by the AI, two points asked | Deleted rows and other devices. A deleted row is not erased at once: it gets `deleted_at` and the device that deleted it, so the other devices learn about the delete when they sync, and it is erased for good 45 days later (a daily cleanup). His words: show the date, the device name and a countdown of the days left in Advanced mode; Regular shows only the device name; in both modes a setting shows or hides this information, to keep the screen clean and comfortable. Design (AI): every user-owned synced table gets `deleted_at` timestamptz null and `deleted_by_device_id` uuid null; a new table `devices` (owner `user_id`): `id`, `user_id`, `name` (1-40, for example "Elias's phone"), `platform` (`web`, `android`, `ios`), `last_seen_at`, timestamps; `user_settings.show_deleted_info` boolean (default asked). Not built. |
+| D-177 | approved (user, 2026-11-23: "first option") | When a guest creates an account, his local data (everything kept in the browser) is moved into the account automatically, so nothing is lost. |
+| D-178 | approved (user, 2026-11-23; his idea, not found in the earlier files) | A guest who has added more than 5 cards gets a suggestion to sign in, so his data is saved in his account and is not lost if he buys a new phone or his phone breaks. A screen rule of the Angular app: the guest's data is local, so no database column is needed. The AI searched the decision log, the plans, the idea files and the saved chats and did not find it written before; it is written now. |
 
 ## Product
 
@@ -162,7 +165,7 @@ them says. Confirm them if one looks wrong.
 | D-030 | deferred | Small calculator tools in the UI (add and multiply). No automatic conversion. |
 | D-031 | superseded by D-033 | Currency chosen from a list. |
 | D-033 | approved | Ignore currency entirely for now: no currency in the database; amounts are plain numbers. |
-| D-034 | approved | `user_settings` has no sync fields; sync is a separate later topic. |
+| D-034 | approved | `user_settings` has no sync fields; sync is a separate later topic. Update 2026-11-23: sync design started in Area 8 (D-176 to D-178). |
 | D-035 | approved | `user_settings` columns as built (plus `skip_merge_confirm`, see D-081). |
 
 ## Finance (approved design; the five tables are built in `apps/finance`, see `schema-blueprint.md`)

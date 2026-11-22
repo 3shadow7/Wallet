@@ -25,6 +25,9 @@ Add a row here whenever a small idea comes up. Tick a row when it has become a d
 | [ ] | In the month-delete popup, when the user keeps funds and the month is ignored, say in one sentence that those funds are not counted and offer a Count switch for that month. | Screen (Angular), part of D-123 | AI suggestion | 2026-11-17 |
 | [ ] | Path C check of Angular fallbacks that invent a value: 160 monthly hours when none are set (`financial-calculator.service.ts`) and 1 per hour in the purchase calculator (`analyzePurchase`); compare with D-032 and D-126 (a line may have no working time) when the screens are aligned. | Screen (Angular) | AI finding | 2026-11-17 |
 | [x] | Currencies that people write with three decimals (the Libyan dinar, KWD, BHD, OMR, JOD, TND): today every amount and every price keeps two decimals (D-033, D-144) and the user accepted it, but asked to keep in mind that people are used to three. A number of decimals per currency would touch every money column. | Database and screens (a later migration) | The user, "keep this in mind" | 2026-11-17 Decided 2026-11-19 as D-149 (a setting: Regular 3, Advanced 2 or 3). |
+| [ ] | Receipt photos (the camera source of the pending list): the photo files are not stored in `pending_entries`; where and whether to keep them (file storage) is a later decision. | Database, storage | The AI, written at his request ("write it down so we don't forget") | 2026-11-23 |
+| [ ] | How long to keep the voice transcript and receipt text (`pending_entries.raw_text`) and the bank data: decide in Area 9 (account, privacy, deletion). | Database, privacy | The AI, written at his request | 2026-11-23 |
+| [ ] | An incoming bank entry may be income, a gift or a debt repayment: how it is classified when he confirms it is a later detail of the pending list. | Database, screens | The AI, written at his request | 2026-11-23 |
 
 ## Relevant files
 
