@@ -240,10 +240,11 @@ account automatically at sign-up (D-177).
 | `platform` | text | `web`, `android`, `ios` (CHECK) |
 | `last_seen_at` | timestamptz, null | |
 | `last_synced_at` | timestamptz, null | shown in Settings next to the "sync now" button (D-182) |
+| `is_primary` | boolean | default false; at most one true per user (partial unique index); the main device that keeps working when the plan ends (D-187) |
 | `created_at`, `updated_at` | timestamptz | default now |
 
 Sync runs automatically whenever online; no sync button on the normal screens (D-182). More than one device is a paid
-feature; the limits are `app_config` values (D-183).
+feature; the free plan allows one device (D-183, D-185); when the plan ends only the main device keeps working (D-187).
 
 `sync_conflicts` (owner field: `user_id`) (D-180)
 | Column | Type | Rule |
@@ -272,14 +273,16 @@ Read-only sharing, a paid feature: people he trusts see all his data and can nev
 | `created_at` | timestamptz | default now |
 | `accepted_at`, `revoked_at` | timestamptz, null | |
 
-At most `app_config.max_data_viewers` active shares per owner (checked by the server). Every read path checks the
+The first viewer is free (`app_config.free_data_viewers` = 1), more are paid, up to `app_config.max_data_viewers`; when the plan
+ends nothing is deleted, the oldest accepted share stays and the others are paused (calculated) (D-186). How a viewer gets
+in and what he may see are still being discussed (D-184). Every read path checks the
 share; a viewer never writes (a tested read-only exception to `OwnedManager.for_user`, D-087).
 
 ### `app_config` (system table, no owner) (D-179; approved; design by the AI)
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free`, `device_limit_paid`, `max_data_viewers` (about 30) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
