@@ -131,7 +131,8 @@ in Advanced (D-152). A welcome for new users and a fast clear of fake data are a
 | `zakat_rate_basis_points` | smallint, null | 1 to 10000; pre-filled 250 (2.5%) (D-137) |
 | `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); dropdown of all currencies with a short note; no country field (D-023, D-144) |
 | `zakat_clear_count` | smallint | >= 0, default 0; how many times the "delete old Zakat" button was used; the limit (1) is a code constant (D-169) |
-| `show_deleted_info` | boolean | shows or hides the delete date, device and countdown (D-176); default asked |
+| `show_deleted_info` | boolean | default false (hidden); shows the delete date and device (D-176, D-181) |
+| `show_deleted_countdown` | boolean, null | the days-left countdown; NULL = follow `show_deleted_info` (D-181) |
 
 CHECK: `zakat_helper_enabled` cannot be true while `zakat_rate_basis_points` or `zakat_currency_code` is empty.
 Combined hourly rate = sum of the counted amounts of the lines with monthly hours / sum of those hours (D-128).
@@ -182,7 +183,7 @@ A gift he gives is an ordinary `burn` card with importance `gift` (D-160).
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `kind` | text | CHECK list: `goal_progress`, `goal_next_month`, `zakat_point`, `zakat_restarted`, `zakat_due`, `prices_stale`, `reconcile_due`, `debt_due_week`, `debt_due_month`, `debt_due_day`; each new feature adds its kind with its migration |
+| `kind` | text | CHECK list: `goal_progress`, `goal_next_month`, `sync_conflict`, `zakat_point`, `zakat_restarted`, `zakat_due`, `prices_stale`, `reconcile_due`, `debt_due_week`, `debt_due_month`, `debt_due_day`; each new feature adds its kind with its migration |
 | `dedupe_key` | text | 1-200; unique `(user_id, dedupe_key)` |
 | `payload` | jsonb, null | small display data only, no money rules |
 | `created_at` | timestamptz | default now |
@@ -220,10 +221,14 @@ Every user-owned table that syncs gets two columns:
 |---|---|---|
 | `deleted_at` | timestamptz, null | set instead of erasing the row; other devices learn about the delete when they sync |
 | `deleted_by_device_id` | uuid, null | the device that deleted it; FK to `devices` |
+| `version` | integer | raised by the server on every change (D-180) |
+| `updated_by_device_id` | uuid, null | the device of the last change; FK to `devices` (D-180) |
 
 A daily cleanup erases a row for good 45 days after `deleted_at`. Advanced shows the date, the device name and the
-days left; Regular shows only the device name; both can hide it with `user_settings.show_deleted_info`. How two devices
-that changed the same row are merged is still asked (D-176 is only about deletes). A guest's local data moves into the
+days left; Regular shows only the device name; both can hide it with `user_settings.show_deleted_info` (hidden by default) and `show_deleted_countdown`.
+A deleted item is restored from its own card in its month (restore clears `deleted_at`); the deleted-items page links
+to the month and the item (D-181). Two devices that changed the same row: the newer change wins for the whole row and
+the losing version is kept in `sync_conflicts` and shown in a calm notice (D-180). A guest's local data moves into the
 account automatically at sign-up (D-177).
 
 `devices` (owner field: `user_id`)
@@ -235,6 +240,32 @@ account automatically at sign-up (D-177).
 | `platform` | text | `web`, `android`, `ios` (CHECK) |
 | `last_seen_at` | timestamptz, null | |
 | `created_at`, `updated_at` | timestamptz | default now |
+
+`sync_conflicts` (owner field: `user_id`) (D-180)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner |
+| `table_name` | text | the table of the row |
+| `row_id` | uuid | the row |
+| `losing_data` | jsonb | the losing version, to show or restore |
+| `losing_device_id`, `kept_device_id` | uuid, null | FK to `devices` |
+| `detected_at` | timestamptz | |
+| `resolved_at` | timestamptz, null | |
+| `resolution` | text, null | `kept` or `restored` (CHECK) |
+
+Notification kind `sync_conflict`. Resolved rows are erased 45 days later.
+
+### `app_config` (system table, no owner) (D-179; approved; design by the AI)
+Values the owner can change without a new app version; the same for every user; only an admin edits them.
+| Column | Type | Rule |
+|---|---|---|
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message` |
+| `value` | jsonb | |
+| `updated_at` | timestamptz | default now |
+| `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
+
+The apps keep the last copy for offline use and have a built-in default when they never read it (D-178, D-179).
 
 ### Zakat (D-136, D-162 to D-171; approved; may be opened again, so these tables stay separate)
 Money only for now (D-168). Rules:
