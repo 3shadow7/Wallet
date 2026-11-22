@@ -8,7 +8,7 @@ tool call in it, 1,349 entries, from 2026-11-08 on), because chat is not a safe 
 decisions (Engineering Rules §35). One line per decision, in English. The user's own words were
 Arabic; wording here is a faithful summary, not a new decision.
 
-**Numbers:** D-001 to D-172 are used. **Next free number: D-173.** Never reuse or renumber one.
+**Numbers:** D-001 to D-175 are used. **Next free number: D-176.** Never reuse or renumber one.
 
 **Status:** approved = the user confirmed it · proposal = not confirmed · superseded = replaced
 (kept for history) · deferred = idea saved for later · AI choice = a small technical choice the
@@ -124,6 +124,9 @@ them says. Confirm them if one looks wrong.
 | D-170 | approved (user, 2026-11-21 03:51: "option 2") | While Zakat is switched off, the daily check keeps running hidden (one check per day on the first opening, D-164), so a year that finishes while Zakat is off shows up, with its Zakat item, when he turns Zakat on again. The AI had recommended stopping the check; the user chose to keep it running. |
 | D-171 | approved (user, 2026-11-21 03:51: "option 2") | The "delete old Zakat" button (D-169, once per user for now) deletes EVERY Zakat row of the user: all `zakat_cycles` (finished, stopped and the running one) and all `zakat_payments`, for a completely fresh start. Consequence, accepted: the tax totals of the months that held Zakat payments go down by those amounts, so those months' results change. After the button, the next daily check starts a new year if the wealth is above the threshold. `zakat_clear_count` goes up by one. |
 | D-172 | approved (user, 2026-11-21 03:51: "do both, keep it in a .md file, not in our chat") | Two documents for the database, kept in the repository, not pasted in the chat: (1) `Qeeva-Backend/docs/database/schema-blueprint.md` holds the CURRENT truth only, built and designed, with its rules and examples; replaced or dropped designs are removed from it, their history stays only in this decision log; (2) a new `Qeeva-Backend/docs/database/final-table-list.md`: every table and every column in its final form, one line per table, marked built or designed, as the reference for building. Both are updated in the same commit as any decision that touches a table or a column. |
+| D-173 | approved (user, 2026-11-23: "first option"); columns by the AI, please review | ONE table `pending_entries` for every source of the pending list (D-062, D-074): bank, voice, camera (receipt photo) and card; the tabs on the screen filter by `source`. A new source later = one new value in the CHECK list, not a new table. It follows "Template 2" of the Foundation Build Plan: a status and an external id that is unique per user, so a bank re-sync never creates the same entry twice. |
+| D-174 | approved (user, 2026-11-23: "first option") | After he confirms a pending entry, its row STAYS with status `confirmed` and a link to the card it became; a dismissed entry stays with status `dismissed`. So when the bank sends the same transaction again (same external id), the app knows it and never adds it twice. Example: bank transaction `TX-881` of 45.000, he names it "Fuel" and confirms: a card appears in his month, the pending row keeps `TX-881`, `confirmed` and the card's id. |
+| D-175 | approved (user, 2026-11-23: "first option") | A confirmed entry goes into the month of its OWN date (the day the money moved), not the month he confirms it, so the log stays true. Example: a bank transaction of 28 October confirmed on 3 November goes into October. If that month does not exist yet it is created the usual way (D-150 for a missing month, D-151 for a month before the first one). |
 
 ## Product
 
@@ -191,7 +194,7 @@ them says. Confirm them if one looks wrong.
 | D-059 | approved | A card holds one number (no row per addition). |
 | D-060 | deferred | Linking items with different names: ignored for now, maybe never. |
 | D-061 | approved | Renaming to an existing same-type name opens a popup: accept to merge (values add up) or decline (old name returns). A different type stays a separate item with a Setup Items suggestion. |
-| D-062 | approved (future) | Voice, receipt photos and bank/card input go to a pending list with tabs by source; confirmed entries join the normal list. |
+| D-062 | approved (future) | Voice, receipt photos and bank/card input go to a pending list with tabs by source; confirmed entries join the normal list. Update 2026-11-23: designed as one table `pending_entries` (D-173 to D-175). |
 | D-063 | superseded by D-064 | The "x" multiply row in an earlier table (see D-064). |
 | D-064 | approved | The "x" tool is removed; "add one more" button (adds the unit value and 1 to the quantity) and an icon to add N pieces. |
 | D-065 | approved | Those buttons lock when the value is edited directly, changed by merging, or a different amount is added with `+`. |
@@ -203,7 +206,7 @@ them says. Confirm them if one looks wrong.
 | D-071 | approved | A Saving item stops repeating when its goal is reached, with a notification (derived from data, no field). |
 | D-072 | approved | Goal notifications at 25/50/75/100% and when the goal is expected next month; never two at once. |
 | D-073 | deferred | A goal for Tax. |
-| D-074 | approved (future) | In the pending list, bank items come without a name (the user types it); voice/camera/card items need only confirmation; nothing is locked until it enters the normal list. |
+| D-074 | approved (future) | In the pending list, bank items come without a name (the user types it); voice/camera/card items need only confirmation; nothing is locked until it enters the normal list. Update 2026-11-23: designed in D-173 to D-175. |
 | D-075 | approved | The same item with different importance makes two cards in one group; the group shows total value and quantity and is not edited directly. |
 | D-076 | approved (AI reading) | Adding an item whose card is ignored un-ignores it and replaces (not adds) its values. |
 | D-077 | approved | Undo for every action with a 5-second timer; only the last action stays undoable. |

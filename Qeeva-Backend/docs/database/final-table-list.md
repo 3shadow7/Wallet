@@ -27,6 +27,7 @@ still use 2 until the one-time change).
 | `fund_entries` | [designed] | `id`, `user_id`, `month_id`, `kind` (opening/add/withdraw/to_item/from_item/gift/lend/borrow/repay_in/repay_out), `amount_minor`, `item_id`, `debt_id`, `title`, `counted_minor`, `note`, `created_at`, `updated_at` |
 | `debts` | [designed] | `id`, `user_id`, `direction` (lent/borrowed), `person_name`, `month_id`, `started_on`, `due_on`, `note`, `created_at`, `updated_at` |
 | `notifications` | [designed] | `id`, `user_id`, `kind`, `dedupe_key`, `payload`, `created_at`, `seen_at` |
+| `pending_entries` | [designed] | `id`, `user_id`, `source` (bank/voice/camera/card), `status` (pending/confirmed/dismissed), `external_id`, `occurred_on`, `direction` (out/in), `amount_minor`, `suggested_name`, `suggested_type`, `raw_text`, `month_item_id`, `decided_at`, `created_at`, `updated_at` |
 
 ## Zakat (kept separate; may be opened again)
 | Table | Status | Columns |
@@ -44,5 +45,5 @@ goal progress, debt open amounts, the daily Zakat threshold and wealth, the Zaka
 `holdings`, `item_classes`, `item_class_aliases`, `items.item_class_id`, gold prices, animals (D-168); item groups
 under one title (D-092).
 
-## Still to design (Path A, areas 7 to 9)
-Pending list, sync and devices, account (plans and waitlist, consents, audit logs, export and deletion), Community.
+## Still to design (Path A, areas 8 and 9)
+Sync and devices, account (plans and waitlist, consents, audit logs, export and deletion), Community.

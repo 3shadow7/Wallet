@@ -41,7 +41,8 @@ In progress and waiting:
 - [x] 2026-11-21: Zakat redesigned by the user (D-162 to D-166): silver nisab of 595 g, black-market rate, daily lunar-year counter stored in `zakat_cycles`, year end checked as if paid, debts by due date. D-161 superseded. 03:19: one Zakat item per year inside the group card, unpaid Zakat deducted (D-167); Zakat on money only, gold/silver/holdings/animals to version 2 (D-168). 03:34: Zakat off hides and keeps the data, a once-per-user button deletes old Zakat items (D-169). 03:51: the check keeps running while off (D-170); the button deletes every Zakat row (D-171).
 - [x] 2026-11-21: the schema blueprint was cleaned to the current truth only, and `Qeeva-Backend/docs/database/final-table-list.md` lists every final table and column (D-172).
 - [x] 2026-11-19: he ran the 360 backend tests on his own machine (Windows, Python 3.14.3, pytest 9.2.0): all passed.
-- [ ] Areas 7-9: pending list, sync and devices, account.
+- [x] Area 7, pending list (2026-11-23): one table `pending_entries` for every source (D-173), confirmed and dismissed rows stay, linked to the card (D-174), a confirmed entry goes into the month of its own date (D-175).
+- [ ] Areas 8-9: sync and devices, account.
 - [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
 
 Not touched yet: Supabase (read-only, nothing applied), the JWT key check, running the shared vectors in Angular, any API endpoint.
@@ -58,4 +59,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-172 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-175 (the ones this period produced); the earlier ones are in the decision log.

@@ -189,6 +189,30 @@ A gift he gives is an ordinary `burn` card with importance `gift` (D-160).
 
 Index on `(user_id, seen_at)`. A milestone lost and reached again after a history edit does not notify again.
 
+### `pending_entries` (owner field: `user_id`) (D-062, D-074, D-173 to D-175; approved; columns by the AI)
+Bank, voice, camera and card entries wait here until he confirms them; nothing counts in any total while pending.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `source` | text | `bank`, `voice`, `camera`, `card` (CHECK) |
+| `status` | text | `pending`, `confirmed`, `dismissed` (CHECK); default `pending` |
+| `external_id` | text, null | the source's own id (a bank transaction id); unique `(user_id, source, external_id)` when set |
+| `occurred_on` | date | the day the money moved; decides the month on confirm (D-175) |
+| `direction` | text | `out` or `in` (CHECK) |
+| `amount_minor` | bigint, null | >= 0; may be empty from voice until he gives it |
+| `suggested_name` | text, null | 1-40; empty for bank entries, he types it (D-074) |
+| `suggested_type` | text, null | `burn`, `tax`, `saving` (CHECK) |
+| `raw_text` | text, null | up to 500 characters: the voice transcript or the receipt text, for display |
+| `month_item_id` | uuid, null | the card it became; set on confirm; composite FK; ON DELETE SET NULL (the row stays `confirmed`, so a re-sync never brings it back) |
+| `decided_at` | timestamptz, null | when he confirmed or dismissed it |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+CHECK: `month_item_id` may be set only when `status` is `confirmed`. Confirm = one transaction: create or reuse the
+month of `occurred_on` (D-150, D-151), create the card, set the link and the status. Receipt photos themselves are not
+stored here (file storage is a later decision); the retention of `raw_text` and bank data is part of Area 9 (account,
+privacy). An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
+
 ### Zakat (D-136, D-162 to D-171; approved; may be opened again, so these tables stay separate)
 Money only for now (D-168). Rules:
 - Threshold (nisab) = 595 g x silver price per gram in USD x his black-market rate, every day; 595 is a code constant (D-162, D-163).
@@ -274,5 +298,5 @@ Never change a formula without the user's approval.
 Approved additions (not formula changes): `tax` of a month also counts the Zakat payments logged in that month (D-145, D-165); a gift he gives is a `burn` item (D-160); money received outside income, lending, borrowing and repayments are moves of the funds, never income or expense (D-155, D-157).
 
 ## Still to design
-Pending list (D-062/D-074), goals shared between items, sync/devices, plans and waitlist, consents, audit logs,
+Sync/devices, plans and waitlist, consents, audit logs,
 data export and account deletion flow, Community. Version 2, maybe: Zakat on gold, silver and animals (D-168), grouping other items under one title (D-092). Debit/credit is designed (D-155 to D-160). The custom month boundary is deferred (D-127).
