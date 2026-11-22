@@ -239,7 +239,11 @@ account automatically at sign-up (D-177).
 | `name` | text | 1-40, shown to the user |
 | `platform` | text | `web`, `android`, `ios` (CHECK) |
 | `last_seen_at` | timestamptz, null | |
+| `last_synced_at` | timestamptz, null | shown in Settings next to the "sync now" button (D-182) |
 | `created_at`, `updated_at` | timestamptz | default now |
+
+Sync runs automatically whenever online; no sync button on the normal screens (D-182). More than one device is a paid
+feature; the limits are `app_config` values (D-183).
 
 `sync_conflicts` (owner field: `user_id`) (D-180)
 | Column | Type | Rule |
@@ -256,11 +260,26 @@ account automatically at sign-up (D-177).
 
 Notification kind `sync_conflict`. Resolved rows are erased 45 days later.
 
+### `data_shares` (owner field: `user_id`) (D-184; approved; design by the AI)
+Read-only sharing, a paid feature: people he trusts see all his data and can never change it.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | the owner of the data; FK to `profiles` `ON DELETE CASCADE` |
+| `viewer_user_id` | uuid, null | FK to `profiles`; set when the invitation is accepted; unique `(user_id, viewer_user_id)` when set |
+| `invited_email` | text | the person invited |
+| `status` | text | `pending`, `accepted`, `revoked` (CHECK) |
+| `created_at` | timestamptz | default now |
+| `accepted_at`, `revoked_at` | timestamptz, null | |
+
+At most `app_config.max_data_viewers` active shares per owner (checked by the server). Every read path checks the
+share; a viewer never writes (a tested read-only exception to `OwnedManager.for_user`, D-087).
+
 ### `app_config` (system table, no owner) (D-179; approved; design by the AI)
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message` |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free`, `device_limit_paid`, `max_data_viewers` (about 30) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
