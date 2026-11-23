@@ -48,6 +48,7 @@ In progress and waiting:
 - [ ] NEXT TARGET after the database design (his words, 2026-11-23): the waitlist and marketing with n8n, even before the app is finished; market everything built; collect feedback from comments and feature ideas; a talk about how n8n works first (D-194).
 - [x] 2026-11-23 (02:34): the owner's read-only device uses a viewer slot (D-191); `waitlist_entries` first draft (D-194); account deletion grace 30 days (D-195).
 - [x] 2026-11-23 (02:50): audit log of sensitive actions, table `audit_logs` (D-196); nothing deleted from the pending list (D-197).
+- [x] 2026-11-23 (03:00): export = one Excel file, can be hidden (D-198); growth control proposal for an MVP with Supabase Free limits checked (D-199, proposal).
 - [ ] Area 9: account.
 - [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
 
@@ -65,4 +66,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-197 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-199 (the ones this period produced); the earlier ones are in the decision log.

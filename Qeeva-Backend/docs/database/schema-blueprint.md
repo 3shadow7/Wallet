@@ -309,6 +309,10 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 
 n8n writes through a small Django endpoint with its own secret, never with database passwords.
 
+### Data export (D-198; approved; no new table)
+One Excel file with a sheet per area; `app_config.feature_export_enabled` can hide the feature; each export writes
+`data_exported` in `audit_logs`.
+
 ### Account deletion (D-195; approved; no new column)
 `profiles.status` = `pending_deletion` and `deleted_at` (built) start a grace period of
 `app_config.account_deletion_grace_days` (30); he can cancel; after it everything of his is erased for good.
@@ -330,7 +334,7 @@ No IP address is stored for now.
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (D-198); proposed `signup_open`, `max_active_users` (D-199) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
