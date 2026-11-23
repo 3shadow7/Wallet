@@ -41,7 +41,7 @@ Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`
 ## System (no owner, the same for everyone)
 | Table | Status | Columns |
 |---|---|---|
-| `app_config` | [designed] | `key`, `value`, `updated_at`, `updated_by` |
+| `app_config` | [designed] | `key`, `value`, `updated_at`, `updated_by` (22 keys, listed in `schema-blueprint.md`, D-179, D-206) |
 
 ## Account
 | Table | Status | Columns |
@@ -49,7 +49,7 @@ Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`
 | `plan_events` | [designed] | `id`, `user_id`, `kind`, `occurred_at`, `payload`, `created_at` |
 | `audit_logs` | [designed] | `id`, `user_id`, `action`, `device_id`, `details`, `created_at` |
 | `user_consents` | [designed] | `id`, `user_id`, `kind` (terms/privacy/marketing), `document_version`, `action` (accepted/withdrawn), `created_at` |
-| `waitlist_entries` | [designed, first draft] | `id`, `email`, `source`, `marketing_consent`, `invited_at`, `converted_profile_id`, `note`, `created_at` |
+| `waitlist_entries` | [first draft; redesigned in the n8n talk, not built with the MVP, D-205] | `id`, `email`, `source`, `marketing_consent`, `invited_at`, `converted_profile_id`, `note`, `created_at` |
 
 ## Zakat (kept separate; may be opened again)
 | Table | Status | Columns |
@@ -69,4 +69,5 @@ under one title (D-092); Community (D-026).
 
 ## Still open
 The number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later), bank linking with
-its provider. Path A is otherwise complete. The MVP subset of these tables is chosen in the pre-build review (D-193, D-200).
+its provider, and the redesign of `waitlist_entries` in the n8n talk. The design is otherwise complete (D-205): the MVP
+tables are built in stages by `plans/plans-Backend/20261123-mvp-tables-build.md`.

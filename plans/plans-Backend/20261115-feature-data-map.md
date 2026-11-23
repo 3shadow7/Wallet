@@ -15,6 +15,9 @@ the living map: for every feature, what data it needs, what is stored and what i
 database already has, and what is still open. We discuss one area at a time (since 2026-11-17 two or more
 questions per message, at his request) and write the answer here and in the decision log. No table is built before its area is approved.
 
+**2026-11-23 (22:58): every area is designed and the design is complete (D-205).** The MVP tables are built in stages by
+`20261123-mvp-tables-build.md`; `waitlist_entries` is redesigned in the n8n talk.
+
 ## Steps
 
 1. [x] Area 1 (data design): D-117 approved (one nullable `reduction_minor` column on the saving card for the pick). D-111 approved: the deficit (and the editing-an-old-month gap, D-119) lowers the month's not-yet-completed saving cards; the default is pro-rata, a tap overrides it, nothing is forced or deleted. D-120 (global undo) deferred.

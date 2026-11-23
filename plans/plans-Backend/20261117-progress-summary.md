@@ -11,8 +11,8 @@ status: "draft"
 
 The backend has a tested foundation, the accounts tables, the five finance tables and a pure-Python month
 calculation layer (360 tests with PostgreSQL, no finance endpoint). Since 2026-11-15 the work is **Path A**: design the
-data of every feature, one area at a time, before building more. Areas 1 to 5 are designed, Area 6 is in progress,
-and several pieces are designed but not built. Nothing has been applied to Supabase. This file is a snapshot; the decision
+data of every feature, one area at a time, before building more. Since 2026-11-23 (22:58) the design is complete (D-205) and
+the MVP tables are being built in stages. Nothing has been applied to Supabase. This file is a snapshot; the decision
 log, the feature-data map and `Qeeva-Backend/AGENTS.md` section 10 are the live sources.
 
 ## Steps
@@ -42,9 +42,9 @@ In progress and waiting:
 - [x] 2026-11-21: the schema blueprint was cleaned to the current truth only, and `Qeeva-Backend/docs/database/final-table-list.md` lists every final table and column (D-172).
 - [x] 2026-11-19: he ran the 360 backend tests on his own machine (Windows, Python 3.14.3, pytest 9.2.0): all passed.
 - [x] Area 7, pending list (2026-11-23): one table `pending_entries` for every source (D-173), confirmed and dismissed rows stay, linked to the card (D-174), a confirmed entry goes into the month of its own date (D-175).
-- [ ] Area 8, sync and devices (in progress): deleted rows kept 45 days with the device (D-176, table `devices`), guest data moves into the account (D-177), sign-in prompt after a number of cards set in `app_config` (D-178, D-179), conflicts kept in `sync_conflicts` with a calm notice (D-180), restore from the item card and links from the deleted-items page (D-181); automatic sync, the button only in Settings (D-182); several devices and bank linking are paid (D-183); read-only sharing with trusted people, table `data_shares` (D-184), first viewer free (D-186); free plan one device (D-185); main device keeps working when the plan ends (D-187); viewer access by invite code, per-area switches, `for_user` unchanged (D-189); last visit in Advanced only (D-190). Area 8 closed.
-- [ ] Area 9 (in progress): the "My plan" place (D-188) with a stored history `plan_events` (D-192); invitations in the app and by email, sharing usable by the owner himself, invite code 7 days (D-191); the number of plans not decided yet.
-- [ ] Before building the tables in Django: review every table for values that belong in `app_config` (D-193).
+- [x] Area 8, sync and devices: deleted rows kept 45 days with the device (D-176, table `devices`), guest data moves into the account (D-177), sign-in prompt after a number of cards set in `app_config` (D-178, D-179), conflicts kept in `sync_conflicts` with a calm notice (D-180), restore from the item card and links from the deleted-items page (D-181); automatic sync, the button only in Settings (D-182); several devices and bank linking are paid (D-183); read-only sharing with trusted people, table `data_shares` (D-184), first viewer free (D-186); free plan one device (D-185); main device keeps working when the plan ends (D-187); viewer access by invite code, per-area switches, `for_user` unchanged (D-189); last visit in Advanced only (D-190). Area 8 closed.
+- [x] Area 9: the "My plan" place (D-188) with a stored history `plan_events` (D-192); invitations in the app and by email, sharing usable by the owner himself, invite code 7 days (D-191); the number of plans not decided yet.
+- [x] Before building the tables in Django: review every table for values that belong in `app_config` (D-193); approved 2026-11-23 (22:58), nine more keys (D-206).
 - [ ] NEXT TARGET after the database design (his words, 2026-11-23): the waitlist and marketing with n8n, even before the app is finished; market everything built; collect feedback from comments and feature ideas; a talk about how n8n works first (D-194).
 - [x] 2026-11-23 (02:34): the owner's read-only device uses a viewer slot (D-191); `waitlist_entries` first draft (D-194); account deletion grace 30 days (D-195).
 - [x] 2026-11-23 (02:50): audit log of sensitive actions, table `audit_logs` (D-196); nothing deleted from the pending list (D-197).
@@ -53,8 +53,9 @@ In progress and waiting:
 - [x] 2026-11-23 (11:38): consents in `user_consents` (D-202); Community to version 2 (D-026); remembered pending ids erased after 90 days with an import window of the same days (D-203). PATH A COMPLETE except the number of plans, Telegram, Arabic and bank linking.
 - [x] 2026-11-23 (11:20): pending entries are deleted on confirm or dismiss; `pending_seen_ids` remembers bank and card ids (D-201); the simpler MVP gate and the MVP scope are confirmed (D-199, D-200).
 - [x] 2026-11-23 (03:20): MVP FIRST, behind the waitlist, less complex (D-199 simpler gate, D-200 scope); export hidden by default (D-198); the pending text stays only in the pending row (D-197).
-- [ ] Area 9: account.
-- [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
+- [x] The calculation layer's shape is approved as a whole (D-109, 2026-11-23 22:58, D-205). D-107 and D-125 were approved on 2026-11-17.
+- [x] 2026-11-23 (22:58): THE DESIGN IS COMPLETE (D-205): review approved, 7-day bank overlap confirmed, nine more `app_config` keys (D-206); `waitlist_entries` is redesigned in the n8n talk. The MVP tables are built in stages by `20261123-mvp-tables-build.md`.
+- [ ] Build the MVP tables (stages 1 to 4 of `20261123-mvp-tables-build.md`).
 
 Not touched yet: Supabase (read-only, nothing applied), the JWT key check, running the shared vectors in Angular, any API endpoint.
 
@@ -70,4 +71,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-204 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-206 (the ones this period produced); the earlier ones are in the decision log.

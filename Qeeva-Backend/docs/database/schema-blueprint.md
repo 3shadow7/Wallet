@@ -130,7 +130,7 @@ in Advanced (D-152). A welcome for new users and a fast clear of fake data are a
 | `zakat_helper_enabled` | boolean | default false; a neutral feature switch; NOT a religion field (D-136) |
 | `zakat_rate_basis_points` | smallint, null | 1 to 10000; pre-filled 250 (2.5%) (D-137) |
 | `zakat_currency_code` | char(3), null | ISO 4217, three capital letters (CHECK); dropdown of all currencies with a short note; no country field (D-023, D-144) |
-| `zakat_clear_count` | smallint | >= 0, default 0; how many times the "delete old Zakat" button was used; the limit (1) is a code constant (D-169) |
+| `zakat_clear_count` | smallint | >= 0, default 0; how many times the "delete old Zakat" button was used; the limit is `app_config.zakat_clear_limit` (1, D-169, D-206) |
 | `show_deleted_info` | boolean | default false (hidden); shows the delete date and device (D-176, D-181) |
 | `show_deleted_countdown` | boolean, null | the days-left countdown; NULL = follow `show_deleted_info` (D-181) |
 | `show_viewer_last_visit` | boolean | default false; Advanced only (D-190) |
@@ -242,7 +242,7 @@ Every user-owned table that syncs gets two columns:
 | `version` | integer | raised by the server on every change (D-180) |
 | `updated_by_device_id` | uuid, null | the device of the last change; FK to `devices` (D-180) |
 
-A daily cleanup erases a row for good 45 days after `deleted_at`. Advanced shows the date, the device name and the
+A daily cleanup erases a row for good 45 days after `deleted_at` (`app_config.deleted_rows_days`, D-206). Advanced shows the date, the device name and the
 days left; Regular shows only the device name; both can hide it with `user_settings.show_deleted_info` (hidden by default) and `show_deleted_countdown`.
 A deleted item is restored from its own card in its month (restore clears `deleted_at`); the deleted-items page links
 to the month and the item (D-181). Two devices that changed the same row: the newer change wins for the whole row and
@@ -312,7 +312,7 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 | `payload` | jsonb, null | display data, for example the device name |
 | `created_at` | timestamptz | default now |
 
-### `waitlist_entries` (no owner; filled by n8n) (D-194; approved; first draft, finished in the marketing talk)
+### `waitlist_entries` (no owner; filled by n8n) (D-194; first draft; redesigned in the n8n talk and not built with the MVP, D-205)
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
@@ -363,7 +363,7 @@ No IP address is stored for now.
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204); added by D-206: `deleted_rows_days` (45), `prices_stale_days` (30), `price_update_hours` (24), `debt_reminder_days_before` (7), `months_ahead_limit` (1), `username_change_days` (14), `zakat_silver_grams` (595), `zakat_default_rate_bp` (250), `zakat_clear_limit` (1) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
@@ -372,7 +372,7 @@ The apps keep the last copy for offline use and have a built-in default when the
 
 ### Zakat (D-136, D-162 to D-171; approved; may be opened again, so these tables stay separate)
 Money only for now (D-168). Rules:
-- Threshold (nisab) = 595 g x silver price per gram in USD x his black-market rate, every day; 595 is a code constant (D-162, D-163).
+- Threshold (nisab) = 595 g x silver price per gram in USD x his black-market rate, every day; 595 is `app_config.zakat_silver_grams` (D-162, D-163, D-206).
 - Wealth = total funds + free money of the current month + lent money due inside the running year - borrowed money due by the year end - Zakat of earlier years not paid yet (D-164, D-166, D-167).
 - One check per day, the first time the app is opened that day; missed days are treated as unchanged. The check keeps running while Zakat is switched off (hidden), so years that finish while it is off show up when it is turned on again (D-170).
 - Above the threshold a Hijri year (Umm al-Qura) starts; below it the year stops; above again a new year starts (D-147, D-148, D-164). The first crossing shows one popup (D-136).
@@ -392,7 +392,7 @@ Money only for now (D-168). Rules:
 | `created_at`, `updated_at` | timestamptz | default now |
 
 Unique `(user_id, metal, fetched_at)`. Price of a day = newest row not after that day; none = no threshold (D-032).
-Notification `prices_stale` after 30 days without an `api` price (D-142).
+Notification `prices_stale` after 30 days without an `api` price (`app_config.prices_stale_days`, D-142, D-206).
 
 `exchange_rates` (owner field: `user_id`)
 | Column | Type | Rule |
@@ -455,6 +455,6 @@ Never change a formula without the user's approval.
 Approved additions (not formula changes): `tax` of a month also counts the Zakat payments logged in that month (D-145, D-165); a gift he gives is a `burn` item (D-160); money received outside income, lending, borrowing and repayments are moves of the funds, never income or expense (D-155, D-157).
 
 ## Still to design
-The number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later; `app_config` texts can
+The design is complete (D-205); left open: the redesign of `waitlist_entries` in the n8n talk, the number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later; `app_config` texts can
 hold `en` and `ar` values), bank linking with its provider. Version 2, maybe: Zakat on gold, silver and animals (D-168),
 grouping other items under one title (D-092), Community (D-026). Debit/credit is designed (D-155 to D-160). The custom month boundary is deferred (D-127).

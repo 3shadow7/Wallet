@@ -201,7 +201,7 @@ A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-p
 Patch 0025 adds the delivery helper `scripts/apply-patches.sh` (section 7); patch subjects now carry their number.
 
 Next candidates (the user's current path is **Path A**, section 10; B and C wait). Each needs his go-ahead:
-1. Finish the data design (Path A): Areas 1-5 are designed (Zakat: D-135 to D-148, D-154; decimals D-149; months D-150 to D-152; welcome idea D-153); Area 6 (credits and debits) is in progress; then Areas 7-9 of the feature map.
+1. Path A is complete (D-205): Areas 1-9 are designed. The MVP tables are being built in stages (`plans/plans-Backend/20261123-mvp-tables-build.md`).
 2. After Path A, build what was designed, one area at a time with tests: `fund_entries`, `notifications`,
    `month_items.reduction_minor`, `user_settings.skip_item_delete_confirm`; then extend the calculation layer
    (deficit and old-month gap rules D-111 and D-119, goals) and run the same vectors in the Angular calculator
@@ -264,8 +264,13 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
 
 Date: 2026-11-17. Patches 0001-0018 are applied and pushed. Patches 0019, 0020 and 0021 are docs only and delivered: 0019 (D-121 notifications table, D-122 working time stays in hours, first D-123 wording, the "Designed, not built" tables in `docs/database/schema-blueprint.md`), 0020 (D-123 rewritten to match the Angular month behavior, the Advanced switch `skip_item_delete_confirm`, the ideas list) and 0021 (D-123 open point decided, History table notes, two more ideas). On 2026-11-17 the user said he is applying 0019 and 0020, and that any change goes into 0021. Patch 0022 (docs: this progress snapshot and the AGENTS.md refresh) follows them.
 
-**Path A (current):** finish the data design for every feature, then the calculation layer. Not built:
-anything for Areas 1-9 of the map. The user's rule: the database is the only subject; he asked the AI
+**2026-11-23 (22:58): the design is complete (D-205).** He approved the pre-build review, the 7-day bank overlap
+(D-204), the calculation layer as a whole (D-109) and nine more `app_config` keys (D-206). `waitlist_entries` is redesigned
+in the n8n talk and is not built with the MVP. **Now: building the MVP tables in stages** by
+`plans/plans-Backend/20261123-mvp-tables-build.md` (one patch per stage, tests required, nothing applied to Supabase
+without his approval, D-084). After the MVP tables: the waitlist and marketing with n8n, a talk first (D-194).
+
+**Path A (closed 2026-11-23):** the data design for every feature. The user's rule: the database is the only subject; he asked the AI
 to ask two or more questions per message (changed 2026-11-17) and to keep the `.md` files updated.
 
 **Done in the design:** Area 1 (D-117 approved). D-119 approved: the free funds can go negative after editing an old month; the next months' money fills that gap first (free leftover, then the planned saving through `reduction_minor`); Regular sees a notice, Advanced also gets a "fix" that lowers one saving item. Funds pool and start amounts (D-118 approved: total funds are one pool, a saving item holds a part of it, the start amount is a ledger entry "move to item", a move larger than the free funds is refused; the ledger table `fund_entries` also serves the manual savings list).

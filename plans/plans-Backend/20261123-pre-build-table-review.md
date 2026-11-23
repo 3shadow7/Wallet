@@ -2,7 +2,7 @@
 title: "Pre-build table review: every table and column with its purpose"
 author: "Claude"
 date: "2026-11-23"
-status: "proposed"
+status: "approved"
 ---
 
 # Pre-build table review
@@ -15,9 +15,9 @@ Common columns are explained once at the top. After his review, the MVP tables a
 as the built tables (models, migrations, tests), and nothing goes to Supabase without his approval (D-084).
 
 ## Steps
-1. The owner reads this file and marks what to change.
-2. The AI updates the designs (`schema-blueprint.md`, `final-table-list.md`, the decision log) in one patch.
-3. With his go-ahead, the AI builds the MVP tables in Django with tests, then the rest later.
+1. [x] The owner reads this file and marks what to change (approved 2026-11-23 22:58, no change, D-205).
+2. [x] The AI updates the designs (`schema-blueprint.md`, `final-table-list.md`, the decision log) in one patch (0057).
+3. [ ] The AI builds the MVP tables in Django with tests, by `20261123-mvp-tables-build.md`, then the rest later.
 
 ## Columns every table has (explained once)
 | Column | What it is for |
@@ -102,7 +102,7 @@ Keys decided so far: `guest_signin_prompt_cards` (5), `guest_signin_prompt_messa
 `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false), `signup_open`,
 `pending_seen_days` (90), `bank_sync_overlap_days` (7, D-204).
 
-### `waitlist_entries` (designed, first draft) · MVP: yes
+### `waitlist_entries` (designed, first draft) · MVP: redesigned in the n8n talk first (D-205)
 | Column | What it is for |
 |---|---|
 | `email` | The person's email, once only. |
@@ -273,9 +273,9 @@ Rules without columns: missing months are made automatically with copies; the ne
 | `month_id` | The month he pressed "spent"; it counts in that month's taxes (D-145). |
 | `amount_minor`, `paid_at` | How much and when. |
 
-## 4. Values that could move to `app_config` (D-193, his choice)
-These are fixed numbers in the designs today; each could become an `app_config` key he can change without a new version:
-| Value today | Where | Possible key |
+## 4. Values moved to `app_config` (D-193; all moved, D-206)
+These were fixed numbers in the designs; on 2026-11-23 (22:58) he moved all of them to `app_config` keys he can change without a new version:
+| Value (the default) | Where | Key |
 |---|---|---|
 | Deleted rows erased after 45 days; resolved conflicts too | D-176, D-180 | `deleted_rows_days` |
 | Silver prices "old" after 30 days | D-142 | `prices_stale_days` |
@@ -296,4 +296,4 @@ These are fixed numbers in the designs today; each could become an `app_config` 
 - After his review: the designs are updated in one patch, then the MVP tables are built with tests.
 
 ## Decisions
-D-193, D-200, D-149, D-172, D-179, D-204.
+D-193, D-200, D-149, D-172, D-179, D-204, D-205, D-206.
