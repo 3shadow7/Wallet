@@ -214,7 +214,8 @@ Bank, voice, camera and card entries wait here until he confirms them; nothing c
 CHECK: `month_item_id` may be set only when `status` is `confirmed`. Confirm = one transaction: create or reuse the
 month of `occurred_on` (D-150, D-151), create the card, set the link and the status. Receipt photos themselves are not
 stored here (file storage is a later decision). Nothing is deleted: a confirmed entry leaves the pending page and is a
-normal item; how the original text and source stay visible after confirm is being asked (D-197). An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
+normal item; its original text and source stay only in this row, and the card reaches them through `month_item_id`
+(no new column on the cards, D-197). How to keep this table from growing forever is being asked. An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
 
 ### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
 Every user-owned table that syncs gets two columns:
@@ -307,10 +308,11 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 | `note` | text, null | |
 | `created_at` | timestamptz | default now |
 
-n8n writes through a small Django endpoint with its own secret, never with database passwords.
+MVP gate (D-199): while `app_config.signup_open` is false, only emails with `invited_at` set can create an account; the
+others join the waitlist. n8n writes through a small Django endpoint with its own secret, never with database passwords.
 
 ### Data export (D-198; approved; no new table)
-One Excel file with a sheet per area; `app_config.feature_export_enabled` can hide the feature; each export writes
+One Excel file with a sheet per area; `app_config.feature_export_enabled` is false by default (hidden) until he turns it on; each export writes
 `data_exported` in `audit_logs`.
 
 ### Account deletion (D-195; approved; no new column)
@@ -334,7 +336,7 @@ No IP address is stored for now.
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (D-198); proposed `signup_open`, `max_active_users` (D-199) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |

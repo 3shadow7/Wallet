@@ -65,5 +65,6 @@ goal progress, debt open amounts, the daily Zakat threshold and wealth, the Zaka
 `holdings`, `item_classes`, `item_class_aliases`, `items.item_class_id`, gold prices, animals (D-168); item groups
 under one title (D-092).
 
-## Still to design (Path A, areas 8 and 9)
-Sync and devices, account (plans and waitlist, consents, audit logs, export and deletion), Community.
+## Still to design (Path A, area 9)
+The number of plans (not decided), consents, the Telegram bot token and linking, Community, Arabic. The MVP subset of
+these tables is chosen in the pre-build review (D-193, D-200).
