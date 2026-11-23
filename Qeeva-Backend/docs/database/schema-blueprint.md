@@ -133,6 +133,7 @@ in Advanced (D-152). A welcome for new users and a fast clear of fake data are a
 | `zakat_clear_count` | smallint | >= 0, default 0; how many times the "delete old Zakat" button was used; the limit (1) is a code constant (D-169) |
 | `show_deleted_info` | boolean | default false (hidden); shows the delete date and device (D-176, D-181) |
 | `show_deleted_countdown` | boolean, null | the days-left countdown; NULL = follow `show_deleted_info` (D-181) |
+| `show_viewer_last_visit` | boolean | default false; Advanced only (D-190) |
 
 CHECK: `zakat_helper_enabled` cannot be true while `zakat_rate_basis_points` or `zakat_currency_code` is empty.
 Combined hourly rate = sum of the counted amounts of the lines with monthly hours / sum of those hours (D-128).
@@ -268,15 +269,19 @@ Read-only sharing, a paid feature: people he trusts see all his data and can nev
 | `id` | uuid, PK | |
 | `user_id` | uuid | the owner of the data; FK to `profiles` `ON DELETE CASCADE` |
 | `viewer_user_id` | uuid, null | FK to `profiles`; set when the invitation is accepted; unique `(user_id, viewer_user_id)` when set |
-| `invited_email` | text | the person invited |
+| `invited_email` | text, null | the person invited, when the invite goes by email (the channel is decided later) |
+| `invite_code_hash` | text, null | hash of the invite code; cleared when the code is used (D-189) |
+| `invite_expires_at` | timestamptz, null | |
+| `allowed_areas` | text[] | subset of `income`, `expenses`, `taxes`, `savings_funds`, `debts`, `zakat` (CHECK); default all six (D-189) |
+| `last_viewed_at` | timestamptz, null | the viewer's last visit; shown only in Advanced when `show_viewer_last_visit` is on (D-190) |
 | `status` | text | `pending`, `accepted`, `revoked` (CHECK) |
 | `created_at` | timestamptz | default now |
 | `accepted_at`, `revoked_at` | timestamptz, null | |
 
 The first viewer is free (`app_config.free_data_viewers` = 1), more are paid, up to `app_config.max_data_viewers`; when the plan
 ends nothing is deleted, the oldest accepted share stays and the others are paused (calculated) (D-186). How a viewer gets
-in and what he may see are still being discussed (D-184). Every read path checks the
-share; a viewer never writes (a tested read-only exception to `OwnedManager.for_user`, D-087).
+in and what he may see are still being discussed (D-184). `OwnedManager.for_user` is NOT changed: a separate read-only
+path checks an accepted, not paused share that allows the area; a viewer never writes; it has its own tests (D-189).
 
 ### `app_config` (system table, no owner) (D-179; approved; design by the AI)
 Values the owner can change without a new app version; the same for every user; only an admin edits them.

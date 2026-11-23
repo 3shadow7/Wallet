@@ -42,7 +42,8 @@ In progress and waiting:
 - [x] 2026-11-21: the schema blueprint was cleaned to the current truth only, and `Qeeva-Backend/docs/database/final-table-list.md` lists every final table and column (D-172).
 - [x] 2026-11-19: he ran the 360 backend tests on his own machine (Windows, Python 3.14.3, pytest 9.2.0): all passed.
 - [x] Area 7, pending list (2026-11-23): one table `pending_entries` for every source (D-173), confirmed and dismissed rows stay, linked to the card (D-174), a confirmed entry goes into the month of its own date (D-175).
-- [ ] Area 8, sync and devices (in progress): deleted rows kept 45 days with the device (D-176, table `devices`), guest data moves into the account (D-177), sign-in prompt after a number of cards set in `app_config` (D-178, D-179), conflicts kept in `sync_conflicts` with a calm notice (D-180), restore from the item card and links from the deleted-items page (D-181); automatic sync, the button only in Settings (D-182); several devices and bank linking are paid (D-183); read-only sharing with trusted people, table `data_shares` (D-184), first viewer free (D-186); free plan one device (D-185); main device keeps working when the plan ends (D-187).
+- [ ] Area 8, sync and devices (in progress): deleted rows kept 45 days with the device (D-176, table `devices`), guest data moves into the account (D-177), sign-in prompt after a number of cards set in `app_config` (D-178, D-179), conflicts kept in `sync_conflicts` with a calm notice (D-180), restore from the item card and links from the deleted-items page (D-181); automatic sync, the button only in Settings (D-182); several devices and bank linking are paid (D-183); read-only sharing with trusted people, table `data_shares` (D-184), first viewer free (D-186); free plan one device (D-185); main device keeps working when the plan ends (D-187); viewer access by invite code, per-area switches, `for_user` unchanged (D-189); last visit in Advanced only (D-190). Area 8 closed.
+- [ ] Area 9 includes the "My plan" place (D-188).
 - [ ] Area 9: account.
 - [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
 
@@ -60,4 +61,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-187 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-190 (the ones this period produced); the earlier ones are in the decision log.
