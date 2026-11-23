@@ -57,16 +57,17 @@ def test_vectors_cover_every_formula_edge() -> None:
 class TestOwnersExamples:
     """The example from the project description, read with the approved formulas.
 
-    Income 500.00, saving goal 100.00, planned outflow 550.00 (so spending + taxes = 450.00).
+    Income 500, saving goal 100, planned outflow 550 (so spending + taxes = 450). Amounts are in
+    thousandths (D-149): 500 is ``500_000``.
     """
 
     def test_planned_outflow_bigger_than_income_but_spending_is_covered(self) -> None:
         summary = summarize_month(
-            50_000, [CardAmount("burn", 45_000), CardAmount("saving", 10_000)]
+            500_000, [CardAmount("burn", 450_000), CardAmount("saving", 100_000)]
         )
-        assert summary.free_money_minor == -5_000  # the plan is 50.00 over the income
-        assert summary.actual_saved_minor == 5_000  # 50.00 really saved
-        assert summary.saving_shortfall_minor == 5_000  # the goal is missed by 50.00
+        assert summary.free_money_minor == -50_000  # the plan is 50 over the income
+        assert summary.actual_saved_minor == 50_000  # 50 really saved
+        assert summary.saving_shortfall_minor == 50_000  # the goal is missed by 50
         assert summary.overspend_minor == 0  # real spending is not over the income
         assert summary.is_over_budget
         assert summary.missed_saving_goal
@@ -74,12 +75,12 @@ class TestOwnersExamples:
 
     def test_real_spending_over_income_saves_nothing(self) -> None:
         summary = summarize_month(
-            50_000, [CardAmount("burn", 55_000), CardAmount("saving", 10_000)]
+            500_000, [CardAmount("burn", 550_000), CardAmount("saving", 100_000)]
         )
-        assert summary.overspend_minor == 5_000
-        assert summary.savings_balance_minor == -5_000  # shown as negative
+        assert summary.overspend_minor == 50_000
+        assert summary.savings_balance_minor == -50_000  # shown as negative
         assert summary.actual_saved_minor == 0
-        assert summary.saving_shortfall_minor == 10_000  # the whole target is missed
+        assert summary.saving_shortfall_minor == 100_000  # the whole target is missed
         assert summary.is_overspent
 
 

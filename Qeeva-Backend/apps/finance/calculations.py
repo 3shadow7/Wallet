@@ -19,7 +19,8 @@ Rules (approved dashboard spec; they also equal the Angular ``FinancialCalculato
     saving_shortfall = max(0, saving_target - actual_saved)   (saving goal that was missed)
 
 If burn + tax is more than the income, nothing is saved that month, so the whole saving target is
-the shortfall. All amounts are integers in minor units (cents, D-033), so there is no rounding.
+the shortfall. All amounts are integers in minor units: thousandths, 3 decimals for every user
+(D-033, D-149; 12.345 is ``12345``), so there is no rounding here.
 """
 
 from __future__ import annotations

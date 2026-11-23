@@ -30,13 +30,14 @@ def test_income_lines_are_added_up() -> None:
 def test_the_owners_example_from_the_database() -> None:
     profile = create_profile()
     month = create_month(profile)
-    create_income(month, 50_000)
-    create_card(month, create_item(profile, "Groceries", "burn"), 45_000)
-    create_card(month, create_item(profile, "Car fund", "saving", target_minor=1_400_000), 10_000)
+    # In thousandths (D-149): income 500, groceries 450, a saving card of 100 with a 14,000 goal.
+    create_income(month, 500_000)
+    create_card(month, create_item(profile, "Groceries", "burn"), 450_000)
+    create_card(month, create_item(profile, "Car fund", "saving", target_minor=14_000_000), 100_000)
     summary = summarize_month_from_db(month)
-    assert summary.free_money_minor == -5_000
-    assert summary.actual_saved_minor == 5_000
-    assert summary.saving_shortfall_minor == 5_000
+    assert summary.free_money_minor == -50_000
+    assert summary.actual_saved_minor == 50_000
+    assert summary.saving_shortfall_minor == 50_000
     assert summary.overspend_minor == 0
 
 

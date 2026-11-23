@@ -97,8 +97,8 @@ a session (they are short). Rules from `plans/rules/` that apply to the backend:
   `qeeva-prod` or any other project. Read-only inspection is fine.
 * **Stay inside `Qeeva-Backend/`.** He allowed edits to any `.md` file in this folder. Anything
   outside needs his approval. Approved exception: `.github/workflows/backend-ci.yml` (D-088).
-* **Money:** integer minor units (`bigint`), always 2 decimals, no currency in the database
-  (D-033). Never floats. Never put authoritative formulas only in Angular.
+* **Money:** integer minor units (`bigint`), stored with 3 decimals for every user (thousandths, 12.345 =
+  `12345`, D-149; migration `finance 0004`), shown with 2 or 3 by a setting; no currency in the database (D-033). Never floats. Never put authoritative formulas only in Angular.
 * **Never** commit `.env` or secrets, never log tokens or financial records.
 * Add a dependency only after checking maintenance, licence, security and need. Pin exact
   versions that are at least 14 days old.
@@ -194,7 +194,8 @@ Patch 0010 moves the decision log to `plans/decisions/` and recovers D-018 and D
 makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes the stale agent and
 doc files (D-101); patch 0013 builds the five finance tables (models, migrations, 150 tests; D-103 to
 D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
-test vectors; D-108, D-109). No finance endpoint exists. Tests: 360 with PostgreSQL.
+test vectors; D-108, D-109). No finance endpoint exists. Patch 0058 moves money to thousandths (migration
+`finance 0004`, D-149). Tests: 363 with PostgreSQL.
 Patches 0015-0018 (docs only) hold decisions D-103 to D-120 and the feature-data map; patches 0019-0021 (docs only, delivered
 2026-11-17) hold D-121 to D-123, the "Designed, not built" tables in the schema blueprint and the ideas list.
 A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-progress-summary.md`.

@@ -1,4 +1,8 @@
-"""Small builders used by the finance tests."""
+"""Small builders used by the finance tests.
+
+Amounts are integers in thousandths (D-149): ``500_000`` is 500. Most tests only compare numbers, so
+the exact scale does not matter to them.
+"""
 
 from __future__ import annotations
 

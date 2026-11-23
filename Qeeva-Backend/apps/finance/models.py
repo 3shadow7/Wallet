@@ -5,7 +5,9 @@ Design: ``Qeeva-Backend/docs/database/schema-blueprint.md`` (decisions D-036 to 
 Rules that apply to every table here:
 
 * Every row carries ``user_id`` (the owner). Reads go through ``Model.objects.for_user(principal)``.
-* Money is stored as integer minor units (``bigint``), never as a float (D-033).
+* Money is stored as integer minor units (``bigint``), never as a float (D-033): thousandths,
+  3 decimals for every user, so 12.345 is ``12345`` (D-149, migration 0004). The 2-or-3 setting
+  only changes the display.
 * A card can never point at another user's month or item: the database enforces this with
   composite foreign keys such as ``(month_id, user_id)`` -> ``months (id, user_id)``
   (migration 0002), not only our code.

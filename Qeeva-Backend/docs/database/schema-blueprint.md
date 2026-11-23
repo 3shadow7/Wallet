@@ -4,7 +4,8 @@ The Django models and migrations are the real schema. This file is the human-rea
 plus the approved-but-unbuilt designs. Decisions behind each rule: see `plans/decisions/decision-log.md`.
 
 Conventions for every table: `uuid` ids, `timestamptz` (UTC) timestamps, money as `bigint` minor
-units (built: 2 decimals; designed: 3 decimals stored for every user, shown with 2 or 3 by a setting, D-149; no currency, D-033), CHECK constraints for every fixed list, RLS on with no
+units with 3 decimals stored for every user (integer thousandths, 12.345 = `12345`; built by migration `finance 0004`),
+shown with 2 or 3 by a setting (D-149); no currency (D-033), CHECK constraints for every fixed list, RLS on with no
 policies (D-087), every model declares `OWNER_FIELD`.
 
 ## Built: `apps/accounts` (migrations 0001-0003)
@@ -31,13 +32,14 @@ policies (D-087), every model declares `OWNER_FIELD`.
 (default `regular`) · `timezone` text (IANA name, checked in Python, not empty) · `language`
 (`en`) · `skip_merge_confirm` boolean default false · `created_at`, `updated_at`.
 
-## Built: `apps/finance` (migrations 0001-0003)
+## Built: `apps/finance` (migrations 0001-0004)
 
 All have `user_id` (the owner) so isolation checks are simple; composite foreign keys
 `(month_id, user_id)` / `(item_id, user_id)` make sure a card can never point at another user's
 month or item (D-105). Delete rules: user -> everything goes; month -> its income lines and cards;
 item -> its merge dismissals; an item that still has cards cannot be deleted. Migration 0002 holds
-the foreign keys (SQL), 0003 closes the tables to the Data API.
+the foreign keys (SQL), 0003 closes the tables to the Data API, 0004 moved every money column from cents to
+thousandths (x 10; going back refuses if an amount uses the third decimal, D-149).
 
 ### `months`
 `id`, `user_id`, `month_start` date (day must be 1), `totals_mode` `auto|included|excluded`

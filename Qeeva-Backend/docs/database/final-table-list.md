@@ -6,8 +6,8 @@ This file is updated in the same commit as every decision that adds, changes or 
 
 Legend: **[built]** exists in Django today; **[designed]** approved, not built yet; *(new)* or *(changes)* = a column
 that a design adds to, or changes in, a built table. Every table: `uuid` ids, `timestamptz` timestamps, RLS on with no
-policies (D-087), CHECK for every fixed list. Money: `bigint`, 3 decimals stored for every user (D-149; built tables
-still use 2 until the one-time change).
+policies (D-087), CHECK for every fixed list. Money: `bigint`, 3 decimals stored for every user (D-149; the built tables too, since migration
+`finance 0004`).
 
 ## Accounts
 | Table | Status | Columns |
