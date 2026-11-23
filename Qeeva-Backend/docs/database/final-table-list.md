@@ -48,6 +48,7 @@ Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`
 |---|---|---|
 | `plan_events` | [designed] | `id`, `user_id`, `kind`, `occurred_at`, `payload`, `created_at` |
 | `audit_logs` | [designed] | `id`, `user_id`, `action`, `device_id`, `details`, `created_at` |
+| `user_consents` | [designed] | `id`, `user_id`, `kind` (terms/privacy/marketing), `document_version`, `action` (accepted/withdrawn), `created_at` |
 | `waitlist_entries` | [designed, first draft] | `id`, `email`, `source`, `marketing_consent`, `invited_at`, `converted_profile_id`, `note`, `created_at` |
 
 ## Zakat (kept separate; may be opened again)
@@ -64,8 +65,8 @@ goal progress, debt open amounts, the daily Zakat threshold and wealth, the Zaka
 
 ## Version 2, maybe (not in the list above)
 `holdings`, `item_classes`, `item_class_aliases`, `items.item_class_id`, gold prices, animals (D-168); item groups
-under one title (D-092).
+under one title (D-092); Community (D-026).
 
-## Still to design (Path A, area 9)
-The number of plans (not decided), consents, the Telegram bot token and linking, Community, Arabic. The MVP subset of
-these tables is chosen in the pre-build review (D-193, D-200).
+## Still open
+The number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later), bank linking with
+its provider. Path A is otherwise complete. The MVP subset of these tables is chosen in the pre-build review (D-193, D-200).

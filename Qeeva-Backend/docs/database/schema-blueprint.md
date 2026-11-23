@@ -228,7 +228,9 @@ Remembers only the id of every bank or card entry he already decided, so a re-sy
 | `decided_at` | timestamptz | |
 
 A bank re-sync skips an id found in `pending_entries` or here. The card shows "from bank" through `month_item_id`; the
-bank's original text is not kept after confirm (D-201). About 100 bytes a row.
+bank's original text is not kept after confirm (D-201). About 100 bytes a row. A row is erased after
+`app_config.pending_seen_days` (90); an import never takes a transaction older than that window, so an erased id can
+never come back (D-203).
 
 ### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
 Every user-owned table that syncs gets two columns:
@@ -324,6 +326,17 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 MVP gate (D-199, confirmed): while `app_config.signup_open` is false, only emails with `invited_at` set can create an account; the
 others join the waitlist. n8n writes through a small Django endpoint with its own secret, never with database passwords.
 
+### `user_consents` (owner field: `user_id`) (D-202; approved; columns by the AI)
+One row per action, never edited; the current state of a kind is its newest row.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `kind` | text | `terms`, `privacy`, `marketing` (CHECK) |
+| `document_version` | text | for example `2026-11` |
+| `action` | text | `accepted` or `withdrawn` (CHECK) |
+| `created_at` | timestamptz | default now |
+
 ### Data export (D-198; approved; no new table)
 One Excel file with a sheet per area; `app_config.feature_export_enabled` is false by default (hidden) until he turns it on; each export writes
 `data_exported` in `audit_logs`.
@@ -349,7 +362,7 @@ No IP address is stored for now.
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
@@ -420,7 +433,7 @@ Toggling "spent" back deletes the row. Payments do not count while their month i
 
 ### Version 2, maybe (deferred, not designed further)
 Zakat on gold, silver and animals (D-133 `holdings`, D-139 `item_classes`, `item_class_aliases`, `items.item_class_id`,
-D-143; D-168), gold prices, grouping other items under one title (D-092). Their earlier drafts are in the decision log.
+D-143; D-168), gold prices, grouping other items under one title (D-092), Community (D-026). Their earlier drafts are in the decision log.
 
 ## Not computed into storage (by design)
 Item groups, monthly working time, hourly rate, the amount of a percentage tax card, the daily Zakat threshold and the wealth of the daily check (D-162, D-164), the Zakat group total (D-167), the open amount and status of a debt (D-157), each month's result, the savings total, the funds pool and its free part, a funds gap (D-119) and a goal's accumulated amount are all calculated.
@@ -441,5 +454,6 @@ Never change a formula without the user's approval.
 Approved additions (not formula changes): `tax` of a month also counts the Zakat payments logged in that month (D-145, D-165); a gift he gives is a `burn` item (D-160); money received outside income, lending, borrowing and repayments are moves of the funds, never income or expense (D-155, D-157).
 
 ## Still to design
-Sync/devices, plans and waitlist, consents, audit logs,
-data export and account deletion flow, Community. Version 2, maybe: Zakat on gold, silver and animals (D-168), grouping other items under one title (D-092). Debit/credit is designed (D-155 to D-160). The custom month boundary is deferred (D-127).
+The number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later; `app_config` texts can
+hold `en` and `ar` values), bank linking with its provider. Version 2, maybe: Zakat on gold, silver and animals (D-168),
+grouping other items under one title (D-092), Community (D-026). Debit/credit is designed (D-155 to D-160). The custom month boundary is deferred (D-127).
