@@ -33,7 +33,7 @@ still use 2 until the one-time change).
 Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`, `version` and `updated_by_device_id` (D-176, D-180).
 | Table | Status | Columns |
 |---|---|---|
-| `devices` | [designed] | `id`, `user_id`, `name`, `platform` (web/android/ios), `last_seen_at`, `last_synced_at`, `is_primary`, `created_at`, `updated_at` |
+| `devices` | [designed] | `id`, `user_id`, `name`, `platform` (web/android/ios), `last_seen_at`, `last_synced_at`, `is_primary`, `access_mode` (full/read_only), `created_at`, `updated_at` |
 | `data_shares` | [designed] | `id`, `user_id`, `viewer_user_id`, `invited_email`, `invite_code_hash`, `invite_expires_at`, `allowed_areas`, `last_viewed_at`, `status` (pending/accepted/revoked), `created_at`, `accepted_at`, `revoked_at` |
 | `sync_conflicts` | [designed] | `id`, `user_id`, `table_name`, `row_id`, `losing_data`, `losing_device_id`, `kept_device_id`, `detected_at`, `resolved_at`, `resolution` (kept/restored) |
 
@@ -41,6 +41,11 @@ Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`
 | Table | Status | Columns |
 |---|---|---|
 | `app_config` | [designed] | `key`, `value`, `updated_at`, `updated_by` |
+
+## Account
+| Table | Status | Columns |
+|---|---|---|
+| `plan_events` | [designed] | `id`, `user_id`, `kind`, `occurred_at`, `payload`, `created_at` |
 
 ## Zakat (kept separate; may be opened again)
 | Table | Status | Columns |

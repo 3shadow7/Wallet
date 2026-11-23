@@ -242,6 +242,7 @@ account automatically at sign-up (D-177).
 | `last_seen_at` | timestamptz, null | |
 | `last_synced_at` | timestamptz, null | shown in Settings next to the "sync now" button (D-182) |
 | `is_primary` | boolean | default false; at most one true per user (partial unique index); the main device that keeps working when the plan ends (D-187) |
+| `access_mode` | text | `full` or `read_only` (CHECK), default `full`; a read-only device of the owner uses a viewer slot, never writes (D-191, proposal) |
 | `created_at`, `updated_at` | timestamptz | default now |
 
 Sync runs automatically whenever online; no sync button on the normal screens (D-182). More than one device is a paid
@@ -269,7 +270,7 @@ Read-only sharing, a paid feature: people he trusts see all his data and can nev
 | `id` | uuid, PK | |
 | `user_id` | uuid | the owner of the data; FK to `profiles` `ON DELETE CASCADE` |
 | `viewer_user_id` | uuid, null | FK to `profiles`; set when the invitation is accepted; unique `(user_id, viewer_user_id)` when set |
-| `invited_email` | text, null | the person invited, when the invite goes by email (the channel is decided later) |
+| `invited_email` | text, null | the person invited by email; empty when invited inside the app to an existing account (both ways, D-191) |
 | `invite_code_hash` | text, null | hash of the invite code; cleared when the code is used (D-189) |
 | `invite_expires_at` | timestamptz, null | |
 | `allowed_areas` | text[] | subset of `income`, `expenses`, `taxes`, `savings_funds`, `debts`, `zakat` (CHECK); default all six (D-189) |
@@ -283,11 +284,22 @@ ends nothing is deleted, the oldest accepted share stays and the others are paus
 in and what he may see are still being discussed (D-184). `OwnedManager.for_user` is NOT changed: a separate read-only
 path checks an accepted, not paused share that allows the area; a viewer never writes; it has its own tests (D-189).
 
+### `plan_events` (owner field: `user_id`) (D-188, D-192; approved; columns by the AI)
+The history shown in "My plan". Payment-provider records are a separate, later table.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `kind` | text | `subscribed`, `renewed`, `plan_changed`, `ended`, `device_paused`, `device_resumed`, `share_paused`, `share_resumed` (CHECK) |
+| `occurred_at` | timestamptz | |
+| `payload` | jsonb, null | display data, for example the device name |
+| `created_at` | timestamptz | default now |
+
 ### `app_config` (system table, no owner) (D-179; approved; design by the AI)
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
