@@ -27,7 +27,8 @@ still use 2 until the one-time change).
 | `fund_entries` | [designed] | `id`, `user_id`, `month_id`, `kind` (opening/add/withdraw/to_item/from_item/gift/lend/borrow/repay_in/repay_out), `amount_minor`, `item_id`, `debt_id`, `title`, `counted_minor`, `note`, `created_at`, `updated_at` |
 | `debts` | [designed] | `id`, `user_id`, `direction` (lent/borrowed), `person_name`, `month_id`, `started_on`, `due_on`, `note`, `created_at`, `updated_at` |
 | `notifications` | [designed] | `id`, `user_id`, `kind`, `dedupe_key`, `payload`, `created_at`, `seen_at` |
-| `pending_entries` | [designed] | `id`, `user_id`, `source` (bank/voice/camera/card), `status` (pending/confirmed/dismissed), `external_id`, `occurred_on`, `direction` (out/in), `amount_minor`, `suggested_name`, `suggested_type`, `raw_text`, `month_item_id`, `decided_at`, `created_at`, `updated_at` |
+| `pending_entries` | [designed] | `id`, `user_id`, `source` (bank/voice/camera/card), `external_id`, `occurred_on`, `direction` (out/in), `amount_minor`, `suggested_name`, `suggested_type`, `raw_text`, `created_at`, `updated_at` (only waiting entries, D-201) |
+| `pending_seen_ids` | [designed] | `id`, `user_id`, `source` (bank/card), `external_id`, `outcome` (confirmed/dismissed), `month_item_id`, `decided_at` |
 
 ## Sync
 Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`, `version` and `updated_by_device_id` (D-176, D-180).

@@ -192,30 +192,43 @@ A gift he gives is an ordinary `burn` card with importance `gift` (D-160).
 
 Index on `(user_id, seen_at)`. A milestone lost and reached again after a history edit does not notify again.
 
-### `pending_entries` (owner field: `user_id`) (D-062, D-074, D-173 to D-175; approved; columns by the AI)
-Bank, voice, camera and card entries wait here until he confirms them; nothing counts in any total while pending.
+### `pending_entries` (owner field: `user_id`) (D-062, D-074, D-173, D-175, D-201; approved; columns by the AI)
+Only entries that are still WAITING. Bank, voice, camera and card entries wait here until he confirms or dismisses them;
+nothing counts in any total while pending. Confirm or dismiss DELETES the row (D-201).
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
 | `source` | text | `bank`, `voice`, `camera`, `card` (CHECK) |
-| `status` | text | `pending`, `confirmed`, `dismissed` (CHECK); default `pending` |
 | `external_id` | text, null | the source's own id (a bank transaction id); unique `(user_id, source, external_id)` when set |
 | `occurred_on` | date | the day the money moved; decides the month on confirm (D-175) |
 | `direction` | text | `out` or `in` (CHECK) |
 | `amount_minor` | bigint, null | >= 0; may be empty from voice until he gives it |
 | `suggested_name` | text, null | 1-40; empty for bank entries, he types it (D-074) |
 | `suggested_type` | text, null | `burn`, `tax`, `saving` (CHECK) |
-| `raw_text` | text, null | up to 500 characters: the voice transcript or the receipt text, for display |
-| `month_item_id` | uuid, null | the card it became; set on confirm; composite FK; ON DELETE SET NULL (the row stays `confirmed`, so a re-sync never brings it back) |
-| `decided_at` | timestamptz, null | when he confirmed or dismissed it |
+| `raw_text` | text, null | up to 500 characters: the voice transcript or the receipt text, shown while it waits |
 | `created_at`, `updated_at` | timestamptz | default now |
 
-CHECK: `month_item_id` may be set only when `status` is `confirmed`. Confirm = one transaction: create or reuse the
-month of `occurred_on` (D-150, D-151), create the card, set the link and the status. Receipt photos themselves are not
-stored here (file storage is a later decision). Nothing is deleted: a confirmed entry leaves the pending page and is a
-normal item; its original text and source stay only in this row, and the card reaches them through `month_item_id`
-(no new column on the cards, D-197). How to keep this table from growing forever is being asked. An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
+Confirm = one transaction: create or reuse the month of `occurred_on` (D-150, D-151), create the card, write a
+`pending_seen_ids` row when the entry has an `external_id`, delete the pending row. Dismiss = write the
+`pending_seen_ids` row (outcome `dismissed`) when there is an `external_id`, delete the pending row. A deleted row follows
+the sync rule (hidden at once, erased after 45 days, D-176). Receipt photos are not stored here (file storage is a later
+decision). An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
+
+### `pending_seen_ids` (owner field: `user_id`) (D-201; approved; design by the AI)
+Remembers only the id of every bank or card entry he already decided, so a re-sync never brings it back.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `source` | text | `bank` or `card` (CHECK) |
+| `external_id` | text | the source's own id; unique `(user_id, source, external_id)` |
+| `outcome` | text | `confirmed` or `dismissed` (CHECK) |
+| `month_item_id` | uuid, null | the card it became; composite FK; ON DELETE SET NULL (the id is still remembered) |
+| `decided_at` | timestamptz | |
+
+A bank re-sync skips an id found in `pending_entries` or here. The card shows "from bank" through `month_item_id`; the
+bank's original text is not kept after confirm (D-201). About 100 bytes a row.
 
 ### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
 Every user-owned table that syncs gets two columns:
@@ -308,7 +321,7 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 | `note` | text, null | |
 | `created_at` | timestamptz | default now |
 
-MVP gate (D-199): while `app_config.signup_open` is false, only emails with `invited_at` set can create an account; the
+MVP gate (D-199, confirmed): while `app_config.signup_open` is false, only emails with `invited_at` set can create an account; the
 others join the waitlist. n8n writes through a small Django endpoint with its own secret, never with database passwords.
 
 ### Data export (D-198; approved; no new table)

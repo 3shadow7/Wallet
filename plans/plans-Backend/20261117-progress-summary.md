@@ -49,6 +49,7 @@ In progress and waiting:
 - [x] 2026-11-23 (02:34): the owner's read-only device uses a viewer slot (D-191); `waitlist_entries` first draft (D-194); account deletion grace 30 days (D-195).
 - [x] 2026-11-23 (02:50): audit log of sensitive actions, table `audit_logs` (D-196); nothing deleted from the pending list (D-197).
 - [x] 2026-11-23 (03:00): export = one Excel file, can be hidden (D-198); growth control proposal for an MVP with Supabase Free limits checked (D-199, proposal).
+- [x] 2026-11-23 (11:20): pending entries are deleted on confirm or dismiss; `pending_seen_ids` remembers bank and card ids (D-201); the simpler MVP gate and the MVP scope are confirmed (D-199, D-200).
 - [x] 2026-11-23 (03:20): MVP FIRST, behind the waitlist, less complex (D-199 simpler gate, D-200 scope); export hidden by default (D-198); the pending text stays only in the pending row (D-197).
 - [ ] Area 9: account.
 - [ ] "AI choice" items wait for his agreement: the rest of the calculation layer's shape (D-109; its point 5 is approved) and the columns and rounding of D-130. D-107 and D-125 were approved on 2026-11-17.
@@ -67,4 +68,4 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-200 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-201 (the ones this period produced); the earlier ones are in the decision log.
