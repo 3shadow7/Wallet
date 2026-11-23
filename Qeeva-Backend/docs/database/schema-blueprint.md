@@ -242,7 +242,7 @@ account automatically at sign-up (D-177).
 | `last_seen_at` | timestamptz, null | |
 | `last_synced_at` | timestamptz, null | shown in Settings next to the "sync now" button (D-182) |
 | `is_primary` | boolean | default false; at most one true per user (partial unique index); the main device that keeps working when the plan ends (D-187) |
-| `access_mode` | text | `full` or `read_only` (CHECK), default `full`; a read-only device of the owner uses a viewer slot, never writes (D-191, proposal) |
+| `access_mode` | text | `full` or `read_only` (CHECK), default `full`; a read-only device of the owner uses a viewer slot, never writes (D-191, confirmed) |
 | `created_at`, `updated_at` | timestamptz | default now |
 
 Sync runs automatically whenever online; no sync button on the normal screens (D-182). More than one device is a paid
@@ -295,11 +295,29 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 | `payload` | jsonb, null | display data, for example the device name |
 | `created_at` | timestamptz | default now |
 
+### `waitlist_entries` (no owner; filled by n8n) (D-194; approved; first draft, finished in the marketing talk)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `email` | text | unique ignoring case |
+| `source` | text, null | where the person came from (site, a social post) |
+| `marketing_consent` | boolean | default false; he agreed to receive news |
+| `invited_at` | timestamptz, null | |
+| `converted_profile_id` | uuid, null | FK to `profiles`, SET NULL; set when the person creates an account |
+| `note` | text, null | |
+| `created_at` | timestamptz | default now |
+
+n8n writes through a small Django endpoint with its own secret, never with database passwords.
+
+### Account deletion (D-195; approved; no new column)
+`profiles.status` = `pending_deletion` and `deleted_at` (built) start a grace period of
+`app_config.account_deletion_grace_days` (30); he can cancel; after it everything of his is erased for good.
+
 ### `app_config` (system table, no owner) (D-179; approved; design by the AI)
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
