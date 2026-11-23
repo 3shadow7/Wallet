@@ -46,6 +46,7 @@ Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`
 | Table | Status | Columns |
 |---|---|---|
 | `plan_events` | [designed] | `id`, `user_id`, `kind`, `occurred_at`, `payload`, `created_at` |
+| `audit_logs` | [designed] | `id`, `user_id`, `action`, `device_id`, `details`, `created_at` |
 | `waitlist_entries` | [designed, first draft] | `id`, `email`, `source`, `marketing_consent`, `invited_at`, `converted_profile_id`, `note`, `created_at` |
 
 ## Zakat (kept separate; may be opened again)

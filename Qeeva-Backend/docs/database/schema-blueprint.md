@@ -213,8 +213,8 @@ Bank, voice, camera and card entries wait here until he confirms them; nothing c
 
 CHECK: `month_item_id` may be set only when `status` is `confirmed`. Confirm = one transaction: create or reuse the
 month of `occurred_on` (D-150, D-151), create the card, set the link and the status. Receipt photos themselves are not
-stored here (file storage is a later decision); the retention of `raw_text` and bank data is part of Area 9 (account,
-privacy). An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
+stored here (file storage is a later decision). Nothing is deleted: a confirmed entry leaves the pending page and is a
+normal item; how the original text and source stay visible after confirm is being asked (D-197). An incoming bank entry may become income, a gift or a repayment: how it is classified is a later detail.
 
 ### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
 Every user-owned table that syncs gets two columns:
@@ -313,11 +313,24 @@ n8n writes through a small Django endpoint with its own secret, never with datab
 `profiles.status` = `pending_deletion` and `deleted_at` (built) start a grace period of
 `app_config.account_deletion_grace_days` (30); he can cancel; after it everything of his is erased for good.
 
+### `audit_logs` (owner field: `user_id`) (D-196; approved; columns by the AI)
+Only sensitive actions; never money values, passwords, tokens or invite codes; erased after `app_config.audit_log_days`.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `action` | text | `signin_new_device`, `share_created`, `share_accepted`, `share_revoked`, `deletion_requested`, `deletion_cancelled`, `data_exported`, `plan_changed` (CHECK) |
+| `device_id` | uuid, null | FK to `devices`, SET NULL |
+| `details` | jsonb, null | display data only |
+| `created_at` | timestamptz | default now |
+
+No IP address is stored for now.
+
 ### `app_config` (system table, no owner) (D-179; approved; design by the AI)
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
