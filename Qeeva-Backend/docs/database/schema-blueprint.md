@@ -229,8 +229,9 @@ Remembers only the id of every bank or card entry he already decided, so a re-sy
 
 A bank re-sync skips an id found in `pending_entries` or here. The card shows "from bank" through `month_item_id`; the
 bank's original text is not kept after confirm (D-201). About 100 bytes a row. A row is erased after
-`app_config.pending_seen_days` (90); an import never takes a transaction older than that window, so an erased id can
-never come back (D-203).
+`app_config.pending_seen_days` (90). Bank imports start on the link day (no old data) and then ask for the
+transactions since the last import minus `app_config.bank_sync_overlap_days` (7); the overlap is far shorter than 90
+days, so an erased id can never come back. The server reads the bank, so entries wait for an offline device (D-204).
 
 ### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
 Every user-owned table that syncs gets two columns:
@@ -362,7 +363,7 @@ No IP address is stored for now.
 Values the owner can change without a new app version; the same for every user; only an admin edits them.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203) |
+| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204) |
 | `value` | jsonb | |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
