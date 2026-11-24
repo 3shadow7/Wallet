@@ -95,3 +95,17 @@ class TestDatabaseIsClosedToThePublicDataApi:
             policies = cursor.fetchall()
         assert rls == dict.fromkeys(tables, True)
         assert policies == []
+
+    def test_every_table_in_public_is_locked_including_djangos_own(self) -> None:
+        # Django's tables (auth_user with the admin login, sessions, ...) too (D-210), and any
+        # table a future migration adds: a new table without RLS fails here.
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity"
+            )
+            unlocked = [row[0] for row in cursor.fetchall()]
+            cursor.execute("SELECT tablename FROM pg_policies WHERE schemaname = 'public'")
+            policies = cursor.fetchall()
+        assert unlocked == []
+        assert policies == []

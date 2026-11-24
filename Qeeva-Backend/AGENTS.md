@@ -100,6 +100,9 @@ a session (they are short). Rules from `plans/rules/` that apply to the backend:
 * **Money:** integer minor units (`bigint`), stored with 3 decimals for every user (thousandths, 12.345 =
   `12345`, D-149; migration `finance 0004`), shown with 2 or 3 by a setting; no currency in the database (D-033). Never floats. Never put authoritative formulas only in Angular.
 * **Never** commit `.env` or secrets, never log tokens or financial records.
+* **Portability (D-211):** he plans to leave Supabase after some years. Use plain Django and PostgreSQL only. The
+  Supabase-tied parts are exactly three; keep it that way: the sign-in (Supabase Auth, `common/auth.py`), the FK
+  `profiles.id -> auth.users` (`accounts 0002`), and the `anon`/`authenticated` revokes in `lock_down_table`.
 * Add a dependency only after checking maintenance, licence, security and need. Pin exact
   versions that are at least 14 days old.
 * Report after each task in this shape (Engineering Rules §33): objective, files changed,
@@ -114,8 +117,10 @@ verifies tokens and never creates users). pytest, ruff, mypy strict. Exact pins 
 
 ```
 core/            settings (all from environment), urls
-common/          auth.py (Supabase JWT), ownership.py (for_user), db.py (lock_down_table), views
-apps/accounts/   profiles, username_reservations, user_settings, user_consents (+ consents.py)
+common/          auth.py (Supabase JWT), ownership.py (for_user), db.py (lock_down_table, version_trigger,
+                 device_foreign_key), views
+apps/accounts/   profiles, username_reservations, user_settings, user_consents (+ consents.py), devices,
+                 VersionedModel / SyncedModel (the sync columns, D-213)
 apps/system/     app_config (+ config.py: keys, defaults, readers; admin.py: the only admin page)
 apps/finance/    months, month_incomes, items, month_items, item_merge_dismissals (+ naming.py)
 conftest.py      test wiring (auth.users stand-in; skips DB tests without PostgreSQL)
@@ -197,7 +202,8 @@ doc files (D-101); patch 0013 builds the five finance tables (models, migrations
 D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
 test vectors; D-108, D-109). No finance endpoint exists. Patch 0058 moves money to thousandths (migration
 `finance 0004`, D-149). Patch 0059 builds `app_config` (new app `apps/system`, 24 keys, the Django admin page for it)
-and `user_consents` (D-207 to D-209). Tests: 438 with PostgreSQL.
+and `user_consents` (D-207 to D-209). Patch 0060 builds `devices` and the sync columns (D-213) and locks Django's own
+tables (D-210). Tests: 478 with PostgreSQL.
 Patches 0015-0018 (docs only) hold decisions D-103 to D-120 and the feature-data map; patches 0019-0021 (docs only, delivered
 2026-11-17) hold D-121 to D-123, the "Designed, not built" tables in the schema blueprint and the ideas list.
 A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-progress-summary.md`.
@@ -251,12 +257,10 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
 
 * **Slow tests on Windows: fixed (D-102).** `localhost` took 15 s per connection; `127.0.0.1`
   takes 19 ms. The user's run after patch 0011: 164 passed in 2.53 s.
-* **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) live in
-  `public` without RLS. Recommend the user turns **Data API off** in the Supabase dashboard
-  (we never use it). Unverified for the project's current setting.
+* **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) are locked like ours since
+  patch 0060 (migration `system 0003`, D-210); a test checks that every table in `public` is locked.
   Supabase's changelog (checked 2026-11-24): since 2026-10-30 new tables in `public` are no longer
-  granted to `anon`/`authenticated` automatically, so tables our migrations create from now on are not
-  exposed even without RLS. Asked on 2026-11-24 whether to lock Django's own tables with RLS too.
+  granted to `anon`/`authenticated` automatically. Turning the Data API off is still a good extra step.
 * **`qeeva-dev` JWT signing keys** must be asymmetric or JWKS verification returns nothing. Not
   yet checked.
 * With the pinned django-stubs, `Model.objects` is typed `Any` (also for Django's own `User`), so
@@ -280,6 +284,10 @@ without his approval, D-084). After the MVP tables: the waitlist and marketing w
 **2026-11-24 (11:58): stage 2 built (patch 0059).** `app_config` filled with its 24 keys by a migration (D-207), the
 terms and privacy versions as keys (D-208), edited in the Django admin page, the only table it shows (D-209);
 `user_consents` (D-202). Next: stage 3 (`devices` and the sync columns), then stage 4.
+
+**2026-11-24 (12:16): stage 3 built (patch 0060).** Django's own tables locked (D-210); the portability rule (D-211);
+seen notifications erased after 7 days (D-212); `devices` and the sync columns on the chosen tables (D-213). Next: stage 4
+(`fund_entries`, `notifications`, `reduction_minor`).
 
 **Path A (closed 2026-11-23):** the data design for every feature. The user's rule: the database is the only subject; he asked the AI
 to ask two or more questions per message (changed 2026-11-17) and to keep the `.md` files updated.

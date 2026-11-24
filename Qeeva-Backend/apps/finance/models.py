@@ -31,7 +31,7 @@ from django.db.models.functions import Length, Now, Trim
 from django.db.models.functions.datetime import ExtractDay
 from django.db.models.lookups import Exact, GreaterThanOrEqual, LessThanOrEqual
 
-from apps.accounts.models import Profile
+from apps.accounts.models import Profile, SyncedModel
 from apps.finance.naming import NAME_MAX, NAME_MIN, make_name_key, validate_item_name
 from common.ownership import OwnedManager
 
@@ -105,7 +105,7 @@ class MonthManager(OwnedManager["Month"]):
     """Typed manager: lets mypy know which model ``for_user`` returns."""
 
 
-class Month(models.Model):
+class Month(SyncedModel):
     """One calendar month of one user. ``month_start`` is always the 1st."""
 
     OWNER_FIELD = "user_id"
@@ -124,8 +124,12 @@ class Month(models.Model):
     class Meta:
         db_table = "months"
         constraints = [
+            # Unique among the rows that are not deleted (D-213): a deleted month waits 45 days
+            # for restore or erase, and must not block making that month again.
             models.UniqueConstraint(
-                fields=["user", "month_start"], name="months_user_month_unique"
+                fields=["user", "month_start"],
+                condition=Q(deleted_at__isnull=True),
+                name="months_user_month_unique",
             ),
             # Child tables point at (id, user_id): a child can never name a stranger's month.
             models.UniqueConstraint(fields=["id", "user"], name="months_id_user_unique"),
@@ -151,7 +155,7 @@ class MonthIncomeManager(OwnedManager["MonthIncome"]):
     """Typed manager: lets mypy know which model ``for_user`` returns."""
 
 
-class MonthIncome(models.Model):
+class MonthIncome(SyncedModel):
     """One income line of a month (D-041: a month may have several; Regular mode adds them up).
 
     Not stored, because they follow from these columns: monthly hours (the override, else
@@ -246,7 +250,7 @@ class ItemManager(OwnedManager["Item"]):
     """Typed manager: lets mypy know which model ``for_user`` returns."""
 
 
-class Item(models.Model):
+class Item(SyncedModel):
     """A thing the user tracks across months (a rent, a tax, a saving). Cards point at it.
 
     Same name and same type is the same item (D-055); the comparison uses ``name_key``.
@@ -270,8 +274,11 @@ class Item(models.Model):
     class Meta:
         db_table = "items"
         constraints = [
+            # Unique among the rows that are not deleted (D-213).
             models.UniqueConstraint(
-                fields=["user", "name_key", "type"], name="items_user_name_key_type_unique"
+                fields=["user", "name_key", "type"],
+                condition=Q(deleted_at__isnull=True),
+                name="items_user_name_key_type_unique",
             ),
             models.UniqueConstraint(fields=["id", "user"], name="items_id_user_unique"),
             models.CheckConstraint(
@@ -317,7 +324,7 @@ class MonthItemManager(OwnedManager["MonthItem"]):
     """Typed manager: lets mypy know which model ``for_user`` returns."""
 
 
-class MonthItem(models.Model):
+class MonthItem(SyncedModel):
     """A card: one item inside one month, with its importance, amount and quantity.
 
     The same item with different importances makes several cards; the "group" the screen shows
@@ -370,8 +377,10 @@ class MonthItem(models.Model):
     class Meta:
         db_table = "month_items"
         constraints = [
+            # Unique among the rows that are not deleted (D-213).
             models.UniqueConstraint(
                 fields=["month", "item", "importance"],
+                condition=Q(deleted_at__isnull=True),
                 name="month_items_month_item_importance_unique",
             ),
             models.CheckConstraint(
@@ -400,7 +409,7 @@ class ItemMergeDismissalManager(OwnedManager["ItemMergeDismissal"]):
     """Typed manager: lets mypy know which model ``for_user`` returns."""
 
 
-class ItemMergeDismissal(models.Model):
+class ItemMergeDismissal(SyncedModel):
     """The user said "do not suggest merging these two items again" (D-053).
 
     The pair is stored in one fixed order (``item_a`` has the smaller id), so "A with B" and
@@ -435,8 +444,11 @@ class ItemMergeDismissal(models.Model):
     class Meta:
         db_table = "item_merge_dismissals"
         constraints = [
+            # Unique among the rows that are not deleted (D-213).
             models.UniqueConstraint(
-                fields=["item_a", "item_b"], name="item_merge_dismissals_pair_unique"
+                fields=["item_a", "item_b"],
+                condition=Q(deleted_at__isnull=True),
+                name="item_merge_dismissals_pair_unique",
             ),
             # One fixed order, so the pair cannot be stored twice the other way round, and an
             # item cannot be dismissed against itself.

@@ -8,7 +8,7 @@ units with 3 decimals stored for every user (integer thousandths, 12.345 = `1234
 shown with 2 or 3 by a setting (D-149); no currency (D-033), CHECK constraints for every fixed list, RLS on with no
 policies (D-087), every model declares `OWNER_FIELD`.
 
-## Built: `apps/accounts` (migrations 0001-0004)
+## Built: `apps/accounts` (migrations 0001-0005)
 
 ### `profiles` (owner field: `id`)
 | Column | Type | Rule |
@@ -30,7 +30,26 @@ policies (D-087), every model declares `OWNER_FIELD`.
 ### `user_settings` (owner field: `user_id`)
 `user_id` uuid PK/FK to `profiles` (`ON DELETE CASCADE`) · `experience_mode` `regular|advanced`
 (default `regular`) · `timezone` text (IANA name, checked in Python, not empty) · `language`
-(`en`) · `skip_merge_confirm` boolean default false · `created_at`, `updated_at`.
+(`en`) · `skip_merge_confirm` boolean default false · `created_at`, `updated_at` · `version` integer (starts at 1,
+raised by a PostgreSQL trigger on every change) · `updated_by_device_id` (composite FK to the same user's device,
+`ON DELETE SET NULL`); no `deleted_at`: the row lives as long as the account (D-213, migration 0005).
+
+### `devices` (owner field: `user_id`) (D-176, D-182 to D-191; migration 0005)
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` (SQL); unique `(id, user_id)` for the synced rows' composite keys |
+| `name` | text | 1-40 characters (CHECK), shown to the user |
+| `platform` | text | `web`, `android`, `ios` (CHECK) |
+| `last_seen_at` | timestamptz, null | |
+| `last_synced_at` | timestamptz, null | shown in Settings next to the "sync now" button (D-182) |
+| `is_primary` | boolean | default false; at most one true per user (partial unique index); the main device that keeps working when the plan ends (D-187) |
+| `access_mode` | text | `full` or `read_only` (CHECK), default `full`; a read-only device of the owner uses a viewer slot, never writes (D-191, confirmed) |
+| `created_at`, `updated_at` | timestamptz | default now |
+
+Sync runs automatically whenever online; no sync button on the normal screens (D-182). More than one device is a paid
+feature; the free plan allows one device (D-183, D-185); when the plan ends only the main device keeps working (D-187).
+
 
 ### `user_consents` (owner field: `user_id`) (D-202, D-208; migration 0004)
 One row per action, never edited (the code refuses to save an existing row); the current state of a kind is its
@@ -45,14 +64,17 @@ newest row. Terms and privacy count only when the newest row is `accepted` for t
 | `action` | text | `accepted` or `withdrawn` (CHECK) |
 | `created_at` | timestamptz | default now |
 
-## Built: `apps/finance` (migrations 0001-0004)
+## Built: `apps/finance` (migrations 0001-0005)
 
 All have `user_id` (the owner) so isolation checks are simple; composite foreign keys
 `(month_id, user_id)` / `(item_id, user_id)` make sure a card can never point at another user's
 month or item (D-105). Delete rules: user -> everything goes; month -> its income lines and cards;
 item -> its merge dismissals; an item that still has cards cannot be deleted. Migration 0002 holds
 the foreign keys (SQL), 0003 closes the tables to the Data API, 0004 moved every money column from cents to
-thousandths (x 10; going back refuses if an amount uses the third decimal, D-149).
+thousandths (x 10; going back refuses if an amount uses the third decimal, D-149), 0005 added the sync columns to all
+five tables (D-213): `deleted_at`, `deleted_by_device_id`, `version` (raised by a trigger), `updated_by_device_id`
+(composite FKs to the same user's device, `ON DELETE SET NULL` of that column only). The "one per user" unique rules
+count only rows that are not deleted.
 
 ### `months`
 `id`, `user_id`, `month_start` date (day must be 1), `totals_mode` `auto|included|excluded`
@@ -81,7 +103,7 @@ not a table (D-075).
 ### `item_merge_dismissals`
 `id`, `user_id`, `item_a_id`, `item_b_id`, `created_at`. Unique on the pair (D-053); `item_a_id < item_b_id` (D-106).
 
-## Built: `apps/system` (migrations 0001-0002)
+## Built: `apps/system` (migrations 0001-0003)
 
 ### `app_config` (system table, owner field: none) (D-179, D-206 to D-209)
 Values the owner can change without a new app version; the same for every user. Migration 0002 fills every key with its
@@ -96,6 +118,7 @@ is missing or wrong. 24 keys.
 | `updated_by` | integer, null | the Django admin account (`auth_user`) that changed it last; FK `ON DELETE SET NULL` in SQL (D-209) |
 
 The apps keep the last copy for offline use and have a built-in default when they never read it (D-178, D-179).
+Migration 0003 locks Django's own tables (`auth_user`, `django_session`, `django_admin_log`, ...) like ours (D-210).
 
 ## Designed, not built (approved designs; no migration yet)
 
@@ -221,7 +244,10 @@ A gift he gives is an ordinary `burn` card with importance `gift` (D-160).
 | `created_at` | timestamptz | default now |
 | `seen_at` | timestamptz, null | NULL = not seen |
 
-Index on `(user_id, seen_at)`. A milestone lost and reached again after a history edit does not notify again.
+Index on `(user_id, seen_at)`. Synced (D-213). A seen row is erased `app_config.notifications_keep_days` (7) days after
+`seen_at`; an unseen row stays until seen (D-212). The checks fire only when a value crosses a milestone or a dated event's
+window opens, and the dedupe key holds the cycle or the date, so an erased notification never comes back by itself; a
+milestone lost and reached again notifies again only once its old row has been erased.
 
 ### `pending_entries` (owner field: `user_id`) (D-062, D-074, D-173, D-175, D-201; approved; columns by the AI)
 Only entries that are still WAITING. Bank, voice, camera and card entries wait here until he confirms or dismisses them;
@@ -264,8 +290,9 @@ bank's original text is not kept after confirm (D-201). About 100 bytes a row. A
 transactions since the last import minus `app_config.bank_sync_overlap_days` (7); the overlap is far shorter than 90
 days, so an erased id can never come back. The server reads the bank, so entries wait for an offline device (D-204).
 
-### Sync: deleted rows and devices (D-176, D-177; approved; details by the AI)
-Every user-owned table that syncs gets two columns:
+### Sync: deleted rows and devices (D-176, D-177, D-213; columns and `devices` BUILT in 0060, the rest designed)
+The synced tables (D-213): the five finance tables (built), `fund_entries` and `notifications` (when built) get all four
+columns; `user_settings` gets only `version` and `updated_by_device_id`. The columns:
 | Column | Type | Rule |
 |---|---|---|
 | `deleted_at` | timestamptz, null | set instead of erasing the row; other devices learn about the delete when they sync |
@@ -279,22 +306,6 @@ A deleted item is restored from its own card in its month (restore clears `delet
 to the month and the item (D-181). Two devices that changed the same row: the newer change wins for the whole row and
 the losing version is kept in `sync_conflicts` and shown in a calm notice (D-180). A guest's local data moves into the
 account automatically at sign-up (D-177).
-
-`devices` (owner field: `user_id`)
-| Column | Type | Rule |
-|---|---|---|
-| `id` | uuid, PK | |
-| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `name` | text | 1-40, shown to the user |
-| `platform` | text | `web`, `android`, `ios` (CHECK) |
-| `last_seen_at` | timestamptz, null | |
-| `last_synced_at` | timestamptz, null | shown in Settings next to the "sync now" button (D-182) |
-| `is_primary` | boolean | default false; at most one true per user (partial unique index); the main device that keeps working when the plan ends (D-187) |
-| `access_mode` | text | `full` or `read_only` (CHECK), default `full`; a read-only device of the owner uses a viewer slot, never writes (D-191, confirmed) |
-| `created_at`, `updated_at` | timestamptz | default now |
-
-Sync runs automatically whenever online; no sync button on the normal screens (D-182). More than one device is a paid
-feature; the free plan allows one device (D-183, D-185); when the plan ends only the main device keeps working (D-187).
 
 `sync_conflicts` (owner field: `user_id`) (D-180)
 | Column | Type | Rule |
@@ -464,6 +475,6 @@ Never change a formula without the user's approval.
 Approved additions (not formula changes): `tax` of a month also counts the Zakat payments logged in that month (D-145, D-165); a gift he gives is a `burn` item (D-160); money received outside income, lending, borrowing and repayments are moves of the funds, never income or expense (D-155, D-157).
 
 ## Still to design
-The design is complete (D-205); left open: the redesign of `waitlist_entries` in the n8n talk, the number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later; `app_config` texts can
+The design is complete (D-205); portability rule D-211 (plain PostgreSQL, three Supabase-tied parts); left open: the redesign of `waitlist_entries` in the n8n talk, the number of plans (not decided by the user), the Telegram bot (when he asks), Arabic texts (later; `app_config` texts can
 hold `en` and `ar` values), bank linking with its provider. Version 2, maybe: Zakat on gold, silver and animals (D-168),
 grouping other items under one title (D-092), Community (D-026). Debit/credit is designed (D-155 to D-160). The custom month boundary is deferred (D-127).

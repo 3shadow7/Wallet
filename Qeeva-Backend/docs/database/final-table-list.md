@@ -14,7 +14,7 @@ policies (D-087), CHECK for every fixed list. Money: `bigint`, 3 decimals stored
 |---|---|---|
 | `profiles` | [built] | `id` (= auth user id), `username`, `display_name`, `role` (user/admin), `status` (active/suspended/pending_deletion), `username_changed_at`, `created_at`, `updated_at`, `deleted_at` |
 | `username_reservations` | [built] | `id`, `username`, `previous_owner_id`, `reserved_until` |
-| `user_settings` | [built] + [designed] | `user_id`, `experience_mode` (regular/advanced), `timezone`, `language`, `skip_merge_confirm`, `created_at`, `updated_at`; *(new)* `hourly_rate_mode` (combined/per_income), `skip_item_delete_confirm`, `decimal_places` (2/3, default 3), `default_weight_unit` (kg/g), `reconcile_every_months` (6/12), `last_reconciled_on`, `zakat_helper_enabled`, `zakat_rate_basis_points` (default 250), `zakat_currency_code`, `zakat_clear_count`, `show_deleted_info`, `show_deleted_countdown`, `show_viewer_last_visit` |
+| `user_settings` | [built] + [designed] | `user_id`, `experience_mode` (regular/advanced), `timezone`, `language`, `skip_merge_confirm`, `created_at`, `updated_at`, `version`, `updated_by_device_id` (built, D-213); *(new)* `hourly_rate_mode` (combined/per_income), `skip_item_delete_confirm`, `decimal_places` (2/3, default 3), `default_weight_unit` (kg/g), `reconcile_every_months` (6/12), `last_reconciled_on`, `zakat_helper_enabled`, `zakat_rate_basis_points` (default 250), `zakat_currency_code`, `zakat_clear_count`, `show_deleted_info`, `show_deleted_countdown`, `show_viewer_last_visit` |
 
 ## Finance
 | Table | Status | Columns |
@@ -31,10 +31,13 @@ policies (D-087), CHECK for every fixed list. Money: `bigint`, 3 decimals stored
 | `pending_seen_ids` | [designed] | `id`, `user_id`, `source` (bank/card), `external_id`, `outcome` (confirmed/dismissed), `month_item_id`, `decided_at` |
 
 ## Sync
-Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`, `version` and `updated_by_device_id` (D-176, D-180).
+The synced tables also get `deleted_at`, `deleted_by_device_id`, `version` and `updated_by_device_id` (D-176, D-180, D-213):
+BUILT on `months`, `month_incomes`, `items`, `month_items`, `item_merge_dismissals`; added to `fund_entries` and
+`notifications` when they are built; `user_settings` gets only `version` and `updated_by_device_id`. Seen notifications are
+erased after `app_config.notifications_keep_days` (7, D-212).
 | Table | Status | Columns |
 |---|---|---|
-| `devices` | [designed] | `id`, `user_id`, `name`, `platform` (web/android/ios), `last_seen_at`, `last_synced_at`, `is_primary`, `access_mode` (full/read_only), `created_at`, `updated_at` |
+| `devices` | [built] | `id`, `user_id`, `name`, `platform` (web/android/ios), `last_seen_at`, `last_synced_at`, `is_primary`, `access_mode` (full/read_only), `created_at`, `updated_at` |
 | `data_shares` | [designed] | `id`, `user_id`, `viewer_user_id`, `invited_email`, `invite_code_hash`, `invite_expires_at`, `allowed_areas`, `last_viewed_at`, `status` (pending/accepted/revoked), `created_at`, `accepted_at`, `revoked_at` |
 | `sync_conflicts` | [designed] | `id`, `user_id`, `table_name`, `row_id`, `losing_data`, `losing_device_id`, `kept_device_id`, `detected_at`, `resolved_at`, `resolution` (kept/restored) |
 

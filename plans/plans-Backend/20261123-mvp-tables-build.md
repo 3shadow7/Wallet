@@ -24,9 +24,12 @@ ruff and mypy clean. Each stage is one patch. Nothing is applied to Supabase wit
    for everyone; D-179), filled with its 24 keys by a migration (D-206 to D-208) and edited in the Django admin page,
    the only table that page shows (D-209); `user_consents` joins `apps/accounts` (D-202), with the check against the
    current terms and privacy versions. Patch 0059.
-3. [ ] **Stage 3: `devices` and the sync columns.** `devices` (D-176, D-185, D-187, D-191) and `deleted_at`,
-   `deleted_by_device_id`, `version`, `updated_by_device_id` on every synced table (D-176, D-180).
-4. [ ] **Stage 4: the funds and the alerts.** `fund_entries` (the MVP kinds), `notifications` (D-121) and
+3. [x] **Stage 3: `devices` and the sync columns.** `devices` (D-176, D-185, D-187, D-191) and `deleted_at`,
+   `deleted_by_device_id`, `version`, `updated_by_device_id` on the synced tables chosen in D-213 (`user_settings` only the
+   last two); `version` raised by a PostgreSQL trigger; the "one per user" rules count only rows that are not deleted.
+   Django's own tables locked like ours (D-210). Patch 0060.
+4. [ ] **Stage 4: the funds and the alerts.** `fund_entries` (the MVP kinds), `notifications` (D-121, erased 7 days after
+   seen, D-212; the key `notifications_keep_days` joins `app_config`), both with the four sync columns (D-213), and
    `month_items.reduction_minor` (D-117).
 5. Not in this plan: `waitlist_entries` (the n8n talk, D-205) and every table marked "later" in the pre-build review.
 
@@ -44,4 +47,4 @@ saving to the server it must send thousandths (cents x 10). That change belongs 
 - Stage 1: a test runs the real migration forward and back on a test database.
 
 ## Decisions
-D-080, D-084, D-117, D-121, D-149, D-172, D-176, D-179, D-180, D-200, D-202, D-205 to D-209.
+D-080, D-084, D-087, D-117, D-121, D-149, D-172, D-176, D-179, D-180, D-200, D-202, D-205 to D-213.

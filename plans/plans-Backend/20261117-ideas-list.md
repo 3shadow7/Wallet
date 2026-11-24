@@ -28,6 +28,7 @@ Add a row here whenever a small idea comes up. Tick a row when it has become a d
 | [ ] | Receipt photos (the camera source of the pending list): the photo files are not stored in `pending_entries`; where and whether to keep them (file storage) is a later decision. | Database, storage | The AI, written at his request ("write it down so we don't forget") | 2026-11-23 |
 | [x] | How long to keep the voice transcript and receipt text (`pending_entries.raw_text`) and the bank data: decide in Area 9 (account, privacy, deletion). | Database, privacy | The AI, written at his request | 2026-11-23 Decided 2026-11-23 (D-197): nothing is deleted. |
 | [ ] | An incoming bank entry may be income, a gift or a debt repayment: how it is classified when he confirms it is a later detail of the pending list. | Database, screens | The AI, written at his request | 2026-11-23 |
+| [ ] | Leaving Supabase later (D-211, his plan for after some years): move the database with `pg_dump`/`pg_restore` to any PostgreSQL 15+ server, move the users to a new sign-in service that signs tokens with JWKS, replace or drop the `profiles.id -> auth.users` foreign key. Everything else is plain Django and PostgreSQL. | Hosting, sign-in | User (AI wrote the steps) | 2026-11-24 |
 
 ## Relevant files
 

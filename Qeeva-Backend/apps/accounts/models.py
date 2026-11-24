@@ -181,12 +181,131 @@ class UsernameReservation(models.Model):
         return self.username
 
 
+class DevicePlatform(models.TextChoices):
+    WEB = "web"
+    ANDROID = "android"
+    IOS = "ios"
+
+
+class DeviceAccess(models.TextChoices):
+    FULL = "full"
+    READ_ONLY = "read_only"
+
+
+class DeviceManager(OwnedManager["Device"]):
+    """Typed manager: lets mypy know which model ``for_user`` returns."""
+
+
+class Device(models.Model):
+    """A phone, a browser or a watch where the user opened his account (D-176, D-182 to D-191).
+
+    Rows that sync remember which device changed or deleted them last. The free plan allows one
+    device (``app_config.device_limit_free``); the main device (``is_primary``) keeps working when
+    a paid plan ends (D-187).
+    """
+
+    OWNER_FIELD = "user_id"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        db_constraint=False,  # created in migration 0005 with ON DELETE CASCADE
+        related_name="devices",
+    )
+    # Shown to the user, for example "Chrome on Windows" or "Ali's phone".
+    name = models.TextField(validators=[MinLengthValidator(1), MaxLengthValidator(40)])
+    platform = models.TextField(choices=DevicePlatform.choices)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    last_synced_at = models.DateTimeField(null=True, blank=True)  # shown in Settings (D-182)
+    is_primary = models.BooleanField(default=False, db_default=False)
+    # A read-only device of the owner never writes and uses a viewer slot (D-191).
+    access_mode = models.TextField(
+        choices=DeviceAccess.choices, default=DeviceAccess.FULL, db_default=DeviceAccess.FULL
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
+    updated_at = models.DateTimeField(auto_now=True, db_default=Now())
+
+    objects = DeviceManager()
+
+    class Meta:
+        db_table = "devices"
+        constraints = [
+            # Synced rows point at (device id, user id): a row can never name a stranger's device.
+            models.UniqueConstraint(fields=["id", "user"], name="devices_id_user_unique"),
+            # At most one main device per user (D-187).
+            models.UniqueConstraint(
+                fields=["user"], condition=Q(is_primary=True), name="devices_one_primary_per_user"
+            ),
+            models.CheckConstraint(
+                condition=GreaterThanOrEqual(Length("name"), 1)
+                & LessThanOrEqual(Length("name"), 40),
+                name="devices_name_length",
+            ),
+            models.CheckConstraint(
+                condition=Q(platform__in=DevicePlatform.values), name="devices_platform_valid"
+            ),
+            models.CheckConstraint(
+                condition=Q(access_mode__in=DeviceAccess.values), name="devices_access_mode_valid"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class VersionedModel(models.Model):
+    """Columns for a row that several devices may change (D-180).
+
+    ``version`` starts at 1 and the DATABASE raises it on every update (a trigger made by
+    ``common.db.version_trigger``), so even a bulk update cannot forget it. A device sends the
+    version it started from; a different number means another device changed the row first.
+    """
+
+    version = models.IntegerField(default=1, db_default=1, editable=False)
+    # The device of the last change. The composite foreign key (device, owner) with
+    # ON DELETE SET NULL is created by SQL in the migration (common.db.device_foreign_key).
+    updated_by_device = models.ForeignKey(
+        Device,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        db_constraint=False,
+        related_name="+",
+    )
+
+    class Meta:
+        abstract = True
+
+
+class SyncedModel(VersionedModel):
+    """A versioned row that is deleted softly (D-176): it stays 45 days so other devices learn
+    about the delete and the user can restore it, then a daily cleanup erases it for good
+    (``app_config.deleted_rows_days``)."""
+
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by_device = models.ForeignKey(
+        Device,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        db_constraint=False,
+        related_name="+",
+    )
+
+    class Meta:
+        abstract = True
+
+
 class UserSettingsManager(OwnedManager["UserSettings"]):
     """Typed manager: lets mypy know which model ``for_user`` returns."""
 
 
-class UserSettings(models.Model):
-    """Personal preferences. Exactly one row per user (the user id is the primary key)."""
+class UserSettings(VersionedModel):
+    """Personal preferences. Exactly one row per user (the user id is the primary key).
+
+    Versioned but never deleted softly: the row lives as long as the account (D-213).
+    """
 
     OWNER_FIELD = "user_id"
 
