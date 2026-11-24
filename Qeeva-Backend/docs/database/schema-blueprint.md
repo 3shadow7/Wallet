@@ -8,7 +8,7 @@ units with 3 decimals stored for every user (integer thousandths, 12.345 = `1234
 shown with 2 or 3 by a setting (D-149); no currency (D-033), CHECK constraints for every fixed list, RLS on with no
 policies (D-087), every model declares `OWNER_FIELD`.
 
-## Built: `apps/accounts` (migrations 0001-0005)
+## Built: `apps/accounts` (migrations 0001-0006)
 
 ### `profiles` (owner field: `id`)
 | Column | Type | Rule |
@@ -64,7 +64,7 @@ newest row. Terms and privacy count only when the newest row is `accepted` for t
 | `action` | text | `accepted` or `withdrawn` (CHECK) |
 | `created_at` | timestamptz | default now |
 
-## Built: `apps/finance` (migrations 0001-0005)
+## Built: `apps/finance` (migrations 0001-0006)
 
 All have `user_id` (the owner) so isolation checks are simple; composite foreign keys
 `(month_id, user_id)` / `(item_id, user_id)` make sure a card can never point at another user's
@@ -74,7 +74,8 @@ the foreign keys (SQL), 0003 closes the tables to the Data API, 0004 moved every
 thousandths (x 10; going back refuses if an amount uses the third decimal, D-149), 0005 added the sync columns to all
 five tables (D-213): `deleted_at`, `deleted_by_device_id`, `version` (raised by a trigger), `updated_by_device_id`
 (composite FKs to the same user's device, `ON DELETE SET NULL` of that column only). The "one per user" unique rules
-count only rows that are not deleted.
+count only rows that are not deleted. 0006 built `fund_entries` (MVP kinds, D-215) and `month_items.reduction_minor`;
+their full design stays below under "Designed", each built part marked BUILT. `notifications` was built in `accounts 0006`.
 
 ### `months`
 `id`, `user_id`, `month_start` date (day must be 1), `totals_mode` `auto|included|excluded`
@@ -103,16 +104,17 @@ not a table (D-075).
 ### `item_merge_dismissals`
 `id`, `user_id`, `item_a_id`, `item_b_id`, `created_at`. Unique on the pair (D-053); `item_a_id < item_b_id` (D-106).
 
-## Built: `apps/system` (migrations 0001-0003)
+## Built: `apps/system` (migrations 0001-0004)
 
 ### `app_config` (system table, owner field: none) (D-179, D-206 to D-209)
 Values the owner can change without a new app version; the same for every user. Migration 0002 fills every key with its
 default (D-207); the owner edits values in the Django admin page (D-209), never adds or deletes keys. The code reads them
 with `apps/system/config.py` (`get_int`, `get_bool`, `get_text`), which falls back to its own copy of the default when a row
-is missing or wrong. 24 keys.
+is missing or wrong. 25 keys. `apps/system/cleanup.py` and the command `python manage.py daily_cleanup` are the daily
+cleanup (D-214), run once a day by the server's scheduler.
 | Column | Type | Rule |
 |---|---|---|
-| `key` | text, PK | `^[a-z][a-z0-9_]{0,63}$`; `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204); added by D-206: `deleted_rows_days` (45), `prices_stale_days` (30), `price_update_hours` (24), `debt_reminder_days_before` (7), `months_ahead_limit` (1), `username_change_days` (14), `zakat_silver_grams` (595), `zakat_default_rate_bp` (250), `zakat_clear_limit` (1); added by D-208: `terms_version`, `privacy_version` (`2026-11`); `device_limit_paid` is 5 as a placeholder, `signup_open` false (D-207) |
+| `key` | text, PK | `^[a-z][a-z0-9_]{0,63}$`; `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204); added by D-206: `deleted_rows_days` (45), `prices_stale_days` (30), `price_update_hours` (24), `debt_reminder_days_before` (7), `months_ahead_limit` (1), `username_change_days` (14), `zakat_silver_grams` (595), `zakat_default_rate_bp` (250), `zakat_clear_limit` (1); added by D-208: `terms_version`, `privacy_version` (`2026-11`); added by D-212: `notifications_keep_days` (7); `device_limit_paid` is 5 as a placeholder, `signup_open` false (D-207) |
 | `value` | jsonb | a number, true/false or text, checked against the key's type |
 | `updated_at` | timestamptz | default now |
 | `updated_by` | integer, null | the Django admin account (`auth_user`) that changed it last; FK `ON DELETE SET NULL` in SQL (D-209) |
@@ -156,7 +158,7 @@ else `amount / monthly hours`, else none (the app never invents working time, D-
 | `threshold_minor` | bigint, null | > 0; only on a percentage card; the amount is 0 while the base is below it (D-134) |
 | `frequency` | text | `monthly` or `yearly` (CHECK); default `monthly`; tax cards only (checked in Python) |
 | `due_month` | smallint, null | 1 to 12; required for `yearly`, empty for `monthly` (CHECK) |
-| `reduction_minor` | bigint, null | NULL = not chosen (pro-rata); otherwise 0 up to `amount_minor` (CHECK); saving cards only (Python) |
+| `reduction_minor` | bigint, null | BUILT (0061). NULL = not chosen (pro-rata); otherwise 0 up to `amount_minor` (CHECK); saving cards only (Python) |
 | `quantity` | numeric(14,3) | > 0 (was integer >= 1); whole numbers only while the item's unit is `piece` (Python) |
 
 One CHECK: a card is fixed (amount set, rate and base empty) or a percentage (rate and base set, amount empty).
@@ -192,7 +194,7 @@ in Advanced (D-152). A welcome for new users and a fast clear of fake data are a
 CHECK: `zakat_helper_enabled` cannot be true while `zakat_rate_basis_points` or `zakat_currency_code` is empty.
 Combined hourly rate = sum of the counted amounts of the lines with monthly hours / sum of those hours (D-128).
 
-### `fund_entries` (owner field: `user_id`) (D-118, D-155, D-157, D-158; approved)
+### `fund_entries` (owner field: `user_id`) (D-118, D-155, D-157, D-158, D-215; BUILT in 0061 with the MVP kinds; the later kinds and `debt_id`, `title`, `counted_minor` still designed)
 The funds ledger: the total funds are one pool, a saving item holds a part of it. The pool total and its free part
 are calculated from these rows plus the months.
 | Column | Type | Rule |
@@ -200,7 +202,7 @@ are calculated from these rows plus the months.
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
 | `month_id` | uuid | composite FK `(month_id, user_id)`; NO ACTION |
-| `kind` | text | `opening`, `add`, `withdraw`, `to_item`, `from_item`, `gift`, `lend`, `borrow`, `repay_in`, `repay_out` (CHECK) |
+| `kind` | text | built: `opening` (one per user among rows not deleted, D-215), `add`, `withdraw`, `to_item`, `from_item`; later: `gift`, `lend`, `borrow`, `repay_in`, `repay_out` (CHECK grows with each feature) |
 | `amount_minor` | bigint | > 0 (the kind says the direction) |
 | `item_id` | uuid, null | required for `to_item` and `from_item`, empty otherwise (CHECK); composite FK; CASCADE; saving items only (Python) |
 | `debt_id` | uuid, null | required for `lend`, `borrow`, `repay_in`, `repay_out`, empty otherwise (CHECK); composite FK `(debt_id, user_id)`; CASCADE |
@@ -233,13 +235,13 @@ The open amount and the status (open, settled) are calculated from its `fund_ent
 entries. Reminders while open: a week before, on the 1st of the due month, on the due day; never two on the same day.
 A gift he gives is an ordinary `burn` card with importance `gift` (D-160).
 
-### `notifications` (owner field: `user_id`) (D-121; approved)
+### `notifications` (owner field: `user_id`) (D-121, D-212; BUILT in `accounts 0006` with the MVP kinds)
 | Column | Type | Rule |
 |---|---|---|
 | `id` | uuid, PK | |
 | `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
 | `kind` | text | CHECK list: `goal_progress`, `goal_next_month`, `sync_conflict`, `zakat_point`, `zakat_restarted`, `zakat_due`, `prices_stale`, `reconcile_due`, `debt_due_week`, `debt_due_month`, `debt_due_day`; each new feature adds its kind with its migration |
-| `dedupe_key` | text | 1-200; unique `(user_id, dedupe_key)` |
+| `dedupe_key` | text | 1-200; unique `(user_id, dedupe_key)`, also among deleted rows (a dismissed event is not created again) |
 | `payload` | jsonb, null | small display data only, no money rules |
 | `created_at` | timestamptz | default now |
 | `seen_at` | timestamptz, null | NULL = not seen |

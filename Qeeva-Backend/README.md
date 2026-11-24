@@ -91,6 +91,16 @@ Open `http://127.0.0.1:8000/admin/`, sign in, then **System > App config values*
 text (`3`, `true`, a sentence); a wrong value is refused with the reason. Keys cannot be added or deleted.
 Before going live: a secret address instead of `/admin/`, a long password, HTTPS only.
 
+## Daily cleanup (D-214)
+
+Once a day, run `python manage.py daily_cleanup` with the server's scheduler (cron on Linux, Task Scheduler on
+Windows). It erases rows deleted more than 45 days ago and notifications seen more than 7 days ago (both numbers live
+in `app_config`). Running it twice is safe.
+
+```bash
+15 3 * * *  cd /srv/qeeva/Qeeva-Backend && python manage.py daily_cleanup   # cron example: every day at 03:15
+```
+
 ## Account tables (`apps/accounts`)
 
 `profiles`, `username_reservations` and `user_settings`. Migration `0002` ties

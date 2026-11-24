@@ -13,17 +13,19 @@ from apps.system.config import KEYS, as_text, check_value, get_bool, get_int, ge
 from apps.system.models import AppConfigEntry
 
 # A migration module name starts with a digit, so it is loaded by its dotted name.
-seeded = importlib.import_module("apps.system.migrations.0002_default_values")
+first_keys = importlib.import_module("apps.system.migrations.0002_default_values").DEFAULTS
+later_keys = importlib.import_module("apps.system.migrations.0004_notifications_keep_days").NEW_KEYS
 
 
 class TestTheFilledTable:
-    def test_the_migration_and_the_code_list_the_same_keys_and_defaults(self) -> None:
-        # The migration keeps its own copy (D-207); both must agree when a key is added.
-        assert {key: spec.default for key, spec in KEYS.items()} == seeded.DEFAULTS
+    def test_the_migrations_and_the_code_list_the_same_keys_and_defaults(self) -> None:
+        # Each migration keeps its own copy (D-207); together they must match the code's list.
+        assert {key: spec.default for key, spec in KEYS.items()} == {**first_keys, **later_keys}
 
-    def test_there_are_24_keys(self) -> None:
-        # 22 keys of D-179/D-206 + terms_version and privacy_version (D-208).
-        assert len(KEYS) == 24
+    def test_there_are_25_keys(self) -> None:
+        # 22 keys of D-179/D-206, terms_version and privacy_version (D-208), and
+        # notifications_keep_days (D-212).
+        assert len(KEYS) == 25
 
     @pytest.mark.django_db
     def test_every_key_is_in_the_table_with_its_default(self) -> None:

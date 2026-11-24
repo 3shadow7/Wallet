@@ -10,7 +10,7 @@ status: "draft"
 ## TL;DR
 
 The backend has a tested foundation, the accounts tables, the five finance tables and a pure-Python month
-calculation layer (478 tests with PostgreSQL, no finance endpoint). Since 2026-11-15 the work is **Path A**: design the
+calculation layer (536 tests with PostgreSQL, no finance endpoint). Since 2026-11-15 the work is **Path A**: design the
 data of every feature, one area at a time, before building more. Since 2026-11-23 (22:58) the design is complete (D-205) and
 the MVP tables are being built in stages. Nothing has been applied to Supabase. This file is a snapshot; the decision
 log, the feature-data map and `Qeeva-Backend/AGENTS.md` section 10 are the live sources.
@@ -58,7 +58,8 @@ In progress and waiting:
 - [x] Build stage 1 (patch 0058): money stored in thousandths for every user, migration `finance 0004` (D-149).
 - [x] Build stage 2 (patch 0059): `app_config` with its 24 keys and the Django admin page for it, `user_consents` (D-207 to D-209).
 - [x] Build stage 3 (patch 0060): `devices`, the sync columns (D-213), Django's own tables locked (D-210); portability rule (D-211); notifications erase rule (D-212).
-- [ ] Build stage 4 of `20261123-mvp-tables-build.md`: `fund_entries`, `notifications`, `reduction_minor`.
+- [x] Build stage 4 (patch 0061): `fund_entries` (one opening per user, D-215), `notifications`, `reduction_minor`, the daily cleanup command (D-214). EVERY MVP TABLE IS BUILT.
+- [ ] Next target: the waitlist and marketing with n8n (redesign `waitlist_entries`, a feedback/ideas table; D-194).
 
 Not touched yet: Supabase (read-only, nothing applied), the JWT key check, running the shared vectors in Angular, any API endpoint.
 
@@ -70,8 +71,8 @@ Not touched yet: Supabase (read-only, nothing applied), the JWT key check, runni
 
 ## Verification
 
-`pytest -q` with a PostgreSQL URL in `QEEVA_TEST_DATABASE_URL`: 478 passed (since 0060); `ruff check` and `mypy` clean. The patches 0001 to 0021 were each applied with `git am` on a clean copy before delivery.
+`pytest -q` with a PostgreSQL URL in `QEEVA_TEST_DATABASE_URL`: 536 passed (since 0061); `ruff check` and `mypy` clean. The patches 0001 to 0021 were each applied with `git am` on a clean copy before delivery.
 
 ## Decisions
 
-D-084, D-087, D-093, D-097, D-101 to D-213 (the ones this period produced); the earlier ones are in the decision log.
+D-084, D-087, D-093, D-097, D-101 to D-215 (the ones this period produced); the earlier ones are in the decision log.

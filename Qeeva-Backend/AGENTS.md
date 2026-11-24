@@ -120,9 +120,10 @@ core/            settings (all from environment), urls
 common/          auth.py (Supabase JWT), ownership.py (for_user), db.py (lock_down_table, version_trigger,
                  device_foreign_key), views
 apps/accounts/   profiles, username_reservations, user_settings, user_consents (+ consents.py), devices,
-                 VersionedModel / SyncedModel (the sync columns, D-213)
-apps/system/     app_config (+ config.py: keys, defaults, readers; admin.py: the only admin page)
-apps/finance/    months, month_incomes, items, month_items, item_merge_dismissals (+ naming.py)
+                 notifications, VersionedModel / SyncedModel (the sync columns, D-213)
+apps/system/     app_config (+ config.py: keys, defaults, readers; admin.py: the only admin page;
+                 cleanup.py + `manage.py daily_cleanup`, D-214)
+apps/finance/    months, month_incomes, items, month_items, item_merge_dismissals, fund_entries (+ naming.py)
 conftest.py      test wiring (auth.users stand-in; skips DB tests without PostgreSQL)
 docs/            schema blueprint, guide for the user (Arabic); decision-log.md is only a pointer
 ```
@@ -203,14 +204,15 @@ D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `
 test vectors; D-108, D-109). No finance endpoint exists. Patch 0058 moves money to thousandths (migration
 `finance 0004`, D-149). Patch 0059 builds `app_config` (new app `apps/system`, 24 keys, the Django admin page for it)
 and `user_consents` (D-207 to D-209). Patch 0060 builds `devices` and the sync columns (D-213) and locks Django's own
-tables (D-210). Tests: 478 with PostgreSQL.
+tables (D-210). Patch 0061 builds `fund_entries`, `notifications`, `reduction_minor` and the daily cleanup (D-214,
+D-215): every MVP table is built. Tests: 536 with PostgreSQL.
 Patches 0015-0018 (docs only) hold decisions D-103 to D-120 and the feature-data map; patches 0019-0021 (docs only, delivered
 2026-11-17) hold D-121 to D-123, the "Designed, not built" tables in the schema blueprint and the ideas list.
 A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-progress-summary.md`.
 Patch 0025 adds the delivery helper `scripts/apply-patches.sh` (section 7); patch subjects now carry their number.
 
 Next candidates (the user's current path is **Path A**, section 10; B and C wait). Each needs his go-ahead:
-1. Path A is complete (D-205): Areas 1-9 are designed. The MVP tables are being built in stages (`plans/plans-Backend/20261123-mvp-tables-build.md`).
+1. Path A is complete (D-205): Areas 1-9 are designed. Every MVP table is built (patches 0058-0061, `plans/plans-Backend/20261123-mvp-tables-build.md`, done). Next: the waitlist and n8n talk (D-194).
 2. After Path A, build what was designed, one area at a time with tests: `fund_entries`, `notifications`,
    `month_items.reduction_minor`, `user_settings.skip_item_delete_confirm`; then extend the calculation layer
    (deficit and old-month gap rules D-111 and D-119, goals) and run the same vectors in the Angular calculator
@@ -288,6 +290,11 @@ terms and privacy versions as keys (D-208), edited in the Django admin page, the
 **2026-11-24 (12:16): stage 3 built (patch 0060).** Django's own tables locked (D-210); the portability rule (D-211);
 seen notifications erased after 7 days (D-212); `devices` and the sync columns on the chosen tables (D-213). Next: stage 4
 (`fund_entries`, `notifications`, `reduction_minor`).
+
+**2026-11-24 (12:33): stage 4 built (patch 0061). EVERY MVP TABLE IS BUILT.** `fund_entries` with one opening per user
+(D-215), `notifications`, `reduction_minor`, the key `notifications_keep_days` and the daily cleanup command (D-214).
+Next, his target: the waitlist and marketing with n8n, starting with the redesign of `waitlist_entries` and the
+feedback/ideas table (D-194, D-205); any endpoint for n8n needs his scope approval.
 
 **Path A (closed 2026-11-23):** the data design for every feature. The user's rule: the database is the only subject; he asked the AI
 to ask two or more questions per message (changed 2026-11-17) and to keep the `.md` files updated.

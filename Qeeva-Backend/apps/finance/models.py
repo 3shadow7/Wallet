@@ -24,7 +24,12 @@ import uuid
 from datetime import date, datetime
 
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxLengthValidator,
+    MaxValueValidator,
+    MinLengthValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.functions import Length, Now, Trim
@@ -369,6 +374,11 @@ class MonthItem(SyncedModel):
     quantity_needs_review = models.BooleanField(default=False, db_default=False)
     # Ignored cards stay visible but are left out of totals, history and charts.
     is_ignored = models.BooleanField(default=False, db_default=False)
+    # Saving cards only (checked in Python): how much of this card the user chose to give up when
+    # the month is short (D-117, D-119). NULL = not chosen, the shortfall is shared pro-rata.
+    reduction_minor = models.BigIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(0)]
+    )
     created_at = created_at_field()
     updated_at = updated_at_field()
 
@@ -390,6 +400,12 @@ class MonthItem(SyncedModel):
                 condition=Q(amount_minor__gte=0), name="month_items_amount_not_negative"
             ),
             models.CheckConstraint(condition=Q(quantity__gte=1), name="month_items_quantity_min_1"),
+            # A reduction can never be more than the card itself.
+            models.CheckConstraint(
+                condition=Q(reduction_minor__isnull=True)
+                | Q(reduction_minor__gte=0, reduction_minor__lte=F("amount_minor")),
+                name="month_items_reduction_within_amount",
+            ),
             models.CheckConstraint(
                 condition=Q(unit_price_minor__isnull=True) | Q(unit_price_minor__gte=0),
                 name="month_items_unit_price_not_negative",
@@ -398,6 +414,11 @@ class MonthItem(SyncedModel):
 
     def __str__(self) -> str:
         return f"{self.item_id} / {self.importance}"
+
+    def clean(self) -> None:
+        # Only a saving card can be reduced; spending and taxes are real money already gone (D-117).
+        if self.reduction_minor is not None and self.item.type != ItemType.SAVING:
+            raise ValidationError({"reduction_minor": "Only a saving card can be reduced."})
 
 
 # ---------------------------------------------------------------------------------------------
@@ -464,3 +485,114 @@ class ItemMergeDismissal(SyncedModel):
     def ordered_pair(first: uuid.UUID, second: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID]:
         """Return the two item ids as (smaller, larger), the order the table requires."""
         return (first, second) if first < second else (second, first)
+
+
+# ---------------------------------------------------------------------------------------------
+# fund_entries
+# ---------------------------------------------------------------------------------------------
+
+
+class FundKind(models.TextChoices):
+    """What moved. Only the MVP kinds for now; gift, lend, borrow, repay_in and repay_out join
+    with their features in their own migration (D-155, D-157, D-215)."""
+
+    OPENING = "opening"  # the first count of his money (one per user, D-215)
+    ADD = "add"  # money put into the funds by hand
+    WITHDRAW = "withdraw"  # money taken out of the funds by hand
+    TO_ITEM = "to_item"  # free funds moved into a saving item
+    FROM_ITEM = "from_item"  # money moved back from a saving item to the free funds
+
+
+# The kinds that move money between the free funds and one saving item.
+ITEM_KINDS = (FundKind.TO_ITEM, FundKind.FROM_ITEM)
+
+
+class FundEntryManager(OwnedManager["FundEntry"]):
+    """Typed manager: lets mypy know which model ``for_user`` returns."""
+
+
+class FundEntry(SyncedModel):
+    """One move of the funds ledger (D-118): the total funds are one pool, a saving item holds a
+    part of it. The pool total and its free part are calculated from these rows and the months.
+
+    Example: ``opening`` 2,000 in November, then ``to_item`` 500 into "Car fund": the funds are
+    2,000, of which 500 belong to the car and 1,500 are free.
+    """
+
+    OWNER_FIELD = "user_id"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = owner_foreign_key(db_index=False)  # (user, kind) below starts with user
+    # Composite (month_id, user_id) -> months with NO ACTION: a month that still has entries
+    # cannot be erased (D-123); the popup keeps ticked entries in the same month.
+    month = models.ForeignKey(
+        Month,
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        db_column="month_id",
+        related_name="fund_entries",
+    )
+    kind = models.TextField(choices=FundKind.choices)
+    # Always positive: the kind says the direction.
+    amount_minor = models.BigIntegerField(validators=[MinValueValidator(1)])
+    # Only for to_item / from_item. Composite (item_id, user_id) -> items with CASCADE: deleting
+    # a saving item deletes its moves, so its money is back in the free funds (D-123).
+    item = models.ForeignKey(
+        Item,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        db_constraint=False,
+        db_column="item_id",
+        related_name="fund_entries",
+    )
+    # NULL means "no note"; an empty string is forbidden by a database check (see Meta).
+    note = models.TextField(  # noqa: DJ001
+        null=True, blank=True, validators=[MinLengthValidator(1), MaxLengthValidator(60)]
+    )
+    created_at = created_at_field()
+    updated_at = updated_at_field()
+
+    objects = FundEntryManager()
+
+    class Meta:
+        db_table = "fund_entries"
+        verbose_name_plural = "fund entries"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(kind__in=FundKind.values), name="fund_entries_kind_valid"
+            ),
+            models.CheckConstraint(
+                condition=Q(amount_minor__gt=0), name="fund_entries_amount_positive"
+            ),
+            # An item exactly for the two item kinds, never for the others.
+            models.CheckConstraint(
+                condition=(Q(kind__in=ITEM_KINDS) & Q(item__isnull=False))
+                | (~Q(kind__in=ITEM_KINDS) & Q(item__isnull=True)),
+                name="fund_entries_item_only_for_item_kinds",
+            ),
+            models.CheckConstraint(
+                condition=Q(note__isnull=True)
+                | (GreaterThanOrEqual(Length("note"), 1) & LessThanOrEqual(Length("note"), 60)),
+                name="fund_entries_note_length",
+            ),
+            # One first count per user among the rows that are not deleted (D-215); later
+            # corrections are add or withdraw rows.
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=Q(kind=FundKind.OPENING, deleted_at__isnull=True),
+                name="fund_entries_one_opening_per_user",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["user", "kind"], name="fund_entries_user_kind"),
+            models.Index(fields=["month"], name="fund_entries_month"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.amount_minor}"
+
+    def clean(self) -> None:
+        # Moves into or out of an item only make sense for saving items (D-118).
+        if self.item is not None and self.item.type != ItemType.SAVING:
+            raise ValidationError({"item": "Funds can only move into or out of a saving item."})

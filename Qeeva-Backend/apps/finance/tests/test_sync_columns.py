@@ -1,4 +1,4 @@
-"""The sync columns of the five finance tables (D-176, D-180, D-213).
+"""The sync columns of every synced table: finance and notifications (D-176, D-180, D-213).
 
 Every row: ``version`` raised by PostgreSQL on each change, ``updated_by_device`` and
 ``deleted_by_device`` tied to the SAME user's device, ``deleted_at`` for a soft delete that does
@@ -13,9 +13,9 @@ import pytest
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from apps.accounts.models import Device, Profile, SyncedModel
+from apps.accounts.models import Device, Notification, Profile, SyncedModel
 from apps.accounts.tests.helpers import create_profile
-from apps.finance.models import Item, ItemMergeDismissal, Month, MonthIncome, MonthItem
+from apps.finance.models import FundEntry, Item, ItemMergeDismissal, Month, MonthIncome, MonthItem
 from apps.finance.tests.helpers import create_card, create_income, create_item, create_month
 
 pytestmark = pytest.mark.django_db
@@ -43,6 +43,12 @@ ROW_MAKERS: dict[str, Callable[[Profile], SyncedModel]] = {
     "items": lambda p: create_item(p),
     "month_items": lambda p: create_card(create_month(p), create_item(p)),
     "item_merge_dismissals": a_dismissal,
+    "fund_entries": lambda p: FundEntry.objects.create(
+        user=p, month=create_month(p), kind="add", amount_minor=1_000
+    ),
+    "notifications": lambda p: Notification.objects.create(
+        user=p, kind="goal_progress", dedupe_key="goal:x:50"
+    ),
 }
 
 

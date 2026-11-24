@@ -425,3 +425,67 @@ class UserConsent(models.Model):
         if not self._state.adding:
             raise ValueError("A consent row is never edited; save a new row instead.")
         super().save(*args, **kwargs)  # type: ignore[arg-type]
+
+
+class NotificationKind(models.TextChoices):
+    """Only the kinds of MVP features; every later feature adds its kind with its own migration
+    (sync conflicts, Zakat, prices, reconcile, debts; D-121)."""
+
+    GOAL_PROGRESS = "goal_progress"  # a saving goal reached 25, 50, 75 or 100% (D-072)
+    GOAL_NEXT_MONTH = "goal_next_month"  # the goal will be reached next month at this pace
+
+
+class NotificationManager(OwnedManager["Notification"]):
+    """Typed manager: lets mypy know which model ``for_user`` returns."""
+
+
+class Notification(SyncedModel):
+    """A message the app found newly true, created once (D-121, D-212).
+
+    ``dedupe_key`` names the event, for example ``goal:<item id>:50``; it is unique per user even
+    among deleted rows, so the same event never creates a second row while the first exists. A
+    seen row is erased ``app_config.notifications_keep_days`` (7) days after ``seen_at`` by the
+    daily cleanup (D-214); an unseen one stays until seen.
+    """
+
+    OWNER_FIELD = "user_id"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        db_constraint=False,  # created in migration 0006 with ON DELETE CASCADE
+        related_name="notifications",
+        db_index=False,  # (user, dedupe_key) and (user, seen_at) below start with user
+    )
+    kind = models.TextField(choices=NotificationKind.choices)
+    dedupe_key = models.TextField(validators=[MinLengthValidator(1), MaxLengthValidator(200)])
+    # Small display data only (a name, a percent), never a money rule.
+    payload = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
+    seen_at = models.DateTimeField(null=True, blank=True)  # NULL = not seen yet
+
+    objects = NotificationManager()
+
+    class Meta:
+        db_table = "notifications"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "dedupe_key"], name="notifications_user_dedupe_unique"
+            ),
+            models.CheckConstraint(
+                condition=Q(kind__in=NotificationKind.values), name="notifications_kind_valid"
+            ),
+            models.CheckConstraint(
+                condition=GreaterThanOrEqual(Length("dedupe_key"), 1)
+                & LessThanOrEqual(Length("dedupe_key"), 200),
+                name="notifications_dedupe_key_length",
+            ),
+        ]
+        indexes = [
+            # "His unseen notifications" and the daily cleanup of seen ones.
+            models.Index(fields=["user", "seen_at"], name="notifications_user_seen"),
+        ]
+
+    def __str__(self) -> str:
+        return self.dedupe_key

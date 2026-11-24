@@ -75,6 +75,9 @@ KEYS: dict[str, ConfigKey] = {
     "bank_sync_overlap_days": ConfigKey(
         7, "Days each bank import reads again, for late entries (D-204).", minimum=0
     ),
+    "notifications_keep_days": ConfigKey(
+        7, "Days a seen notification is kept before the daily cleanup erases it (D-212).", minimum=1
+    ),
     # Months and debts (D-150, D-159)
     "months_ahead_limit": ConfigKey(
         1, "How many months ahead a user may create (D-150).", minimum=0

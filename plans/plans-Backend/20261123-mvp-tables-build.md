@@ -2,7 +2,7 @@
 title: "Build the MVP tables in Django, in stages"
 author: "Claude"
 date: "2026-11-23"
-status: "approved"
+status: "done"
 ---
 
 # Build the MVP tables in Django
@@ -28,9 +28,9 @@ ruff and mypy clean. Each stage is one patch. Nothing is applied to Supabase wit
    `deleted_by_device_id`, `version`, `updated_by_device_id` on the synced tables chosen in D-213 (`user_settings` only the
    last two); `version` raised by a PostgreSQL trigger; the "one per user" rules count only rows that are not deleted.
    Django's own tables locked like ours (D-210). Patch 0060.
-4. [ ] **Stage 4: the funds and the alerts.** `fund_entries` (the MVP kinds), `notifications` (D-121, erased 7 days after
+4. [x] **Stage 4: the funds and the alerts (patch 0061).** `fund_entries` (the MVP kinds), `notifications` (D-121, erased 7 days after
    seen, D-212; the key `notifications_keep_days` joins `app_config`), both with the four sync columns (D-213), and
-   `month_items.reduction_minor` (D-117).
+   `month_items.reduction_minor` (D-117). Also the daily cleanup command (D-214) and one opening per user (D-215).
 5. Not in this plan: `waitlist_entries` (the n8n talk, D-205) and every table marked "later" in the pre-build review.
 
 A note for the frontend plan (outside `Qeeva-Backend`): the Angular app keeps cents in its local storage; when it starts
@@ -47,4 +47,4 @@ saving to the server it must send thousandths (cents x 10). That change belongs 
 - Stage 1: a test runs the real migration forward and back on a test database.
 
 ## Decisions
-D-080, D-084, D-087, D-117, D-121, D-149, D-172, D-176, D-179, D-180, D-200, D-202, D-205 to D-213.
+D-080, D-084, D-087, D-117, D-121, D-149, D-172, D-176, D-179, D-180, D-200, D-202, D-205 to D-215.

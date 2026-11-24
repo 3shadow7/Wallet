@@ -22,18 +22,17 @@ policies (D-087), CHECK for every fixed list. Money: `bigint`, 3 decimals stored
 | `months` | [built] | `id`, `user_id`, `month_start`, `totals_mode` (auto/included/excluded), `created_at`, `updated_at` |
 | `month_incomes` | [built] + [designed] | `id`, `user_id`, `month_id`, `name`, `amount_minor`, `hourly_rate_manual_minor`, `created_at`, `updated_at`; *(changes)* `hours_per_day` and `days_per_week` nullable, `work_hours_override` numeric(5,2); *(new)* `frequency` (monthly/yearly), `due_month` |
 | `items` | [built] + [designed] | `id`, `user_id`, `name`, `name_key`, `type` (burn/tax/saving), `target_minor`, `created_at`, `updated_at`; *(new)* `unit` (piece/g/kg) |
-| `month_items` | [built] + [designed] | `id`, `user_id`, `month_id`, `item_id`, `importance` (want/must/emergency/gift), `unit_price_minor`, `quantity_needs_review`, `is_ignored`, `created_at`, `updated_at`; *(changes)* `amount_minor` nullable, `quantity` numeric(14,3); *(new)* `rate_basis_points`, `rate_base` (income/funds), `threshold_minor`, `frequency` (monthly/yearly), `due_month`, `reduction_minor` |
+| `month_items` | [built] + [designed] | `id`, `user_id`, `month_id`, `item_id`, `importance` (want/must/emergency/gift), `unit_price_minor`, `quantity_needs_review`, `is_ignored`, `created_at`, `updated_at`; *(changes)* `amount_minor` nullable, `quantity` numeric(14,3); *(new)* `rate_basis_points`, `rate_base` (income/funds), `threshold_minor`, `frequency` (monthly/yearly), `due_month`; built since 0061: `reduction_minor` |
 | `item_merge_dismissals` | [built] | `id`, `user_id`, `item_a_id`, `item_b_id`, `created_at` |
-| `fund_entries` | [designed] | `id`, `user_id`, `month_id`, `kind` (opening/add/withdraw/to_item/from_item/gift/lend/borrow/repay_in/repay_out), `amount_minor`, `item_id`, `debt_id`, `title`, `counted_minor`, `note`, `created_at`, `updated_at` |
+| `fund_entries` | [built] (MVP kinds) + [designed] (later kinds, `debt_id`, `title`, `counted_minor`) | `id`, `user_id`, `month_id`, `kind` (opening/add/withdraw/to_item/from_item/gift/lend/borrow/repay_in/repay_out), `amount_minor`, `item_id`, `debt_id`, `title`, `counted_minor`, `note`, `created_at`, `updated_at` |
 | `debts` | [designed] | `id`, `user_id`, `direction` (lent/borrowed), `person_name`, `month_id`, `started_on`, `due_on`, `note`, `created_at`, `updated_at` |
-| `notifications` | [designed] | `id`, `user_id`, `kind`, `dedupe_key`, `payload`, `created_at`, `seen_at` |
+| `notifications` | [built] | `id`, `user_id`, `kind`, `dedupe_key`, `payload`, `created_at`, `seen_at` |
 | `pending_entries` | [designed] | `id`, `user_id`, `source` (bank/voice/camera/card), `external_id`, `occurred_on`, `direction` (out/in), `amount_minor`, `suggested_name`, `suggested_type`, `raw_text`, `created_at`, `updated_at` (only waiting entries, D-201) |
 | `pending_seen_ids` | [designed] | `id`, `user_id`, `source` (bank/card), `external_id`, `outcome` (confirmed/dismissed), `month_item_id`, `decided_at` |
 
 ## Sync
 The synced tables also get `deleted_at`, `deleted_by_device_id`, `version` and `updated_by_device_id` (D-176, D-180, D-213):
-BUILT on `months`, `month_incomes`, `items`, `month_items`, `item_merge_dismissals`; added to `fund_entries` and
-`notifications` when they are built; `user_settings` gets only `version` and `updated_by_device_id`. Seen notifications are
+BUILT on `months`, `month_incomes`, `items`, `month_items`, `item_merge_dismissals`, `fund_entries`, `notifications`; `user_settings` gets only `version` and `updated_by_device_id`. Seen notifications are
 erased after `app_config.notifications_keep_days` (7, D-212).
 | Table | Status | Columns |
 |---|---|---|
@@ -44,7 +43,7 @@ erased after `app_config.notifications_keep_days` (7, D-212).
 ## System (no owner, the same for everyone)
 | Table | Status | Columns |
 |---|---|---|
-| `app_config` | [built] | `key`, `value`, `updated_at`, `updated_by` (the Django admin account, D-209); 24 keys, listed in `schema-blueprint.md` (D-179, D-206, D-208) |
+| `app_config` | [built] | `key`, `value`, `updated_at`, `updated_by` (the Django admin account, D-209); 25 keys, listed in `schema-blueprint.md` (D-179, D-206, D-208, D-212) |
 
 ## Account
 | Table | Status | Columns |
