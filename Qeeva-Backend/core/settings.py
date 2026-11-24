@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "apps.accounts",
     "apps.finance",
+    "apps.system",
 ]
 
 MIDDLEWARE = [

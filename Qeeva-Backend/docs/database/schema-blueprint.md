@@ -8,7 +8,7 @@ units with 3 decimals stored for every user (integer thousandths, 12.345 = `1234
 shown with 2 or 3 by a setting (D-149); no currency (D-033), CHECK constraints for every fixed list, RLS on with no
 policies (D-087), every model declares `OWNER_FIELD`.
 
-## Built: `apps/accounts` (migrations 0001-0003)
+## Built: `apps/accounts` (migrations 0001-0004)
 
 ### `profiles` (owner field: `id`)
 | Column | Type | Rule |
@@ -31,6 +31,19 @@ policies (D-087), every model declares `OWNER_FIELD`.
 `user_id` uuid PK/FK to `profiles` (`ON DELETE CASCADE`) · `experience_mode` `regular|advanced`
 (default `regular`) · `timezone` text (IANA name, checked in Python, not empty) · `language`
 (`en`) · `skip_merge_confirm` boolean default false · `created_at`, `updated_at`.
+
+### `user_consents` (owner field: `user_id`) (D-202, D-208; migration 0004)
+One row per action, never edited (the code refuses to save an existing row); the current state of a kind is its
+newest row. Terms and privacy count only when the newest row is `accepted` for today's `app_config.terms_version` /
+`privacy_version` (D-208). FK to `profiles` `ON DELETE CASCADE` in SQL; index `(user_id, kind, created_at desc)`.
+| Column | Type | Rule |
+|---|---|---|
+| `id` | uuid, PK | |
+| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
+| `kind` | text | `terms`, `privacy`, `marketing` (CHECK) |
+| `document_version` | text | 1-20 characters, for example `2026-11` |
+| `action` | text | `accepted` or `withdrawn` (CHECK) |
+| `created_at` | timestamptz | default now |
 
 ## Built: `apps/finance` (migrations 0001-0004)
 
@@ -67,6 +80,22 @@ not a table (D-075).
 
 ### `item_merge_dismissals`
 `id`, `user_id`, `item_a_id`, `item_b_id`, `created_at`. Unique on the pair (D-053); `item_a_id < item_b_id` (D-106).
+
+## Built: `apps/system` (migrations 0001-0002)
+
+### `app_config` (system table, owner field: none) (D-179, D-206 to D-209)
+Values the owner can change without a new app version; the same for every user. Migration 0002 fills every key with its
+default (D-207); the owner edits values in the Django admin page (D-209), never adds or deletes keys. The code reads them
+with `apps/system/config.py` (`get_int`, `get_bool`, `get_text`), which falls back to its own copy of the default when a row
+is missing or wrong. 24 keys.
+| Column | Type | Rule |
+|---|---|---|
+| `key` | text, PK | `^[a-z][a-z0-9_]{0,63}$`; `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204); added by D-206: `deleted_rows_days` (45), `prices_stale_days` (30), `price_update_hours` (24), `debt_reminder_days_before` (7), `months_ahead_limit` (1), `username_change_days` (14), `zakat_silver_grams` (595), `zakat_default_rate_bp` (250), `zakat_clear_limit` (1); added by D-208: `terms_version`, `privacy_version` (`2026-11`); `device_limit_paid` is 5 as a placeholder, `signup_open` false (D-207) |
+| `value` | jsonb | a number, true/false or text, checked against the key's type |
+| `updated_at` | timestamptz | default now |
+| `updated_by` | integer, null | the Django admin account (`auth_user`) that changed it last; FK `ON DELETE SET NULL` in SQL (D-209) |
+
+The apps keep the last copy for offline use and have a built-in default when they never read it (D-178, D-179).
 
 ## Designed, not built (approved designs; no migration yet)
 
@@ -329,17 +358,6 @@ The history shown in "My plan". Payment-provider records are a separate, later t
 MVP gate (D-199, confirmed): while `app_config.signup_open` is false, only emails with `invited_at` set can create an account; the
 others join the waitlist. n8n writes through a small Django endpoint with its own secret, never with database passwords.
 
-### `user_consents` (owner field: `user_id`) (D-202; approved; columns by the AI)
-One row per action, never edited; the current state of a kind is its newest row.
-| Column | Type | Rule |
-|---|---|---|
-| `id` | uuid, PK | |
-| `user_id` | uuid | owner; FK to `profiles` `ON DELETE CASCADE` |
-| `kind` | text | `terms`, `privacy`, `marketing` (CHECK) |
-| `document_version` | text | for example `2026-11` |
-| `action` | text | `accepted` or `withdrawn` (CHECK) |
-| `created_at` | timestamptz | default now |
-
 ### Data export (D-198; approved; no new table)
 One Excel file with a sheet per area; `app_config.feature_export_enabled` is false by default (hidden) until he turns it on; each export writes
 `data_exported` in `audit_logs`.
@@ -360,17 +378,6 @@ Only sensitive actions; never money values, passwords, tokens or invite codes; e
 | `created_at` | timestamptz | default now |
 
 No IP address is stored for now.
-
-### `app_config` (system table, no owner) (D-179; approved; design by the AI)
-Values the owner can change without a new app version; the same for every user; only an admin edits them.
-| Column | Type | Rule |
-|---|---|---|
-| `key` | text, PK | for example `guest_signin_prompt_cards` (5 today), `guest_signin_prompt_message`, `device_limit_free` (1), `device_limit_paid`, `free_data_viewers` (1), `max_data_viewers` (about 30), `invite_code_days` (7), `account_deletion_grace_days` (30), `audit_log_days` (365), `feature_export_enabled` (false, D-198), `signup_open` (D-199), `pending_seen_days` (90, D-203), `bank_sync_overlap_days` (7, D-204); added by D-206: `deleted_rows_days` (45), `prices_stale_days` (30), `price_update_hours` (24), `debt_reminder_days_before` (7), `months_ahead_limit` (1), `username_change_days` (14), `zakat_silver_grams` (595), `zakat_default_rate_bp` (250), `zakat_clear_limit` (1) |
-| `value` | jsonb | |
-| `updated_at` | timestamptz | default now |
-| `updated_by` | uuid, null | a profile with role `admin`; FK, SET NULL |
-
-The apps keep the last copy for offline use and have a built-in default when they never read it (D-178, D-179).
 
 ### Zakat (D-136, D-162 to D-171; approved; may be opened again, so these tables stay separate)
 Money only for now (D-168). Rules:

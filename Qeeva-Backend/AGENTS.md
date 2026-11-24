@@ -115,7 +115,8 @@ verifies tokens and never creates users). pytest, ruff, mypy strict. Exact pins 
 ```
 core/            settings (all from environment), urls
 common/          auth.py (Supabase JWT), ownership.py (for_user), db.py (lock_down_table), views
-apps/accounts/   profiles, username_reservations, user_settings
+apps/accounts/   profiles, username_reservations, user_settings, user_consents (+ consents.py)
+apps/system/     app_config (+ config.py: keys, defaults, readers; admin.py: the only admin page)
 apps/finance/    months, month_incomes, items, month_items, item_merge_dismissals (+ naming.py)
 conftest.py      test wiring (auth.users stand-in; skips DB tests without PostgreSQL)
 docs/            schema blueprint, guide for the user (Arabic); decision-log.md is only a pointer
@@ -195,7 +196,8 @@ makes `localhost` in a database URL mean `127.0.0.1` (D-102); patch 0012 fixes t
 doc files (D-101); patch 0013 builds the five finance tables (models, migrations, 150 tests; D-103 to
 D-107); patch 0014 adds the calculation layer (`apps/finance/calculations.py`, `summary.py`, shared
 test vectors; D-108, D-109). No finance endpoint exists. Patch 0058 moves money to thousandths (migration
-`finance 0004`, D-149). Tests: 363 with PostgreSQL.
+`finance 0004`, D-149). Patch 0059 builds `app_config` (new app `apps/system`, 24 keys, the Django admin page for it)
+and `user_consents` (D-207 to D-209). Tests: 438 with PostgreSQL.
 Patches 0015-0018 (docs only) hold decisions D-103 to D-120 and the feature-data map; patches 0019-0021 (docs only, delivered
 2026-11-17) hold D-121 to D-123, the "Designed, not built" tables in the schema blueprint and the ideas list.
 A one-page snapshot of everything done so far is `plans/plans-Backend/20261117-progress-summary.md`.
@@ -235,9 +237,10 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
   `src/app/@SERVICES/sync/backup.service.ts` (`/api`). The new backend has only `/api/health/` and
   `/api/me/`, so a logged-in flow that uses them fails against it. Guest mode (local only) is not
   affected. This belongs to the alignment phase (D-096); do not patch it ad hoc.
-* **`/admin/` is still routed** (the default Django scaffold; `django.contrib.admin` is
-  installed) although admin features are deferred (D-080). Django creates no admin account by
-  itself. Decide later whether to remove it or keep it closed in production. Not changed.
+* **`/admin/` shows `app_config` only** (D-209, patch 0059). The owner signs in with a Django admin
+  account (`python manage.py createsuperuser`), separate from Supabase. Register no user-data model
+  there (D-080 stays deferred). Before going live: a secret address instead of `/admin/`, a long
+  password, HTTPS only.
 * **Frontend/backend alignment is a planned phase after the backend work** (D-096); read
   `plans/plans-Backend/20261114-frontend-backend-alignment.md` before writing any endpoint or
   adapter. Backend and database are the source of truth; the frontend gets a mapping layer.
@@ -251,11 +254,14 @@ Next candidates (the user's current path is **Path A**, section 10; B and C wait
 * **Django's own tables** (`auth_user`, `django_session`, `django_migrations`, ...) live in
   `public` without RLS. Recommend the user turns **Data API off** in the Supabase dashboard
   (we never use it). Unverified for the project's current setting.
+  Supabase's changelog (checked 2026-11-24): since 2026-10-30 new tables in `public` are no longer
+  granted to `anon`/`authenticated` automatically, so tables our migrations create from now on are not
+  exposed even without RLS. Asked on 2026-11-24 whether to lock Django's own tables with RLS too.
 * **`qeeva-dev` JWT signing keys** must be asymmetric or JWKS verification returns nothing. Not
   yet checked.
 * With the pinned django-stubs, `Model.objects` is typed `Any` (also for Django's own `User`), so
   mypy is weaker on ORM calls. Re-check after upgrading the stubs.
-* Not yet decided: hosting, Django admin (deferred, D-080), per-request RLS (option B in D-087,
+* Not yet decided: hosting, admin features beyond `app_config` (D-080, D-209), per-request RLS (option B in D-087,
   can be added later through a migration), multi-income pool rules, sync, devices,
   plans/waitlist, consents, audit logs, export/delete flows, Community, Arabic UI.
 * Planned, not now: Telegram voice bot, bank import (pending list, D-062/D-074), Advanced-mode
@@ -270,6 +276,10 @@ Date: 2026-11-17. Patches 0001-0018 are applied and pushed. Patches 0019, 0020 a
 in the n8n talk and is not built with the MVP. **Now: building the MVP tables in stages** by
 `plans/plans-Backend/20261123-mvp-tables-build.md` (one patch per stage, tests required, nothing applied to Supabase
 without his approval, D-084). After the MVP tables: the waitlist and marketing with n8n, a talk first (D-194).
+
+**2026-11-24 (11:58): stage 2 built (patch 0059).** `app_config` filled with its 24 keys by a migration (D-207), the
+terms and privacy versions as keys (D-208), edited in the Django admin page, the only table it shows (D-209);
+`user_consents` (D-202). Next: stage 3 (`devices` and the sync columns), then stage 4.
 
 **Path A (closed 2026-11-23):** the data design for every feature. The user's rule: the database is the only subject; he asked the AI
 to ask two or more questions per message (changed 2026-11-17) and to keep the `.md` files updated.

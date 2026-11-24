@@ -77,6 +77,20 @@ test database only.
 To look at the tables, run `python -m pytest --reuse-db`, then open `test_postgres` on
 `127.0.0.1:5433` (user `postgres`, password `test`) in pgAdmin or DBeaver.
 
+## Admin page (`app_config` only)
+
+The owner changes the values of `app_config` (limits, texts, switches) in Django's admin page (D-209). No other
+table is shown there.
+
+```bash
+python manage.py createsuperuser   # once: a Django admin account, separate from your Supabase account
+python manage.py runserver
+```
+
+Open `http://127.0.0.1:8000/admin/`, sign in, then **System > App config values**. Type the value as plain
+text (`3`, `true`, a sentence); a wrong value is refused with the reason. Keys cannot be added or deleted.
+Before going live: a secret address instead of `/admin/`, a long password, HTTPS only.
+
 ## Account tables (`apps/accounts`)
 
 `profiles`, `username_reservations` and `user_settings`. Migration `0002` ties

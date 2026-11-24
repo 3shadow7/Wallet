@@ -236,3 +236,73 @@ class UserSettings(models.Model):
 
     def __str__(self) -> str:
         return f"settings of {self.user_id}"
+
+
+class ConsentKind(models.TextChoices):
+    TERMS = "terms"
+    PRIVACY = "privacy"
+    MARKETING = "marketing"
+
+
+class ConsentAction(models.TextChoices):
+    ACCEPTED = "accepted"
+    WITHDRAWN = "withdrawn"
+
+
+class UserConsentManager(OwnedManager["UserConsent"]):
+    """Typed manager: lets mypy know which model ``for_user`` returns."""
+
+
+class UserConsent(models.Model):
+    """One consent action, kept as proof (D-202): who accepted or withdrew which document version.
+
+    Rows are never edited: a new action is a new row, and the current state of a kind is its
+    newest row. Example: accepted terms ``2026-11`` at sign-up, then terms ``2027-03`` after the
+    owner changed ``app_config.terms_version`` (D-208).
+    """
+
+    OWNER_FIELD = "user_id"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        db_constraint=False,  # created in migration 0004 with ON DELETE CASCADE
+        related_name="consents",
+    )
+    kind = models.TextField(choices=ConsentKind.choices)
+    # The version of the document he saw, for example "2026-11".
+    document_version = models.TextField(validators=[MaxLengthValidator(20)])
+    action = models.TextField(choices=ConsentAction.choices)
+    created_at = models.DateTimeField(auto_now_add=True, db_default=Now())
+
+    objects = UserConsentManager()
+
+    class Meta:
+        db_table = "user_consents"
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(kind__in=ConsentKind.values), name="user_consents_kind_valid"
+            ),
+            models.CheckConstraint(
+                condition=Q(action__in=ConsentAction.values), name="user_consents_action_valid"
+            ),
+            models.CheckConstraint(
+                condition=GreaterThanOrEqual(Length("document_version"), 1)
+                & LessThanOrEqual(Length("document_version"), 20),
+                name="user_consents_document_version_length",
+            ),
+        ]
+        indexes = [
+            # "What is his newest action for this kind?" reads only this index.
+            models.Index(fields=["user", "kind", "-created_at"], name="user_consents_latest"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} {self.document_version} {self.action}"
+
+    def save(self, *args: object, **kwargs: object) -> None:
+        # Proof must not change after the fact: only new rows may be saved.
+        if not self._state.adding:
+            raise ValueError("A consent row is never edited; save a new row instead.")
+        super().save(*args, **kwargs)  # type: ignore[arg-type]

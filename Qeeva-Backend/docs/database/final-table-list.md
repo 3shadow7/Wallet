@@ -41,14 +41,14 @@ Every user-owned table that syncs also gets `deleted_at`, `deleted_by_device_id`
 ## System (no owner, the same for everyone)
 | Table | Status | Columns |
 |---|---|---|
-| `app_config` | [designed] | `key`, `value`, `updated_at`, `updated_by` (22 keys, listed in `schema-blueprint.md`, D-179, D-206) |
+| `app_config` | [built] | `key`, `value`, `updated_at`, `updated_by` (the Django admin account, D-209); 24 keys, listed in `schema-blueprint.md` (D-179, D-206, D-208) |
 
 ## Account
 | Table | Status | Columns |
 |---|---|---|
 | `plan_events` | [designed] | `id`, `user_id`, `kind`, `occurred_at`, `payload`, `created_at` |
 | `audit_logs` | [designed] | `id`, `user_id`, `action`, `device_id`, `details`, `created_at` |
-| `user_consents` | [designed] | `id`, `user_id`, `kind` (terms/privacy/marketing), `document_version`, `action` (accepted/withdrawn), `created_at` |
+| `user_consents` | [built] | `id`, `user_id`, `kind` (terms/privacy/marketing), `document_version`, `action` (accepted/withdrawn), `created_at` |
 | `waitlist_entries` | [first draft; redesigned in the n8n talk, not built with the MVP, D-205] | `id`, `email`, `source`, `marketing_consent`, `invited_at`, `converted_profile_id`, `note`, `created_at` |
 
 ## Zakat (kept separate; may be opened again)

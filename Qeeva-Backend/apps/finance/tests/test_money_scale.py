@@ -39,7 +39,13 @@ def back_to_latest() -> Iterator[None]:
     executor.migrate(executor.loader.graph.leaf_nodes())
 
 
-pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.usefixtures("back_to_latest")]
+# A transactional test empties every table when it ends. serialized_rollback makes each of these
+# tests start from the rows that migrations wrote (the app_config defaults, D-207), not from an
+# empty database, so the migrations run on realistic data.
+pytestmark = [
+    pytest.mark.django_db(transaction=True, serialized_rollback=True),
+    pytest.mark.usefixtures("back_to_latest"),
+]
 
 
 def test_every_money_column_is_multiplied_by_ten() -> None:

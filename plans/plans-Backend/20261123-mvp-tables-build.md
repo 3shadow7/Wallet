@@ -20,9 +20,10 @@ ruff and mypy clean. Each stage is one patch. Nothing is applied to Supabase wit
    `month_items.amount_minor`, `month_items.unit_price_minor`). No real data exists anywhere, so in practice it
    converts nothing; it is written correctly anyway. Going back refuses when an amount uses the third decimal, so no
    thousandth is ever lost. The calculation layer and the shared vectors say thousandths. Patch 0058.
-2. [ ] **Stage 2: `app_config` and `user_consents`.** `app_config` lives in a new app `apps/system` (no owner, the same
-   for everyone; D-179) with every decided key (D-206); `user_consents` joins `apps/accounts` (D-202). Waits for two
-   answers from the owner: how the rows are filled, and where the current terms version lives.
+2. [x] **Stage 2: `app_config` and `user_consents`.** `app_config` lives in a new app `apps/system` (no owner, the same
+   for everyone; D-179), filled with its 24 keys by a migration (D-206 to D-208) and edited in the Django admin page,
+   the only table that page shows (D-209); `user_consents` joins `apps/accounts` (D-202), with the check against the
+   current terms and privacy versions. Patch 0059.
 3. [ ] **Stage 3: `devices` and the sync columns.** `devices` (D-176, D-185, D-187, D-191) and `deleted_at`,
    `deleted_by_device_id`, `version`, `updated_by_device_id` on every synced table (D-176, D-180).
 4. [ ] **Stage 4: the funds and the alerts.** `fund_entries` (the MVP kinds), `notifications` (D-121) and
@@ -43,4 +44,4 @@ saving to the server it must send thousandths (cents x 10). That change belongs 
 - Stage 1: a test runs the real migration forward and back on a test database.
 
 ## Decisions
-D-084, D-117, D-121, D-149, D-172, D-176, D-179, D-180, D-200, D-202, D-205, D-206.
+D-080, D-084, D-117, D-121, D-149, D-172, D-176, D-179, D-180, D-200, D-202, D-205 to D-209.
